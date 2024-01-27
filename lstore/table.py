@@ -27,6 +27,9 @@ class Table:
         self.num_columns = num_columns
         self.page_directory = {}
         self.index = Index(self)
+        self.num_records = 0
+         # Initialize pages for each column, plus system columns
+        self.columns = [[] for _ in range(num_columns + 4)]  # +4 for system columns
         pass
 
     def __merge(self):

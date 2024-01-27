@@ -31,7 +31,17 @@ class Query:
     """
     def insert(self, *columns):
         schema_encoding = '0' * self.table.num_columns
-        pass
+        try:
+            if len(columns) != self.table.num_columns:
+                return False
+
+            rid = self.table.num_records
+            record = Record(rid, columns[self.table.key], columns)
+            self.table.page_directory[rid] = record
+            self.table.num_records += 1
+            return True
+        except Exception as e:
+            return False
 
     
     """

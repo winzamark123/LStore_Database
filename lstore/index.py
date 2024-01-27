@@ -1,5 +1,9 @@
 """
-A data strucutre holding indices for various columns of a table. Key column should be indexd by default, other columns can be indexed through this object. Indices are usually B-Trees, but other data structures can be used as well.
+A data strucutre holding indices for various columns of a table. 
+Key column should be indexd by default, other columns can be indexed 
+through this object. Indices are usually B-Trees, but other data 
+structures can be used as well.
+
 """
 
 class Index:
@@ -17,7 +21,8 @@ class Index:
         pass
 
     """
-    # Returns the RIDs of all records with values in column "column" between "begin" and "end"
+    # Returns the RIDs of all records with values in column 
+    "column" between "begin" and "end"
     """
 
     def locate_range(self, begin, end, column):
