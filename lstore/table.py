@@ -9,25 +9,26 @@ SCHEMA_ENCODING_COLUMN = 3
 
 class Record:
 
-    def __init__(self, rid, key, columns):
+    def __init__(self, rid:int, key:int, columns:tuple)->None:
         self.rid = rid
         self.key = key
         self.columns = columns
 
 class Table:
-
     """
     :param name: string         #Table name
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def __init__(self, name, num_columns, key):
+    
+    def __init__(self, name:str, num_columns:int, key:int)->None:
         self.name = name
-        self.key = key
         self.num_columns = num_columns
-        self.page_directory = {}
+        self.key = key
         self.index = Index(self)
-        pass
+        self.page_directory = dict()
+        self.num_base_records = 0
+
 
     def __merge(self):
         print("merge is happening")
