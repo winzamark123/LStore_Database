@@ -26,6 +26,7 @@ class Database():
         if name in self.tables:
             print("Table already exists")
             raise ValueError(f"Table {name} already exists.")
+        
         table = Table(name, num_columns, key_index)
 
         self.tables[name] = table

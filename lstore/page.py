@@ -3,8 +3,10 @@ import time
 COLUMN_SIZE = 8 # in bytes (8 bytes specified in paper pg. 546)
 PHYSICAL_PAGE_SIZE = 4096 # in bytes
 NUM_BASE_PAGES = 16
-PAGE_RANGE_SIZE = PHYSICAL_PAGE_SIZE * NUM_BASE_PAGES
+PAGE_RANGE_SIZE = PHYSICAL_PAGE_SIZE * NUM_BASE_PAGES * COLUMN_SIZE
+META_DATA_NUM_COLUMNS = 5
 
+#size of PAGE RANGE / SIZE BASE PAGE will be dependent on number of columns 
 class Physical_Page:
 
     def __init__(self):
@@ -50,8 +52,8 @@ class Base_Page:
         Offset is found w/ (RID-1) * COLUMN_SIZE % PHYSICAL_PAGE_SIZE
         """
 
-        self.metadata = []
-        self.columns = [[Physical_Page()]] * num_columns
+        self.metadata = [[Physical_Page()] for _ in range(META_DATA_NUM_COLUMNS)]
+        self.columns = [[Physical_Page()] * (num_columns)]
     
     def write_to_base_page(self, *entry_columns)->None:
         for i, physical_pages in enumerate(self.columns):
@@ -65,11 +67,10 @@ class Base_Page:
         self.metadata[len(self.metadata)+1] = [None, bytearray(len(entry_columns)), time.time()] # maybe add last updated time?
 
 class Tail_Page:
-    
     def __init__(self, num_columns:int)->None:
         self.columns = [Physical_Page()] * num_columns
 
 class Page_Range:
-
-    def __init__(self):
-        pass
+    def __init__(self, num_columns:int)->None:
+        self.base_pages = [Base_Page(num_columns=num_columns)] * NUM_BASE_PAGES
+    

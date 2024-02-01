@@ -1,5 +1,6 @@
 from lstore.index import Index
 from time import time
+from page import Page_Range
 
 INDIRECTION_COLUMN = 0
 RID_COLUMN = 1
@@ -26,7 +27,9 @@ class Table:
         self.num_columns = num_columns
         self.key = key
         self.index = Index(self)
-        self.page_directory = dict()
+
+        #CREATE THE PAGE DIRECTORY with SIZE BASED ON THE num_columns 
+        self.page_directory = [Page_Range(num_columns=num_columns)]
         self.num_base_records = 0
 
 
