@@ -22,7 +22,7 @@ class Database():
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def create_table(self, name, num_columns, key_index):
+    def create_table(self, name:str, num_columns:int, key_index:int)->Table:
         if name in self.tables:
             print("Table already exists")
             raise ValueError(f"Table {name} already exists.")
@@ -35,7 +35,7 @@ class Database():
     """
     # Deletes the specified table
     """
-    def drop_table(self, name):
+    def drop_table(self, name:str)->None:
         if name in self.tables[name]:
             del self.tables[name]
         else:
@@ -47,7 +47,7 @@ class Database():
     """
     # Returns table with the passed name
     """
-    def get_table(self, name):
+    def get_table(self, name:str)->Table:
         if name in self.tables:
             return self.tables[name]
         else:

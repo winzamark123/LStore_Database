@@ -1,4 +1,5 @@
 from lstore.table import Table, Record
+from lstore.page import Base_Page
 from lstore.index import Index
 
 
@@ -9,7 +10,7 @@ class Query:
     Queries that succeed should return the result or True
     Any query that crashes (due to exceptions) should return False
     """
-    def __init__(self, table):
+    def __init__(self, table:Table):
         self.table = table
         pass
 
@@ -20,7 +21,7 @@ class Query:
     # Returns True upon succesful deletion
     # Return False if record doesn't exist or is locked due to 2PL
     """
-    def delete(self, primary_key):
+    def delete(self, primary_key)->bool:
         pass
     
     
@@ -29,16 +30,18 @@ class Query:
     # Return True upon succesful insertion
     # Returns False if insert fails for whatever reason
     """
-    def insert(self, *columns):
+    def insert(self, *columns:tuple)->bool:
         schema_encoding = '0' * self.table.num_columns
         try:
             if len(columns) != self.table.num_columns:
                 return False
 
-            rid = self.table.num_records
-            record = Record(rid, columns[self.table.key], columns)
-            self.table.page_directory[rid] = record
-            self.table.num_records += 1
+            rid = self.table.num_base_records + 1 # offset to let ID=0 be available for merging
+            
+            self.table.page_directory[rid]
+            self.table.index.create_index()
+
+            self.table.num_base_records += 1
             return True
         except Exception as e:
             return False
