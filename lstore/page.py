@@ -1,26 +1,43 @@
 import time
+from lstore.config import *
 
-COLUMN_SIZE = 8 # in bytes (8 bytes specified in paper pg. 546)
-PHYSICAL_PAGE_SIZE = 4096 # in bytes
-NUM_BASE_PAGES = 16
-PAGE_RANGE_SIZE = PHYSICAL_PAGE_SIZE * NUM_BASE_PAGES * COLUMN_SIZE
-META_DATA_NUM_COLUMNS = 5
-
-#size of PAGE RANGE / SIZE BASE PAGE will be dependent on number of columns 
 class Physical_Page:
+    """
+    :param entry_size: int          # size of entry in bytes for this page (column)
+    :param column_number: int       # number of this page (column) in the base page or tail page
+    :param page_number: int         # page_number of this physical page corresponds to the base page it's on
 
-    def __init__(self):
+    """
+    def __init__(self, entry_size:int, column_number:int, page_number:int):
         self.num_records = 0
         self.data = bytearray(PHYSICAL_PAGE_SIZE)
+        self.entry_size = entry_size # entry size of physical page entry differs between columns (Indirection colum: 2 bytes, StudentID column: 8 bytes, etc..)
+        self.column_number = column_number 
+        self.page_number = page_number # know what base page this physical page belongs to (If base page and physical page_number match then physical page is in base page )
 
     def has_capacity(self)->bool:
-        return (self.num_records + 1) * COLUMN_SIZE < PHYSICAL_PAGE_SIZE
+        return ((self.num_records + 1) * self.entry_size <= PHYSICAL_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
 
-    def write_to_physical_page(self, value:str): # value has to be a string in order to properly encode the value into the physical page
-        if len(value.encode()) < COLUMN_SIZE: raise OverflowError
-        self.data[self.num_records:self.num_records+COLUMN_SIZE] = bytearray(COLUMN_SIZE - len(bytearray(value.encode()))) + value.encode()
-        self.num_records += 1
+    def write_to_physical_page(self, value:int): # value has to be a string in order to properly encode the value into the physical page
+        if self.has_capacity():
+            start = self.num_records * self.entry_size # ex : 4 record entries for StudentID column (physical page), then we start writing at (4 record entries * 8 bytes = 32 bytes)
+            end = start + self.entry_size # ex : stop writing at 32 bytes + 8 bytes = 40 bytes
+            value_bytes = int.to_bytes(value, self.entry_size, byteorder='big') # converts integer to (entry_size) bytes
+            self.data[start:end] = value_bytes
+            self.num_records += 1
+        else:
+            raise OverflowError("Not enough space in physical page or Reached record limit")
 
+    def find_value_in_page(self, value_to_find:int):
+        for i in range(0, len(self.data), self.entry_size):
+            entry_bytes = self.data[i:i + self.entry_size]
+            entry_value = int.from_bytes(entry_bytes, byteorder='big')
+            if(value_to_find == entry_value):
+                return entry_value
+            #print(f"Entry {i // self.entry_size + 1}: {entry_value}")
+        
+        raise Exception("Value was not found")
+    
 
 class Base_Page:
     
@@ -52,9 +69,9 @@ class Base_Page:
         Offset is found w/ (RID-1) * COLUMN_SIZE % PHYSICAL_PAGE_SIZE
         """
 
-        self.metadata = [[Physical_Page()] for _ in range(META_DATA_NUM_COLUMNS)]
-        self.columns = [[Physical_Page()] * (num_columns)]
-    
+        self.entry_and_metadata_columns = [[Physical_Page()] * (META_DATA_NUM_COLUMNS + num_columns)] # creates physical pages(columns of entry plus meta columns) inside base page    
+
+
     def write_to_base_page(self, *entry_columns)->None:
         for i, physical_pages in enumerate(self.columns):
             # create a new empty physical page if last one is full
@@ -66,11 +83,13 @@ class Base_Page:
         # add entry's metadata
         self.metadata[len(self.metadata)+1] = [None, bytearray(len(entry_columns)), time.time()] # maybe add last updated time?
 
+    def access_physical_page(self, entry_for_colum:int)->None: # be able to access physical pages inside the base pages and tail pages 
+        for physical_page in self.entry_and_metadata_columns: # looks at every page in base page 
+             print(physical_page)
+        
 class Tail_Page:
     def __init__(self, num_columns:int)->None:
         self.columns = [Physical_Page()] * num_columns
 
-class Page_Range:
-    def __init__(self, num_columns:int)->None:
-        self.base_pages = [Base_Page(num_columns=num_columns)] * NUM_BASE_PAGES
-    
+
+
