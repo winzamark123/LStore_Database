@@ -1,4 +1,4 @@
-from lstore.index import Index
+from index import Index
 from time import time
 
 INDIRECTION_COLUMN = 0
@@ -25,7 +25,7 @@ class Table:
         self.name = name
         self.num_columns = num_columns
         self.key = key
-        self.index = Index(self)
+        # self.index = Index(self)
         self.page_directory = dict()
         self.num_base_records = 0
 
