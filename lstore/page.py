@@ -8,70 +8,118 @@ class Physical_Page:
     :param page_number: int         # page_number of this physical page corresponds to the base page it's on
 
     """
-    def __init__(self, entry_size:int, column_number:int, page_number:int):
+    def __init__(self, entry_size:int, column_number:int):
         self.num_records = 0
         self.data = bytearray(PHYSICAL_PAGE_SIZE)
-        self.entry_size = entry_size # entry size of physical page entry differs between columns (Indirection colum: 2 bytes, StudentID column: 8 bytes, etc..)
+        self.entry_size = entry_size # entry size of physical page entry differs between columns (RID colum: 2 bytes, StudentID column: 8 bytes, etc..)
         self.column_number = column_number 
-        self.page_number = page_number # know what base page this physical page belongs to (If base page and physical page_number match then physical page is in base page )
 
     def has_capacity(self)->bool:
         return ((self.num_records + 1) * self.entry_size <= PHYSICAL_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
 
-    def write_to_physical_page(self, value:int): # value has to be a string in order to properly encode the value into the physical page
+    # write to physical page
+    def write_to_physical_page(self, value:int, rid:int)->None:
+        #print('\nFunction: write_to_physical_page')
         if self.has_capacity():
-            start = self.num_records * self.entry_size # ex : 4 record entries for StudentID column (physical page), then we start writing at (4 record entries * 8 bytes = 32 bytes)
-            end = start + self.entry_size # ex : stop writing at 32 bytes + 8 bytes = 40 bytes
+            offset = self.get_offset(rid) # gets offset with RID
+            start = offset
+            end = start + self.entry_size # ex : stop writing at (32 bytes + 8 bytes) = 40 bytes
             value_bytes = int.to_bytes(value, self.entry_size, byteorder='big') # converts integer to (entry_size) bytes
             self.data[start:end] = value_bytes
+            #print(f'Inserted value ({value}) into Bytes ({start} - {end})')
             self.num_records += 1
         else:
             raise OverflowError("Not enough space in physical page or Reached record limit")
 
-    def find_value_in_page(self, value_to_find:int):
-        for i in range(0, len(self.data), self.entry_size):
-            entry_bytes = self.data[i:i + self.entry_size]
-            entry_value = int.from_bytes(entry_bytes, byteorder='big')
-            if(value_to_find == entry_value):
-                return entry_value
-            #print(f"Entry {i // self.entry_size + 1}: {entry_value}")
-        
-        raise Exception("Value was not found")
+    # checks if a value is in physical page
+    def check_value_in_page(self, value_to_find:int, rid:int)->bool:
+        #print('\nFunction: check_value_in_page')
+        offset = self.get_offset(rid)
+        start = offset
+        end = start + self.entry_size
+        entry_bytes = self.data[start:end]
+        entry_value = int.from_bytes(entry_bytes, byteorder='big') # converts bytes to integer
+        if(entry_value == value_to_find): # if value in entry_bytes match value we're trying to find, then we print that we found it (we can change it to return True or false)
+            #print(f"Value {entry_value} was found at Bytes ({start} - {end})")
+            return True
+        else:
+            #print(f"value {entry_value} was not found at Bytes ({start} - {end})")
+            return False
+
+    """ - Used for testing
+    def value_exists_at_bytes(self, rid:int):
+        print('\nFunction: value_exists_at_bytes()')
+        offset = self.get_offset(rid)
+        start = offset
+        end = start + self.entry_size
+        entry_bytes = self.data[start:end]
+        value_in_page = int.from_bytes(entry_bytes, byteorder='big')
+        print(f"Value {value_in_page} was found at Bytes ({start} - {end})")
+    """
+
+    # calculates our offset to know where the RID entry is at in the physical page
+    def get_offset(self, rid:int)->int:
+        if(rid < 0):
+            rid = abs(rid)
+        return (rid-1) * self.entry_size % PHYSICAL_PAGE_SIZE        
     
 
 class Base_Page:
+    """
+    :param num_columns: int         # amount of columns in table (5 columns for our example)
+    :param entry_sizes: list        # list of the entry sizes ([2 bytes, 8 bytes, ...]) for each physical page
+    :param key_column: int          # column (physical page) the key value is going to be at 
+
+    """
     
-    def __init__(self, num_columns:int)->None:
-        """
-        Metadata:
-            - Indirection Value: 8 bytes
-                (from paper: "The Indirection column is at most 8-byte long" (pg. 547))
-            - RID: 2 bytes
-                (from paper: "Base RID is a highly compressible column that would require at most two bytes")
-            - Schema Encoding: (# columns) bits
-            - Timestamp: however many bytes the Python time object takes up
-                - Atomic Time? https://stackoverflow.com/questions/17979375/how-do-i-get-the-atomic-clock-time-in-python
-        
-        Entry Columns (key, etc.):
+    def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
 
-        |------------------- metadata -------------------|----- entry ------|       
-        | RID | Indir. | Schema Encoding | Creation Time | key | col1 | ... |
-        |-----|--------|-----------------|---------------|-----|------|-...-|
-        | 2   | 8      | # columns       | ?             | 8   | 8    | ... | number of bytes each column will take (metadata reqs only depend on if we want to follow the paper's info)
-        ...
+        # list of physical_pages in base page
+        self.physical_pages = [] 
 
-        Convert this into a list of columns w/ each column represented by physical pages
-        [col1 entry list, ..., list(Physical Pages)]
-        
-        Metadata will contain: (TODO: figure out if this is correct)
-        | RID (starts @ 1) | Indirection | SE | CT | (last updated time)? |
-        RID can can be associated to a Physical Page's index by performing (RID - 1) * COLUMN_SIZE // PHYSICAL_PAGE_SIZE
-        Offset is found w/ (RID-1) * COLUMN_SIZE % PHYSICAL_PAGE_SIZE
-        """
+        # column (physical page) the key value is going to be at 
+        self.primary_key_column = key_column
 
-        self.entry_and_metadata_columns = [[Physical_Page()] * (META_DATA_NUM_COLUMNS + num_columns)] # creates physical pages(columns of entry plus meta columns) inside base page    
+        # adds to list of physical_pages depending the amount of columns
+        for column_number ,entry_size in enumerate(entry_sizes, start=0): 
+            column_page = Physical_Page(entry_size=entry_size, column_number=column_number)
+            self.physical_pages.append(column_page)
 
+    def get_primary_key_page(self)->Physical_Page: # returns physical_page(column) that has the primary keys 
+        for physical_Page in self.physical_pages:
+            if(physical_Page.column_number == self.primary_key_column ):
+                print(f'column for primary key page : ({physical_Page.column_number})')
+                return physical_Page
 
+    def get_page(self, column_number:int)->Physical_Page: # returns page needed
+        #print('\nFunction: get_page()')
+        for physical_Page in self.physical_pages:
+            if(physical_Page.column_number == (META_DATA_NUM_COLUMNS + column_number)):
+                #print(f'column number: ({META_DATA_NUM_COLUMNS + column_number})')
+                return physical_Page
+
+    def value_getting_updated(self, key_value:int, column_to_update:int, new_value:int, rid:int)->bool: # updates value in physical pages 
+        #print('\nFunction: value_getting_updated()')
+        key_page = self.get_primary_key_page() # grabs key page (Student IDs)
+
+        # checks if key(Student ID) exists
+        if(key_page.check_value_in_page(key_value,rid)): 
+
+            # physical page of column we want update
+            column_to_update_page = self.get_page(column_to_update) 
+            # column_to_update_page.value_exists_at_bytes(rid) - for testing
+
+            # update value with new value
+            column_to_update_page.write_to_physical_page(new_value, rid)
+            #column_to_update_page.value_exists_at_bytes(rid) - for testing
+            #print('\nvalue was updated')
+            return True
+        else:
+            # key value(Student ID) does not exist
+            #print(f'Key {key_value} does not exist')
+            return False
+
+    # not completed
     def write_to_base_page(self, *entry_columns)->None:
         for i, physical_pages in enumerate(self.columns):
             # create a new empty physical page if last one is full
@@ -83,13 +131,6 @@ class Base_Page:
         # add entry's metadata
         self.metadata[len(self.metadata)+1] = [None, bytearray(len(entry_columns)), time.time()] # maybe add last updated time?
 
-    def access_physical_page(self, entry_for_colum:int)->None: # be able to access physical pages inside the base pages and tail pages 
-        for physical_page in self.entry_and_metadata_columns: # looks at every page in base page 
-             print(physical_page)
-        
 class Tail_Page:
     def __init__(self, num_columns:int)->None:
         self.columns = [Physical_Page()] * num_columns
-
-
-
