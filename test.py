@@ -1,4 +1,5 @@
 from lstore.page import *
+from lstore.record import Record
 
 # To make it work, uncomment all the print() statements in page.py to see the physical pages get updated 
 
@@ -18,17 +19,5 @@ for i in range(num_columns):
 
 # creates base page
 base_page = Base_Page(num_columns, entry_size_for_columns, META_DATA_NUM_COLUMNS + key)
-
-# key_column page
-key_column = base_page.get_primary_key_page()
-
-# write to key column a random stID with RID
-key_column.write_to_physical_page(906659671, 20)
-
-# writing to physical page which has a column number (4 + 3) = 7, which is the 3rd grade for our example
-for physical_page in base_page.physical_pages:
-    if (physical_page.column_number == META_DATA_NUM_COLUMNS + 3):
-        physical_page.write_to_physical_page(13,20)
-
-# update grade 3 for the (Student ID: 906659671) to 15 
-base_page.value_getting_updated(906659671, 3, 15, 20)
+print("\nInserting Record(RID=22,KEY=906659672,Grades(10,15,8,7))\n")
+base_page.insert_new_base_record(Record(22,906659672, (10,15,8,7)))
