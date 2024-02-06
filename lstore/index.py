@@ -1,4 +1,4 @@
-from table import Table
+# from table import Table
 
 """
 A data structure holding indices for various columns of a table.
@@ -39,15 +39,19 @@ A: When we update the column, the record 'key' associated to the RID will be
 
 class Column_Index_Node:
 
-    def __init__(self, order)->None:
-        self.order = order
-        self.entry_values = []
-        self.child_nodes = [] # only used for non-leaf nodes
-        self.rids = [] # only used for leaf nodes
-        self.next_node = None
-        self.is_leaf = True
-    
+    def __init__(self, order:int)->None:
+        self.order:int                           = order
+        self.entry_values:list                   = []
+        self.rids:list[list[int]]                = [] # only used for leaf nodes (i:i w/ entry_values)
+        self.child_nodes:list[Column_Index_Node] = [] # only used for non-leaf nodes (i:i+1 w/ entry_values)
+
+        self.parent:Column_Index_Node            = None
+        self.next_node:Column_Index_Node         = None
+        self.is_leaf:bool                        = True
+
     def insert_value_in_node(self, entry_value, rid:int):
+        if not self.is_leaf: raise ValueError
+
         if not self.entry_values:
             self.entry_values.append(entry_value)
             self.rids.append([rid])
@@ -66,27 +70,46 @@ class Column_Index_Node:
                 self.rids.append([rid])
                 break
         return
-    
-    def split_node(self):
+
+    def split_node(self)->None:
         left_node = Column_Index_Node(self.order)
         right_node = Column_Index_Node(self.order)
         mid = self.order // 2
 
+        # assign entry values to child nodes
+        mid_entry_value = self.entry_values[mid]
         left_node.entry_values = self.entry_values[:mid]
-        right_node.entry_values = self.entry_values[mid:]
-        
-        left_node.next_node = right_node
-        
-        self.entry_values = right_node.entry_values[0]
         if self.is_leaf:
+            right_node.entry_values = self.entry_values[mid:]
+        else:
+            right_node.entry_values = self.entry_values[mid+1:]
+
+        # make current node parent
+        left_node.parent = self
+        right_node.parent = self
+        self.entry_values = [mid_entry_value]
+
+        if self.is_leaf:
+            # child node properties
             left_node.rids = self.rids[:mid]
             right_node.rids = self.rids[mid:]
-            self.child_nodes = [left_node, right_node]
+
+            # set linear pointers between leaf nodes
+            left_node.next_node = right_node
+            if self.next_node:
+                right_node.next_node = self.next_node
+
+            # set current node to non-leaf properties
             self.rids = None
+            self.next_node = None
             self.is_leaf = False
         else:
-            self.child_nodes = self.child_nodes[:mid]
-            self.child_nodes = self.child_nodes[mid:]
+            left_node.child_nodes = self.child_nodes[:mid]
+            right_node.child_nodes = self.child_nodes[mid:]
+
+        self.child_nodes = [left_node, right_node]
+
+        return
 
     def is_full(self):
         return len(self.entry_values) == self.order
@@ -94,23 +117,25 @@ class Column_Index_Node:
 
 class Column_Index_Tree:
 
-    def __init__(self, order):
+    def __init__(self, order:int):
         self.root = Column_Index_Node(order)
         self.order = order
 
-    def find_child_node(self, prev_node:Column_Index_Node, entry_value)->tuple[Column_Index_Node, int]:
+    def find_child_node(self, prev_node:Column_Index_Node, entry_value)->tuple[Column_Index_Node,int]:
         for i, cur_val in enumerate(prev_node.entry_values):
-            if cur_val < entry_value:
+            if cur_val > entry_value:
                 return prev_node.child_nodes[i], i
         return prev_node.child_nodes[i+1], i + 1
-    
-    def merge(self, parent:Column_Index_Node, child:Column_Index_Node, index:int)->None:
-        parent.child_nodes.pop(index)
-        pivot = child.entry_values[0]
 
+    def merge(self, parent:Column_Index_Node, child:Column_Index_Node, index:int)->None:
+        if parent == None: return
+        pivot = child.entry_values[0]
+        parent.child_nodes.pop(index)
+        print(f"here for {pivot}")
         for i, item in enumerate(parent.entry_values):
-            if pivot < item:
+            if item > pivot:
                 parent.entry_values = parent.entry_values[:i] + [pivot] + parent.entry_values[i:]
+                parent.child_nodes = parent.child_nodes[:i] + child.child_nodes + parent.child_nodes[i:]
                 break
             elif i + 1 == len(parent.entry_values):
                 parent.entry_values.append(pivot)
@@ -118,20 +143,28 @@ class Column_Index_Tree:
                 break
 
     def insert_value(self, entry_value, rid:int)->None:
-        parent = Column_Index_Node(self.order)
-        child = self.root
+        cur_node = self.root
+        index = None
+        while not cur_node.is_leaf:
+            cur_node, index = self.find_child_node(cur_node, entry_value)
+        cur_node.insert_value_in_node(entry_value, rid)
+        
+        # print("root", self.root.entry_values, f"for {entry_value}")
+        # for l in self.root.child_nodes:
+        #     print(l.entry_values)
+        
+        while cur_node != None and cur_node.is_full():
+            # prev node was parent if cur_node is None
 
-        while not child.is_leaf:
-            parent = child
-            child, index = self.find_child_node(child, entry_value)
+            cur_node.split_node()
 
-        child.insert_value_in_node(entry_value, rid)
-
-        if child.is_full():
-            child.split_node()
-
-            if parent and not parent.is_full():
-                self.merge(parent, child, index)
+            # print("children of parent")
+            # for l in cur_node.parent.child_nodes:
+            #     print(l.entry_values)
+            # print("index", index)
+            if cur_node.parent:
+                self.merge(cur_node.parent, cur_node, index)
+            cur_node = cur_node.parent
 
     def get_rids_equality_search(self, entry_value)->list[int]:
         cur_node = self.root
@@ -160,7 +193,7 @@ class Column_Index_Tree:
                 if val > upper_bound: break
                 if lower_bound <= val and val <= upper_bound:
                     return_list += cur_node.rids[i]
-            
+
             if val > upper_bound: break
             cur_node = cur_node.next_node
 
@@ -176,36 +209,33 @@ class Column_Index_Tree:
                 self.print_node(child_node, count + 1)
         return f"[lvl {count}] -- " + str(cur_node.entry_values)
 
-class Index:
+# class Index:
 
-    def __init__(self, table:Table):
-        # One index for each table. All are empty initially.
-        self.indices = [Column_Index_Tree()] *  table.num_columns
+#     def __init__(self, table:Table):
+#         # One index for each table. All are empty initially.
+#         self.indices = [Column_Index_Tree()] *  table.num_columns
 
-    def locate(self, value, column_index:int):
-        """
-        # returns the location of all records with the given value on column "column"
-        """
-        pass
+#     def locate(self, value, column_index:int):
+#         """
+#         # returns the location of all records with the given value on column "column"
+#         """
+#         pass
 
+#     def locate_range(self, begin, end, column_index:int):
+#         """
+#         # Returns the RIDs of all records with values in column
+#         "column" between "begin" and "end"
+#         """
+#         pass
 
-    def locate_range(self, begin, end, column_index:int):
-        """
-        # Returns the RIDs of all records with values in column
-        "column" between "begin" and "end"
-        """
-        pass
+#     def create_index(self, column):
+#         """
+#         # optional: Create index on specific column
+#         """
+#         pass
 
-
-    def create_index(self, column):
-        """
-        # optional: Create index on specific column
-        """
-        pass
-
-
-    def drop_index(self, column):
-        """
-        # optional: Drop index of specific column
-        """
-        pass
+#     def drop_index(self, column):
+#         """
+#         # optional: Drop index of specific column
+#         """
+#         pass
