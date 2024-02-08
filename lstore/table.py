@@ -35,7 +35,7 @@ class Table:
         self.key_column = META_DATA_NUM_COLUMNS + key
 
         # list of the size of each physical page in base pages in Bytes - These first 4 sizes are for the meta columns
-        self.entry_size_for_columns = [2,8,8,8]
+        self.entry_size_for_columns = [2,8,8]
 
         # adds integers of 8 to list depending on how many columns are asked from table
         for i in range(num_columns): 
@@ -55,15 +55,4 @@ class Table:
     def get_tid_value(self):
         self.lid -= 1
         return self.lid # returns unique new TID(RIDs for tails records) - easier to identify if they're tail records or base records
-
-    def get_schema_encoding(columns):
-        schema_encoding = ''
-        for item in columns:
-            # if value in column is not 'None' add 1
-            if item:
-                schema_encoding = schema_encoding + '1'
-            # else add 0
-            else:
-                schema_encoding = schema_encoding + '0'
-        return int(schema_encoding, 2)
 
