@@ -1,5 +1,5 @@
 from lstore.table import Table 
-
+from lstore.record import Record
 
 class Query:
     """
@@ -34,6 +34,8 @@ class Query:
         if cur_page_range.has_capacity() == False:
             self.table.insert_page_range()
             self.table.page_directory[-1].insert_base_page()
+        print("PAGE_RANGE:", self.table.page_directory[-1])
+        print("BASE_PAGE:", self.table.page_directory[-1].base_pages[-1])
 
         cur_page = self.table.page_directory[-1].base_pages[-1].insert_new_record(Record(self.table.inc_rid(), columns[0], columns[1:]))
         return True if cur_page else False

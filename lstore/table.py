@@ -5,13 +5,23 @@ from time import time
 
 class Page_Range:
     def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
-        self.base_pages = [Base_Page(num_columns, entry_sizes, key_column, False)] * NUM_BASE_PAGES
+        self.num_columns = num_columns
+        self.entry_size_for_columns = entry_sizes
+        self.key_column = key_column
+        self.num_base_records = 0
         self.tid = 0
+        
+        self.base_pages = [Base_Page(num_columns, entry_sizes, key_column, False)] * NUM_BASE_PAGES
 
-    def has_capacity():
-            
-        return True 
-    
+    def has_capacity(self)-> bool:
+        if self.num_base_records < RECORDS_PER_PAGE * NUM_BASE_PAGES:
+            return True
+        
+        return False
+
+    def insert_base_page(self)->None:
+        self.base_pages.append(Base_Page(self.num_columns, self.entry_size_for_columns, self.key_column, False))
+
     def inc_tid(self):
         self.tid -= 1
         return self.tid # returns unique new TID(RIDs for tails records) - easier to identify if they're tail records or base records
@@ -66,7 +76,6 @@ class Table:
     def __merge(self):
         print("merge is happening")
         pass
-
 
     def inc_rid(self):
         self.rid += 1

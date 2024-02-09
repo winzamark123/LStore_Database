@@ -26,7 +26,6 @@ class Physical_Page:
         else:
             return ((self.num_records + 1) * self.entry_size <= PHYSICAL_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
 
-
     # write to physical page
     def write_to_physical_page(self, value:int, rid:int, update: bool=False)->None:
         # Perform capacity check only if update is False
@@ -85,7 +84,6 @@ class Physical_Page:
             return (rid-1) * self.entry_size % INDIRECTION_PAGE_SIZE 
         return (rid-1) * self.entry_size % PHYSICAL_PAGE_SIZE        
     
-
 class Page:
     """
     :param num_columns: int         # amount of columns in table (5 columns for our example)
@@ -207,6 +205,8 @@ class Page:
     # inserts new base record into base page
     def insert_new_record(self, new_record: Record)->bool:
 
+        print('\nFunction: insert_new_record()')
+        print(new_record)
         # checks if page is full of records
         if(self.page_is_full()):
             return False
@@ -251,7 +251,6 @@ class Page:
             return True
         else:
             raise KeyError(f"RID ({rid}) already exists.")
-
 
     # returns record with just the RID
     def get_record_with_rid(self,rid:int)->Record:
@@ -303,8 +302,6 @@ class Page:
             return True
         
         return False
-
-        
 
 class Tail_Page(Page):
     def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
