@@ -31,21 +31,14 @@ class Query:
     # Returns False if insert fails for whatever reason
     """
     def insert(self, *columns:tuple)->bool:
-        schema_encoding = '0' * self.table.num_columns
-        try:
-            if len(columns) != self.table.num_columns:
-                return False
+        cur_page_range = self.table.page_directory[-1]
 
-            rid = self.table.num_base_records + 1 # offset to let ID=0 be available for merging
-            
-            self.table.page_directory[rid]
-            self.table.index.create_index()
+        if cur_page_range.has_capacity() == False:
+            self.table.insert_page_range()
+            self.table.page_directory[-1].insert_base_page()
 
-            self.table.num_base_records += 1
-            return True
-        except Exception as e:
-            return False
-
+        cur_page = self.table.page_directory[-1].base_pages[-1].insert_new_record(Record(self.table.inc_rid(), columns[0], columns[1:]))
+        return True if cur_page else False
     
     """
     # Read matching record with specified search key
@@ -57,6 +50,10 @@ class Query:
     # Assume that select will never be called on a key that doesn't exist
     """
     def select(self, search_key, search_key_index, projected_columns_index):
+        #Convert SID to RID with Indexing
+        #GET Page_RANGE and Base_page from get_address in table.py
+        #GET record_with_rid from Base_page using table.py
+        #return record
         pass
 
     
@@ -71,6 +68,7 @@ class Query:
     # Assume that select will never be called on a key that doesn't exist
     """
     def select_version(self, search_key, search_key_index, projected_columns_index, relative_version):
+
         pass
 
     
@@ -80,6 +78,8 @@ class Query:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, primary_key, *columns):
+        #insert but for the TailPage
+        #increment in PageRange 
         pass
 
     

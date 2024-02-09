@@ -6,6 +6,16 @@ from page import Page_Range, Base_Page
 class Page_Range:
     def __init__(self, num_columns:int)->None:
         self.base_pages = [Base_Page(num_columns=num_columns)] * NUM_BASE_PAGES
+        self.tid = 0
+
+    def has_capacity():
+        return True 
+    
+    def inc_tid(self):
+        self.tid -= 1
+        return self.tid # returns unique new TID(RIDs for tails records) - easier to identify if they're tail records or base records
+
+
 
 class Table:
     """
@@ -48,11 +58,7 @@ class Table:
         pass
 
 
-    def get_rid_value(self):
+    def inc_rid(self):
         self.rid += 1
         return self.rid # returns unique new RID for base records
-
-    def get_tid_value(self):
-        self.lid -= 1
-        return self.lid # returns unique new TID(RIDs for tails records) - easier to identify if they're tail records or base records
 
