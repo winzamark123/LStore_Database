@@ -1,14 +1,15 @@
 from lstore.index import Index
 from lstore.config import *
+from lstore.page import Base_Page
 from time import time
-from page import Page_Range, Base_Page
 
 class Page_Range:
-    def __init__(self, num_columns:int)->None:
-        self.base_pages = [Base_Page(num_columns=num_columns)] * NUM_BASE_PAGES
+    def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
+        self.base_pages = [Base_Page(num_columns, entry_sizes, key_column, False)] * NUM_BASE_PAGES
         self.tid = 0
 
     def has_capacity():
+            
         return True 
     
     def inc_tid(self):
@@ -28,9 +29,7 @@ class Table:
         self.name = name
         self.num_columns = num_columns
         self.key = key
-        self.index = Index(self)
-        #CREATE THE PAGE DIRECTORY with SIZE BASED ON THE num_columns 
-        self.page_directory = [Page_Range(num_columns=num_columns)]
+        self.index = Index(num_columns)
 
         # number of base records 
         self.num_base_records = 0
@@ -47,11 +46,22 @@ class Table:
         # list of the size of each physical page in base pages in Bytes - These first 4 sizes are for the meta columns
         self.entry_size_for_columns = [2,8,8]
 
+        #CREATE THE PAGE DIRECTORY with SIZE BASED ON THE num_columns 
+        self.page_directory = [Page_Range(num_columns, self.entry_size_for_columns, self.key_column)]
         # adds integers of 8 to list depending on how many columns are asked from table
         for i in range(num_columns): 
-            entry_size_for_columns.append(8)
+            self.entry_size_for_columns.append(8)
 
 
+    def get_list_of_addresses(self, rids):
+        addreses = []
+
+        for rid in rids:
+            page_range_num = rid // (RECORDS_PER_PAGE * NUM_BASE_PAGES)
+            base_page_num = (rid // RECORDS_PER_PAGE) % NUM_BASE_PAGES
+            addreses.append((page_range_num, base_page_num))
+        #return page_range_num, base_page_num
+        return addreses
 
     def __merge(self):
         print("merge is happening")

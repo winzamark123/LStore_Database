@@ -1,6 +1,4 @@
-from lstore.table import Table, Record
-from lstore.page import Base_Page
-from lstore.index import Index
+from lstore.table import Table 
 
 
 class Query:
@@ -50,11 +48,25 @@ class Query:
     # Assume that select will never be called on a key that doesn't exist
     """
     def select(self, search_key, search_key_index, projected_columns_index):
+        #search key: SID 
+        #search_key_index: 0 (the column that the SID resides in)
+        #projected_columns_index: [1,1,1,1,1] (all columns)
+
         #Convert SID to RID with Indexing
+        rids = [] #list of rids
+        rids = self.table.index.locate(search_key, search_key_index)
+
         #GET Page_RANGE and Base_page from get_address in table.py
+        addresses = []
+        addresses = self.table.get_list_of_addresses(rids) #list of addresses (page_range_num, base_page_num)
+
         #GET record_with_rid from Base_page using table.py
-        #return record
-        pass
+        records = []
+        for address in addresses:
+            records.append(self.table.page_directory[address[0]].base_pages[address[1]].get_record_with_rid(rids[addresses.index(address)]))
+            
+        return records
+
 
     
     """
