@@ -21,36 +21,32 @@ class Physical_Page:
 
     # checks capacity of page
     def has_capacity(self)->bool:
-        #Calculate the total number of entires that can fit in the data bytearray
-        max_entries = len(self.data) // self.entry_size
-        
-        #check if the current number is less than the max number of entries
-        return self.num_records < max_entries
+        if(self.column_number == 0):
+            return ((self.num_records + 1) * self.entry_size <= INDIRECTION_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
+        else:
+            return ((self.num_records + 1) * self.entry_size <= PHYSICAL_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
 
-   # calculates our offset to know where the RID entry is at in the physical page
-    def get_offset(self, rid:int)->int:
-        # Tail Pages
-        if rid <= 0:
-            return abs(rid) * self.entry_size
-        # Base Pages
-        else: 
-            return rid * self.entry_size
 
     # write to physical page
-    def write_to_physical_page(self, data:int, rid:int, ) ->None:
-        #check if the page has capacity
-        if not self.has_capacity():
-            raise ValueError("The physical page is full.")
+    def write_to_physical_page(self, value:int, rid:int, update: bool=False)->None:
+        # Perform capacity check only if update is False
+        if not update and not self.has_capacity():
+            raise OverflowError("Not enough space in physical page or Reached record limit")
+
         # Gets offset with RID
         offset = self.get_offset(rid) 
+        start = offset
+        # Stop writing at (32 bytes + 8 bytes) = 40 bytes
+        end = start + self.entry_size
 
-        if len(data) != self.entry_size:
-            raise ValueError("The data does not match the entry size of the physical page.")
-        
-        # Write the data to the page
-        self.data[offset:offset+self.entry_size] = data
-        self.num_records += 1
-        
+        # Convert integer to (entry_size) bytes
+        value_bytes = int.to_bytes(value, self.entry_size, byteorder='big', signed=True)
+        self.data[start:end] = value_bytes
+        print(f'Inserted value ({value}) in column ({self.column_number}) into Bytes ({start} - {end})')
+
+        # Increment num_records only if update is False
+        if not update:
+            self.num_records += 1
 
     # checks if a value is in physical page
     def check_value_in_page(self, value_to_find:int, rid:int)->bool:
@@ -68,6 +64,7 @@ class Physical_Page:
             return True
         else:
             print(f"value {entry_value} was not found at Bytes ({start} - {end})")
+            print("============================")
             return False
 
     # using for testing 
@@ -81,8 +78,15 @@ class Physical_Page:
         print(f"Value {value_in_page} was found at Bytes ({start} - {end})")
         return value_in_page
 
- 
+    # calculates our offset to know where the RID entry is at in the physical page
+    def get_offset(self, rid:int)->int:
+        if(rid < 0):
+            rid = abs(rid)
+        if self.column_number == 0:
+            return (rid-1) * self.entry_size % INDIRECTION_PAGE_SIZE 
+        return (rid-1) * self.entry_size % PHYSICAL_PAGE_SIZE        
     
+
 class Page:
     """
     :param num_columns: int         # amount of columns in table (5 columns for our example)
@@ -94,45 +98,39 @@ class Page:
     base_page_counter = 0
     tail_page_counter = 0
 
-    def __init__(self, num_columns:int, entry_sizes:list)->None:
+    def __init__(self, num_columns:int, entry_sizes:list, key_column:int, is_tail_page: bool = False)->None:
+        if is_tail_page:
+            # Increment the tail_page_counter each time a Tail_Page object is created
+            Page.tail_page_counter += 1
+            self.page_number = Page.tail_page_counter
+        else:
+            # Increment the base_page_counter each time a Base_Page object is created
+            Page.base_page_counter += 1
+            self.page_number = Page.base_page_counter
+
+
         # list of physical_pages in base page
-        META_DATA_SIZES = [2,8,8]
-        full_entry_sizes = META_DATA_SIZES + entry_sizes
-        self.physical_pages = [Physical_Page(entry_size, i) for i, entry_size in enumerate(full_entry_sizes)] 
+        self.physical_pages = [] 
 
-        # number of records in page
+        # column (physical page) the key value is going to be at 
+        self.primary_key_column = key_column 
+
+        # adds to list of physical_pages depending the amount of columns
+        for column_number ,entry_size in enumerate(entry_sizes, start=0): 
+            column_page = Physical_Page(entry_size=entry_size, column_number=column_number)
+            self.physical_pages.append(column_page)
+
         self.num_records = 0
-    
-    # checks if page is full
-    def has_capacity(self)->bool:
-        return self.num_records < RECORDS_PER_PAGE
-        
-    # inserts new base record into base page
-    def insert_new_record(self, new_record: Record)->bool:
-        print('\nFunction: insert_new_record()')
-        print(new_record)
+        print("Physical Pages:", self.physical_pages)
 
-        # rid of record 
-        rid = new_record.rid
-
-        # checks if page is full of records
-        if not self.has_capacity():
-            print(f'Base Page {self.page_number} is full')
-            return False
-        
-        for i, data in enumerate(new_record.columns):
-            # No need to add META_DATA_NUM_COLUMNS since self.physical_pages now includes meta data pages
-            offset = self.physical_pages[i].get_offset(self.num_records)
-            # Convert data to bytearray and write it to the physical page
-            self.physical_pages[i].write_to_physical_page(data.to_bytes(self.physical_pages[i].entry_size, 'little'), offset)
-        #Increment Record count 
-        self.num_records += 1
-        return True 
-        
     # returns physical_page(column) that has the primary keys 
     def get_primary_key_page(self)->Physical_Page:
         for physical_Page in self.physical_pages:
+            # print("PHYSICAL PAGE COL", physical_Page.column_number)
+            # print("Primary Key Col", self.primary_key_column)
+
             if(physical_Page.column_number == self.primary_key_column ):
+                # print("Returning primary key page")
                 return physical_Page
 
     # returns physical_page(column) that has the RIDs
@@ -212,6 +210,57 @@ class Page:
         # If key is not found, raise a KeyError
         raise KeyError(f"Key {key_value} not found in the primary key column.")
 
+    # inserts new base record into base page
+    def insert_new_record(self, new_record: Record)->bool:
+
+        # checks if page is full of records
+        if(self.page_is_full()):
+            return False
+        
+        # rid of record 
+        rid = new_record.rid
+        
+        # grabs rid page
+        rid_page = self.get_rid_page()
+
+        print(f'RID ({rid} getting inserted)')
+        # checks if RID exists)
+        if(rid_page.check_value_in_page(rid,rid) == False): 
+
+            # key of record (Student ID)
+            key = new_record.key
+
+            # grabs key page
+            key_page = self.get_primary_key_page()
+            print(f'Key ({key}) getting inserted')
+            print(f'Key Page ({key_page})')
+
+            # write to key page 
+            key_page.write_to_physical_page(key,rid)
+
+            # grabs Indirection page
+            indirection_page = self.get_indirection_page()
+
+            # write to Indirection page - indirection set to equal to RID because it's the most previous version of that record
+            indirection_page.write_to_physical_page(rid, rid)
+
+            # write to RID page
+            rid_page.write_to_physical_page(rid,rid)
+
+            # columns of record
+            columns = new_record.columns
+        
+            for column_num, column_data in enumerate(columns, start = 1):
+                # gets page which corresponds to each column
+                page_to_write = self.get_page(column_number=column_num) 
+                page_to_write.write_to_physical_page(value=column_data, rid=rid)
+            print("\nRecord Inserted!")
+            self.num_records += 1
+            return True
+        else:
+            raise KeyError(f"RID ({rid}) already exists.")
+
+
     # returns record with just the RID
     def get_record_with_rid(self,rid:int)->Record:
         print('\nFunction: get_record_with_rid()')
@@ -263,15 +312,17 @@ class Page:
         
         return False
 
-class Base_Page(Page):
-    def __init__(self, num_columns, entry_sizes, key_column):
-        super().__init__(num_columns, entry_sizes)
-        self.page_number = Page.base_page_counter
-        self.primary_key_column = key_column + META_DATA_NUM_COLUMNS
-        # Other base page-specific initializations
+        
 
 class Tail_Page(Page):
-    def __init__(self, num_columns, entry_sizes):
-        super().__init__(num_columns, entry_sizes)
-        self.page_number = Page.tail_page_counter
+    def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
+        # Call the constructor of the parent class (Page)
+        super().__init__(num_columns, entry_sizes, key_column, is_tail_page=True)
 
+class Base_Page(Page):
+    def __init__(self, num_columns:int, entry_sizes:list, key_column:int, tail_page: Tail_Page)->None:
+        # Call the constructor of the parent class (Page)
+        super().__init__(num_columns, entry_sizes, key_column, is_tail_page=False)
+
+        # tail page associated with this base page
+        self.tail_page = tail_page
