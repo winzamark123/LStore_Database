@@ -33,7 +33,7 @@ class Table:
 
         #CREATE THE PAGE DIRECTORY with SIZE BASED ON THE num_columns 
         self.page_directory = [Page_Range(num_columns, self.entry_size_for_columns, self.key_column)]
-        
+
         print("Table created: ", self.name)
         print("Number of columns: ", self.num_columns)
         print("Key column: ", self.key_column)
@@ -49,13 +49,13 @@ class Table:
         #return page_range_num, base_page_num
         return addreses
 
-    def __merge(self):
-        print("merge is happening")
-        pass
-
-    def inc_rid(self):
+    def inc_rid(self)-> int:
         self.rid += 1
         return self.rid # returns unique new RID for base records
 
-    def insert_page_range(self):
-        self.page_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column))
+    def insert_page_range(self)-> bool:
+        if not self.page_directory[-1].has_capacity():
+            self.page_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column))
+            print("Function: insert_page_range(), Total page ranges: ", len(self.page_directory))
+            return True
+        return False 

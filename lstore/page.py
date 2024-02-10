@@ -214,7 +214,7 @@ class Page:
     def insert_new_record(self, new_record: Record)->bool:
 
         # checks if page is full of records
-        if(self.page_is_full()):
+        if not self.has_capacity():
             return False
         
         # rid of record 
@@ -305,12 +305,12 @@ class Page:
         return rid_page.check_value_in_page(rid,rid) 
 
     # checks if page is full
-    def page_is_full(self)->bool:
+    def has_capacity(self)->bool:
         if self.num_records == RECORDS_PER_PAGE:
             print(f'Page is full of records on base_page ({self.page_number})')
-            return True
+            return False 
         
-        return False
+        return True 
 
         
 

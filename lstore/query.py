@@ -29,23 +29,30 @@ class Query:
     # Returns False if insert fails for whatever reason
     """
     def insert(self, *columns:tuple)->bool:
-        cur_page_range = self.table.page_directory[-1]
+        latest_page_range = self.table.page_directory[-1]
 
-        if  cur_page_range.has_capacity() == False:
+        if  latest_page_range.has_capacity() == False:
             print("INSERT: PAGE_RANGE IS FULL")
             self.table.insert_page_range()
+            latest_page_range = self.table.page_directory[-1]
 
-        self.table.page_directory[-1].insert_base_page()
+        latest_base_page = latest_page_range.base_pages[-1]
+
+        if latest_page_range.base_pages[-1].has_capacity() == False:
+            print("INSERT: BASE_PAGE IS FULL")
+            self.table.page_directory[-1].insert_base_page()
+            latest_base_page = latest_page_range.base_pages[-1]
+
 
         new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
-        cur_page = self.table.page_directory[-1].base_pages[-1]
-        insertSuccess = cur_page.insert_new_record(new_record)
+        insertSuccess = latest_base_page.insert_new_record(new_record)
 
+        #Check 
         print("TOTAL_PAGE_RANGE", len(self.table.page_directory))
-               
         for i in range(len(self.table.page_directory)):
             for j in range(len(self.table.page_directory[i].base_pages)):
                 print("PAGE_RANGE", i, "BASE_PAGES", j, "TOTAL_RECORDS", self.table.page_directory[i].base_pages[j].num_records) 
+
         return True if insertSuccess else False
     
     """

@@ -20,19 +20,19 @@ class Page_Range:
         # checks if the last base page in the base page list is full
         if len(self.base_pages) >= NUM_BASE_PAGES:
             # checks if the last base page in the base page list is full
-            if self.base_pages[-1].page_is_full():
+            if not self.base_pages[-1].has_capacity():
                 return False 
         return True
 
     # increment the TID (RID for tails records)
-    def inc_tid(self):
+    def inc_tid(self)-> int:
         self.tid -= 1
         return self.tid 
 
     # insert a new base page to the page range
     def insert_base_page(self)-> bool:
         # checks the last base page in the base page list to see if it's full
-        if self.base_pages[-1].page_is_full(): 
+        if not self.base_pages[-1].has_capacity(): 
             self.base_pages.append(Base_Page(self.num_columns, self.entry_size_for_columns, self.key_column, False))
             print("Function: insert_base_page()")
             print("Total base pages in page range: ", len(self.base_pages))
