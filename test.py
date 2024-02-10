@@ -21,11 +21,8 @@ for i in range(num_columns):
 # creates base page list
 base_pages = []
 
-# creates tail page 
-tail_page = Tail_Page(num_columns=num_columns, entry_sizes=entry_size_for_columns, key_column=key)
-
 def add_base_page(num_columns, entry_sizes, key_column):
-    base_page = Base_Page(num_columns=num_columns, entry_sizes=entry_sizes, key_column=key, tail_page=tail_page)
+    base_page = Base_Page(num_columns=num_columns, entry_sizes=entry_sizes, key_column=key)
     base_pages.append(base_page)
 
 # Create the initial base page
@@ -63,7 +60,7 @@ while True:
         current_base_page_index += 1
 
         # stop creating base pages after 3 base pages for this example
-        #if current_base_page_index == 3:
+        #if current_base_page_index == 1:
             #break
         
         # Check if the current base page index exceeds the number of base pages
@@ -79,7 +76,6 @@ print("Inserting 10k records took:  \t\t\t", insert_time_1 - insert_time_0)
 
 """
 UPDATE A CERTAIN RECORD
-"""
 
 print("\n\nUpdating Record!!")
 
@@ -101,25 +97,22 @@ for base_page in base_pages:
         # Get the RID associated with the student ID from the current base page
         rid_for_student = base_page.get_rid_for_key(stID)
 
-        # column (physical page) of grade they want to update
-        page_of_grade = base_page.get_page(grade_to_update)
+        indirection_page = base_page.get_indirection_page()
+
+        
 
         print(f'\nStudent ID ({stID}) is associated with RID: ({rid_for_student}) in Base Page {base_page.page_number} associated with tail page {base_page.tail_page.page_number}')
-        print(f'\nValue before Update for Grade ({grade_to_update}): ({page_of_grade.value_exists_at_bytes(rid_for_student)})\n')
+        print(f'\nValue before Update for column ({indirection_page.column_number}): ({indirection_page.value_exists_at_bytes(rid_for_student)})\n')
 
         lid -= 1
-        if(base_page.tail_page.value_getting_updated_tail_page(grade_to_update,new_grade, lid)):
-            print("Added to tail page")
+        if(base_page.tail_page.value_getting_updated_tail_page(grade_to_update,new_grade, rid_for_student ,lid)):
+            print(f"Added to tail page {base_page.tail_page.page_number}")
+
 
         # update column (physical page) with new grade
-        if(base_page.value_getting_updated_base_page(stID, grade_to_update,new_grade, rid_for_student, lid)):
-            print(f"Value was updated for {stID}")
-            page_of_grade = base_page.get_page(grade_to_update)
-            print(f'\nValue after Update for Grade ({grade_to_update}): ({page_of_grade.value_exists_at_bytes(rid_for_student)})\n')
-            indirection_page = base_page.get_indirection_page()
-            print(indirection_page.value_exists_at_bytes(rid_for_student))
-
-        print(base_page.page_number)
+        if(base_page.updating_base_record(stID, rid_for_student, lid)):
+            print("Value was updated")
+            print(f'\nValue after the Update for column ({indirection_page.column_number}): ({indirection_page.value_exists_at_bytes(rid_for_student)})\n')
             
         break  # Exit loop if the student ID is found in any base page
     except KeyError:
@@ -129,4 +122,4 @@ else:
     # If the loop completes without finding the student ID in any base page, print a message
     print(f'Student ID ({stID}) is not found in any base page.')
 
-
+"""

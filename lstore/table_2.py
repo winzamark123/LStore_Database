@@ -57,3 +57,30 @@ class Table:
         self.lid -= 1
         return self.lid # returns unique new TID(RIDs for tails records) - easier to identify if they're tail records or base records
 
+    """
+    :param columns: list        # being list of the columns being passed in when wanting to update 
+    
+    ex: m1_test.py (line 53) - updated_columns = [None, None, None, None, None]
+
+    - if updated_columns = [None, 5, None, None, None] - then schema encoding would be 01000
+
+    - then we can update the schema encoding by ORing old schema encoding with schema encoding
+
+    - let's say x = 01000, the first encodings, then we update the schema encoding, we'll do 
+    - new_schema_encoding = x | get_schema_encoding(columns) - columns being another updates list  [None, None, 10, None, None].
+    - This would return 01100, and this would be the updated schema encoding that will be passed with our insert_new_record() function,
+    - with our tail record and also passed when updating schema encoding for base record
+
+    """
+    def get_schema_encoding(columns):
+            schema_encoding = ''
+            for item in columns:
+                # if value in column is not 'None' add 1
+                if item:
+                    schema_encoding = schema_encoding + '1'
+                # else add 0
+                else:
+                    schema_encoding = schema_encoding + '0'
+            
+            print(schema_encoding)
+            return int(schema_encoding, 2)

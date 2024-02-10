@@ -14,6 +14,7 @@ class Physical_Page:
         # entry size of physical page entry differs between columns (RID colum: 2 bytes, StudentID column: 8 bytes, etc..)
         self.entry_size = entry_size 
         self.column_number = column_number 
+        self.updates = 0
         if(column_number == 0):
             self.data = bytearray(INDIRECTION_PAGE_SIZE) # Indirection column is smaller
         else:
@@ -25,7 +26,6 @@ class Physical_Page:
             return ((self.num_records + 1) * self.entry_size <= INDIRECTION_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
         else:
             return ((self.num_records + 1) * self.entry_size <= PHYSICAL_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
-
 
     # write to physical page
     def write_to_physical_page(self, value:int, rid:int, update: bool=False)->None:
@@ -47,6 +47,8 @@ class Physical_Page:
         # Increment num_records only if update is False
         if not update:
             self.num_records += 1
+        else:
+            self.updates += 1
 
     # checks if a value is in physical page
     def check_value_in_page(self, value_to_find:int, rid:int)->bool:
@@ -73,8 +75,8 @@ class Physical_Page:
         start = offset
         end = start + self.entry_size
         entry_bytes = self.data[start:end]
-        value_in_page = int.from_bytes(entry_bytes, byteorder='big')
-        print(f"Value {value_in_page} was found at Bytes ({start} - {end})")
+        value_in_page = int.from_bytes(entry_bytes, byteorder='big', signed=True)
+        print(f"Value {value_in_page} was found at Bytes ({start} - {end}) in column {self.column_number}")
         return value_in_page
 
     # calculates our offset to know where the RID entry is at in the physical page
@@ -91,13 +93,16 @@ class Page:
     :param num_columns: int         # amount of columns in table (5 columns for our example)
     :param entry_sizes: list        # list of the entry sizes ([2 bytes, 8 bytes, ...]) for each physical page
     :param key_column: int          # column (physical page) the key value is going to be at 
+    :param is_tail_page: bool       # to know if page is tail_page or not(if not then it's base page, automatically set to false)
 
     """
+
     # Class variables to keep track of the number of Base_Page and Tail_Page objects created
     base_page_counter = 0
     tail_page_counter = 0
 
     def __init__(self, num_columns:int, entry_sizes:list, key_column:int, is_tail_page: bool = False)->None:
+
         if is_tail_page:
             # Increment the tail_page_counter each time a Tail_Page object is created
             Page.tail_page_counter += 1
@@ -106,8 +111,7 @@ class Page:
             # Increment the base_page_counter each time a Base_Page object is created
             Page.base_page_counter += 1
             self.page_number = Page.base_page_counter
-
-
+        
         # list of physical_pages in base page
         self.physical_pages = [] 
 
@@ -139,47 +143,39 @@ class Page:
             if(physical_Page.column_number == INDIRECTION_COLUMN):
                 return physical_Page
 
+    # returns physical_page(column) that has the Schema Encodings
+    def get_schema_encoding_page(self)->Physical_Page:
+        for physical_Page in self.physical_pages:
+            if(physical_Page.column_number == SCHEMA_ENCODING):
+                return physical_Page
+
     # returns page needed
     def get_page(self, column_number:int)->Physical_Page:
         for physical_Page in self.physical_pages:
             if(physical_Page.column_number == (META_DATA_NUM_COLUMNS + column_number)):
                 return physical_Page
 
-    # updates value in physical pages 
-    def value_getting_updated_base_page(self, key_value:int, column_to_update:int, new_value:int, rid:int, tail_record_lid:int)->bool:
-        key_page = self.get_primary_key_page() # grabs key page (Student IDs)
+    # updates indirection column with new LID
+    def update_indirection_base_column(self, new_value_LID:int, rid:int,)->bool:
 
-        # checks if key(Student ID) exists
-        if key_page.check_value_in_page(key_value,rid): 
+            # indirection physical_page(column) of base page 
+            indirection_page = self.get_indirection_page() 
 
-            # physical page of column we want update
-            column_to_update_page = self.get_page(column_to_update) 
-
-            # update value with new value
-            column_to_update_page.write_to_physical_page(new_value, rid, update=True)
-
-            # indirection column updated to have most recent version of record
-            indirection_page = self.get_indirection_page()
-
-            # updates indirection column for record
-            indirection_page.write_to_physical_page(tail_record_lid, rid, update=True)
+            # update indirection of base record with LID
+            indirection_page.write_to_physical_page(new_value_LID, rid, update=True)
 
             return True
-        
-        # key value(Student ID) does not exist
-        print('key value does not match with rid')
-        return False
 
-    def value_getting_updated_tail_page(self, column_to_update:int, new_value:int, rid:int)->bool:
+    # updates schema encoding column with updated schema encoding
+    def update_schema_encoding_base_column(self, new_value_encoding:int, rid:int)->bool:
 
-            # physical page of column we want update in tail page
-            column_to_update_page = self.get_page(column_to_update) 
+            # schema encoding physical_page(column) of base page 
+            schema_encoding_page = self.get_schema_encoding_page() 
 
-            # update with new value
-            column_to_update_page.write_to_physical_page(new_value, rid, update=True)
+            # update schema encoding of base record with LID
+            schema_encoding_page.write_to_physical_page(new_value_encoding, rid, update=True)
+
             return True
-
-            print("Did not update in tail page")
 
     # gets RID that's associated with a key (Student ID)
     def get_rid_for_key(self, key_value:int)->int:
@@ -204,11 +200,11 @@ class Page:
         # If key is not found, raise a KeyError
         raise KeyError(f"Key {key_value} not found in the primary key column.")
 
-    # inserts new base record into base page
-    def insert_new_record(self, new_record: Record)->bool:
+    # inserts new record to Base Page or Tail Page
+    def insert_new_record(self, new_record: Record, indirection_value:int = 0, schema_encoding:int = 0, update: bool=False)->bool:
 
+        if not self.has_capacity():
         # checks if page is full of records
-        if(self.page_is_full()):
             return False
         
         # rid of record 
@@ -221,20 +217,34 @@ class Page:
         # checks if RID exists)
         if(rid_page.check_value_in_page(rid,rid) == False): 
 
-            # key of record (Student ID)
-            key = new_record.key
+            # grabs schema encoding page
+            schema_encoding_page = self.get_schema_encoding_page()
 
-            # grabs key page
-            key_page = self.get_primary_key_page()
+            # if not update record then we pass the key, if not then we don't need key in tail records 
+            if not update:
 
-            # write to key page 
-            key_page.write_to_physical_page(key,rid)
+                # key of record (Student ID) being inserted
+                key = new_record.key
 
-            # grabs Indirection page
-            indirection_page = self.get_indirection_page()
+                # grabs key page
+                key_page = self.get_primary_key_page()
 
-            # write to Indirection page - indirection set to equal to RID because it's the most previous version of that record
-            indirection_page.write_to_physical_page(rid, rid)
+                # write to key page 
+                key_page.write_to_physical_page(key,rid)
+
+            # if an (update = True) record then we write to the indirection physical_page which is in the tail page else base record stays as NULL since it's not pointing to any new updates (pages (byte array) are set to null automatically),
+            # so no else statement is needed
+            if update:
+
+                # writes updated schema encoding 
+                schema_encoding_page.write_to_physical_page(schema_encoding,rid)
+
+                # grabs Indirection page
+                indirection_page = self.get_indirection_page()
+
+                # write to Indirection page - if passed in that this record is an update record, then it means that it's going to the tail page, 
+                # so we need the indirection value to be passed in as well
+                indirection_page.write_to_physical_page(indirection_value, rid)
 
             # write to RID page
             rid_page.write_to_physical_page(rid,rid)
@@ -253,7 +263,8 @@ class Page:
             raise KeyError(f"RID ({rid}) already exists.")
 
 
-    # returns record with just the RID
+    # (TODO: Make it return record - might do it outside of page.py)
+    # returns record with just the RID (Not working properly)
     def get_record_with_rid(self,rid:int)->Record:
         print('\nFunction: get_record_with_rid()')
 
@@ -296,13 +307,13 @@ class Page:
         # returns if RID is in page
         return rid_page.check_value_in_page(rid,rid) 
 
+    def has_capacity(self)->bool:
     # checks if page is full
-    def page_is_full(self)->bool:
         if self.num_records == RECORDS_PER_PAGE:
             print(f'Page is full of records on base_page ({self.page_number})')
-            return True
+            return False
         
-        return False
+        return True
 
         
 
@@ -310,11 +321,41 @@ class Tail_Page(Page):
     def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
         # Call the constructor of the parent class (Page)
         super().__init__(num_columns, entry_sizes, key_column, is_tail_page=True)
+        
 
 class Base_Page(Page):
-    def __init__(self, num_columns:int, entry_sizes:list, key_column:int, tail_page: Tail_Page)->None:
+
+    def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
         # Call the constructor of the parent class (Page)
         super().__init__(num_columns, entry_sizes, key_column, is_tail_page=False)
 
-        # tail page associated with this base page
-        self.tail_page = tail_page
+
+    # returns value of indirection in for base records
+    def check_base_record_indirection(self, key_value:int, rid:int)->int:
+        # grabs key page (Student IDs)
+        key_page = self.get_primary_key_page() 
+
+        # checks if key(Student ID) exists
+        if key_page.check_value_in_page(key_value,rid): 
+            
+            # indirection column of base page
+            indirection_page = self.get_indirection_page()
+
+            indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
+
+        return indirection_value_base_record
+
+    # returns value of schema encoding in base record
+    def check_base_record_indirection(self, key_value:int, rid:int)->int:
+        # grabs key page (Student IDs)
+        key_page = self.get_primary_key_page() 
+
+        # checks if key(Student ID) exists
+        if key_page.check_value_in_page(key_value,rid): 
+            
+            # indirection column of base page
+            schema_encoding_page = self.get_schema_encoding_page()
+
+            schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
+
+        return schema_encoding_value_base_record
