@@ -1,7 +1,5 @@
-from lstore.table import Table, Record
-from lstore.page import Base_Page
-from lstore.index import Index
-
+from lstore.table import Table 
+from lstore.record import Record
 
 class Query:
     """
@@ -31,21 +29,31 @@ class Query:
     # Returns False if insert fails for whatever reason
     """
     def insert(self, *columns:tuple)->bool:
-        schema_encoding = '0' * self.table.num_columns
-        try:
-            if len(columns) != self.table.num_columns:
-                return False
+        latest_page_range = self.table.page_directory[-1]
 
-            rid = self.table.num_base_records + 1 # offset to let ID=0 be available for merging
-            
-            self.table.page_directory[rid]
-            self.table.index.create_index()
+        if  latest_page_range.has_capacity() == False:
+            print("INSERT: PAGE_RANGE IS FULL")
+            self.table.insert_page_range()
+            latest_page_range = self.table.page_directory[-1]
 
-            self.table.num_base_records += 1
-            return True
-        except Exception as e:
-            return False
+        latest_base_page = latest_page_range.base_pages[-1]
 
+        if latest_page_range.base_pages[-1].has_capacity() == False:
+            print("INSERT: BASE_PAGE IS FULL")
+            self.table.page_directory[-1].insert_base_page()
+            latest_base_page = latest_page_range.base_pages[-1]
+
+
+        new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
+        insertSuccess = latest_base_page.insert_new_record(new_record)
+
+        #Check 
+        print("TOTAL_PAGE_RANGE", len(self.table.page_directory))
+        for i in range(len(self.table.page_directory)):
+            for j in range(len(self.table.page_directory[i].base_pages)):
+                print("PAGE_RANGE", i, "BASE_PAGES", j, "TOTAL_RECORDS", self.table.page_directory[i].base_pages[j].num_records) 
+
+        return True if insertSuccess else False
     
     """
     # Read matching record with specified search key
@@ -57,7 +65,25 @@ class Query:
     # Assume that select will never be called on a key that doesn't exist
     """
     def select(self, search_key, search_key_index, projected_columns_index):
-        pass
+        #search key: SID 
+        #search_key_index: 0 (the column that the SID resides in)
+        #projected_columns_index: [1,1,1,1,1] (all columns)
+
+        #Convert SID to RID with Indexing
+        rids = [] #list of rids
+        rids = self.table.index.locate(search_key, search_key_index)
+
+        #GET Page_RANGE and Base_page from get_address in table.py
+        addresses = []
+        addresses = self.table.get_list_of_addresses(rids) #list of addresses (page_range_num, base_page_num)
+
+        #GET record_with_rid from Base_page using table.py
+        records = []
+        for address in addresses:
+            records.append(self.table.page_directory[address[0]].base_pages[address[1]].get_record_with_rid(rids[addresses.index(address)]))
+            
+        return records
+
 
     
     """
@@ -71,6 +97,7 @@ class Query:
     # Assume that select will never be called on a key that doesn't exist
     """
     def select_version(self, search_key, search_key_index, projected_columns_index, relative_version):
+
         pass
 
     
@@ -80,6 +107,8 @@ class Query:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, primary_key, *columns):
+        #insert but for the TailPage
+        #increment in PageRange 
         pass
 
     

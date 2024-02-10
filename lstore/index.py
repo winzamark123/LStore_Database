@@ -1,4 +1,4 @@
-from lstore.table import Table
+# from lstore.table import Table
 
 """
 A data structure holding indices for various columns of a table. 
@@ -56,9 +56,9 @@ class Column_Index_Tree:
 
 class Index:
 
-    def __init__(self, table:Table):
+    def __init__(self, num_columns:int):
         # One index for each table. All are empty initially.
-        self.indices = [Column_Index_Tree()] *  table.num_columns
+        self.indices = [Column_Index_Tree()] *  num_columns
 
     def locate(self, column, value):
         """
