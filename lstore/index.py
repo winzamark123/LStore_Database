@@ -1,4 +1,4 @@
-# from table import Table
+from table import Table
 
 """
 A data structure holding indices for various columns of a table.
@@ -233,33 +233,34 @@ class Column_Index_Tree:
             return_list += self.return_entry_values_lists(child_node)
         return return_list
 
-# class Index:
+class Index:
 
-#     def __init__(self, table:Table):
-#         # One index for each table. All are empty initially.
-#         self.indices = [Column_Index_Tree()] *  table.num_columns
+    def __init__(self, table:Table):
+        # One index for each table. All are empty initially.
+        self.indices = [Column_Index_Tree()] *  table.num_columns
 
-#     def locate(self, value, column_index:int):
-#         """
-#         # returns the location of all records with the given value on column "column"
-#         """
-#         pass
+    def locate(self, value, column_index:int)->list[int]:
+        """
+        # returns the location of all records with the given value on column "column"
+        """
+        return self.indices[column_index].get_rids_equality_search(value)
+        
 
-#     def locate_range(self, begin, end, column_index:int):
-#         """
-#         # Returns the RIDs of all records with values in column
-#         "column" between "begin" and "end"
-#         """
-#         pass
+    def locate_range(self, begin, end, column_index:int):
+        """
+        # Returns the RIDs of all records with values in column
+        "column" between "begin" and "end"
+        """
+        pass
 
-#     def create_index(self, column):
-#         """
-#         # optional: Create index on specific column
-#         """
-#         pass
+    def create_index(self, column):
+        """
+        # optional: Create index on specific column
+        """
+        pass
 
-#     def drop_index(self, column):
-#         """
-#         # optional: Drop index of specific column
-#         """
-#         pass
+    def drop_index(self, column):
+        """
+        # optional: Drop index of specific column
+        """
+        pass
