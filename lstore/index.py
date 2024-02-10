@@ -50,7 +50,7 @@ class Column_Index_Node:
         self.is_leaf:bool                        = True
 
     def insert_value_in_node(self, entry_value, rid:int):
-        if not self.is_leaf: raise ValueError
+        assert self.is_leaf, ValueError
 
         if not self.entry_values:
             self.entry_values.append(entry_value)
@@ -104,8 +104,8 @@ class Column_Index_Node:
             self.next_node = None
             self.is_leaf = False
         else:
-            left_node.child_nodes = self.child_nodes[:mid]
-            right_node.child_nodes = self.child_nodes[mid:]
+            left_node.child_nodes = self.child_nodes[:mid+1]
+            right_node.child_nodes = self.child_nodes[mid+1:]
 
         self.child_nodes = [left_node, right_node]
 
@@ -114,12 +114,19 @@ class Column_Index_Node:
     def is_full(self):
         return len(self.entry_values) == self.order
 
+    def __str__(self):
+        return (f"entry values: {str(self.entry_values)}\n" +
+               f"has {len(self.child_nodes)} children")
 
 class Column_Index_Tree:
 
-    def __init__(self, order:int):
-        self.root = Column_Index_Node(order)
-        self.order = order
+    def __init__(self, order:int)->None:
+        self.root:Column_Index_Node = Column_Index_Node(order)
+        self.order:int              = order
+        self.size:int               = 0
+
+    def __len__(self)->int:
+        return self.size
 
     def find_child_node(self, prev_node:Column_Index_Node, entry_value)->tuple[Column_Index_Node,int]:
         for i, cur_val in enumerate(prev_node.entry_values):
@@ -129,9 +136,14 @@ class Column_Index_Tree:
 
     def merge(self, parent:Column_Index_Node, child:Column_Index_Node, index:int)->None:
         if parent == None: return
+
+        # assign child node's child nodes' parent as parent node
+        for child_node in child.child_nodes:
+            child_node.parent = parent
+
+        # add child node to parent child node array
         pivot = child.entry_values[0]
         parent.child_nodes.pop(index)
-        print(f"here for {pivot}")
         for i, item in enumerate(parent.entry_values):
             if item > pivot:
                 parent.entry_values = parent.entry_values[:i] + [pivot] + parent.entry_values[i:]
@@ -143,71 +155,83 @@ class Column_Index_Tree:
                 break
 
     def insert_value(self, entry_value, rid:int)->None:
+        """
+        Insert an entry value to the column.
+
+        Note: RIDs start at index value 1.
+        """
+
+        assert rid == self.size + 1, IndexError
+
         cur_node = self.root
         index = None
         while not cur_node.is_leaf:
             cur_node, index = self.find_child_node(cur_node, entry_value)
         cur_node.insert_value_in_node(entry_value, rid)
-        
-        # print("root", self.root.entry_values, f"for {entry_value}")
-        # for l in self.root.child_nodes:
-        #     print(l.entry_values)
-        
+
         while cur_node != None and cur_node.is_full():
             # prev node was parent if cur_node is None
-
             cur_node.split_node()
-
-            # print("children of parent")
-            # for l in cur_node.parent.child_nodes:
-            #     print(l.entry_values)
-            # print("index", index)
             if cur_node.parent:
                 self.merge(cur_node.parent, cur_node, index)
             cur_node = cur_node.parent
 
+        self.size += 1
+
     def get_rids_equality_search(self, entry_value)->list[int]:
+        """
+        Returns a list of RIDs associated to a provided entry value.
+
+        If the entry value cannot be found in the tree, an empty list
+        will be returned.
+        """
         cur_node = self.root
         while not cur_node.is_leaf:
-            for i, val in enumerate(cur_node):
+            for i, val in enumerate(cur_node.entry_values):
                 if val > entry_value:
                     cur_node = cur_node.child_nodes[i]
                 elif val == entry_value or i + 1 == len(cur_node.entry_values):
                     cur_node = cur_node.child_nodes[i+1]
-        return cur_node.rids[cur_node.entry_values.index(entry_value)]
+        try:
+            return cur_node.rids[cur_node.entry_values.index(entry_value)]
+        except ValueError:
+            return []
 
     def get_rids_range_search(self, lower_bound, upper_bound)->list[int]:
-        if lower_bound > upper_bound: raise ValueError
+        """
+        Returns all RIDs associated with entry values in between
+        the specified upper and lower bound values (inclusive).
+
+        If no entry values can be found, an empty list will be returned.
+        """
+
+        assert lower_bound <= upper_bound, ValueError
 
         cur_node = self.root
         while not cur_node.is_leaf:
-            for i, val in enumerate(cur_node):
+            for i, val in enumerate(cur_node.entry_values):
                 if val > lower_bound:
                     cur_node = cur_node.child_nodes[i]
+                    break
                 elif val == lower_bound or i + 1 == len(cur_node.entry_values):
                     cur_node = cur_node.child_nodes[i+1]
+                    break
 
-        return_list = list()
+        return_list = []
         while cur_node != None:
             for i, val in enumerate(cur_node.entry_values):
                 if val > upper_bound: break
                 if lower_bound <= val and val <= upper_bound:
                     return_list += cur_node.rids[i]
-
             if val > upper_bound: break
             cur_node = cur_node.next_node
-
         return return_list
 
-    def __str__(self):
-        return self.print_node(self.root)
-
-
-    def print_node(self, cur_node:Column_Index_Node, count:int=0)->str:
-        if not cur_node.is_leaf:
-            for child_node in cur_node.child_nodes:
-                self.print_node(child_node, count + 1)
-        return f"[lvl {count}] -- " + str(cur_node.entry_values)
+    def return_entry_values_lists(self, node:Column_Index_Node, return_list:list)->list:
+        return_list += node.entry_values
+        for child_node in node.child_nodes:
+            return_list += self.return_entry_values_lists(child_node)
+        return return_list
 
 # class Index:
 
