@@ -37,8 +37,10 @@ class Query:
         print("PAGE_RANGE:", self.table.page_directory[-1])
         print("BASE_PAGE:", self.table.page_directory[-1].base_pages[-1])
 
-        cur_page = self.table.page_directory[-1].base_pages[-1].insert_new_record(Record(self.table.inc_rid(), columns[0], columns[1:]))
-        return True if cur_page else False
+        new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
+        cur_page = self.table.page_directory[-1].base_pages[-1]
+        insertSuccess = cur_page.insert_new_record(new_record)
+        return True if insertSuccess else False
     
     """
     # Read matching record with specified search key

@@ -11,7 +11,7 @@ class Page_Range:
         self.num_base_records = 0
         self.tid = 0
         
-        self.base_pages = [Base_Page(num_columns, entry_sizes, key_column, False)] * NUM_BASE_PAGES
+        self.base_pages = [Base_Page(num_columns, entry_sizes, key_column)] * NUM_BASE_PAGES
 
     def has_capacity(self)-> bool:
         if self.num_base_records < RECORDS_PER_PAGE * NUM_BASE_PAGES:
