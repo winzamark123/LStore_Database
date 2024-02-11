@@ -83,6 +83,8 @@ class Query:
         # Get record_with_rid from Base_page using table.py
         records = []
         for address in addresses:
+            cur_page_range = self.table.page_directory[address[0]]
+            cur_base_page = cur_page_range.base_pages[address[1]]
             record = self.table.page_directory[address[0]].base_pages[address[1]].get_record_with_rid(rids[addresses.index(address)])
             # Filter the record's columns based on projected_columns_index
             filtered_record = [col for i, col in enumerate(record) if projected_columns_index[i] == 1]
