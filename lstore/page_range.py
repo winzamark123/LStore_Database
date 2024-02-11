@@ -1,4 +1,3 @@
-from lstore.index import Index
 from lstore.config import *
 from lstore.page import Base_Page
 from time import time

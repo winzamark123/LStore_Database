@@ -1,5 +1,6 @@
 from lstore.table import Table 
 from lstore.record import Record
+from lstore.index import Index
 
 class Query:
     """
@@ -64,24 +65,31 @@ class Query:
     # Returns False if record locked by TPL
     # Assume that select will never be called on a key that doesn't exist
     """
-    def select(self, search_key, search_key_index, projected_columns_index):
+    def select(self, search_key: int, search_key_index: int, projected_columns_index: list):
         #search key: SID 
         #search_key_index: 0 (the column that the SID resides in)
-        #projected_columns_index: [1,1,1,1,1] (all columns)
+        #projected_columns_index: what columns you want to show 
+                                    #[1,1,1,1,1] (all columns)
 
         #Convert SID to RID with Indexing
         rids = [] #list of rids
-        rids = self.table.index.locate(search_key, search_key_index)
+        rids = self.table.index.locate(search_key, search_key_index) #list of rids (page_range_num, base_page_num, record_num
+        print("SELECTED RIDS", rids)
 
         #GET Page_RANGE and Base_page from get_address in table.py
         addresses = []
         addresses = self.table.get_list_of_addresses(rids) #list of addresses (page_range_num, base_page_num)
 
-        #GET record_with_rid from Base_page using table.py
+        # Get record_with_rid from Base_page using table.py
         records = []
         for address in addresses:
-            records.append(self.table.page_directory[address[0]].base_pages[address[1]].get_record_with_rid(rids[addresses.index(address)]))
-            
+            record = self.table.page_directory[address[0]].base_pages[address[1]].get_record_with_rid(rids[addresses.index(address)])
+            # Filter the record's columns based on projected_columns_index
+            filtered_record = [col for i, col in enumerate(record) if projected_columns_index[i] == 1]
+            records.append(filtered_record)
+
+        print("SELECTED RECORDS", records)
+
         return records
 
 

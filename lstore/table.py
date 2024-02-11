@@ -1,6 +1,5 @@
 from lstore.index import Index
 from lstore.config import *
-from lstore.page import Base_Page
 from time import time
 from lstore.page_range import Page_Range
 
@@ -39,7 +38,7 @@ class Table:
         print("Key column: ", self.key_column)
         
 
-    def get_list_of_addresses(self, rids):
+    def get_list_of_addresses(self, rids)-> list:
         addreses = []
 
         for rid in rids:
