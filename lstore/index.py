@@ -184,7 +184,10 @@ class Column_Index_Tree:
         If the entry value cannot be found in the tree, an empty list
         will be returned.
         """
+        print("get_rids_equality_search()", entry_value)
         cur_node = self.root
+        
+        print(cur_node)
         while not cur_node.is_leaf:
             for i, val in enumerate(cur_node.entry_values):
                 if val > entry_value:
@@ -236,13 +239,16 @@ class Index:
 
     def __init__(self, num_columns:int)->None:
         # One index for each table. All are empty initially.
-        self.indices = [Column_Index_Tree(ORDER_CHOICE)] *  num_columns
+        self.indices = [Column_Index_Tree(ORDER_CHOICE) for _ in range(num_columns)]
 
     def locate(self, value, column_index:int)->list[int]:
         """
         # returns the location of all records with the given value on column "column"
         """                
         print(f"Locating value {value} in column {column_index}")
+        print("Indices:", self.indices) 
+        print("Column Index:", column_index)
+        print("Index with Column Index:", self.indices[column_index])
         return self.indices[column_index].get_rids_equality_search(value)
         
 
