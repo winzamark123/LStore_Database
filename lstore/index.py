@@ -1,4 +1,4 @@
-from table import Table
+# from table import Table
 
 """
 A data structure holding indices for various columns of a table.
@@ -72,44 +72,67 @@ class Column_Index_Node:
         return
 
     def split_node(self)->None:
+        self.split_leaf_node() if self.is_leaf else self.split_nonleaf_node()
+
+    def split_leaf_node(self):
+        mid = self.order // 2
         left_node = Column_Index_Node(self.order)
         right_node = Column_Index_Node(self.order)
-        mid = self.order // 2
 
-        # assign entry values to child nodes
-        mid_entry_value = self.entry_values[mid]
-        left_node.entry_values = self.entry_values[:mid]
-        if self.is_leaf:
-            right_node.entry_values = self.entry_values[mid:]
-        else:
-            right_node.entry_values = self.entry_values[mid+1:]
-
-        # make current node parent
+        # make current node parent of new child nodes
         left_node.parent = self
         right_node.parent = self
-        self.entry_values = [mid_entry_value]
 
-        if self.is_leaf:
-            # child node properties
-            left_node.rids = self.rids[:mid]
-            right_node.rids = self.rids[mid:]
+        # set next node pointers
+        left_node.next_node = right_node
+        right_node.next_node = self.next_node
 
-            # set linear pointers between leaf nodes
-            left_node.next_node = right_node
-            if self.next_node:
-                right_node.next_node = self.next_node
+        # split entry values
+        left_node.entry_values = self.entry_values[:mid]
+        right_node.entry_values = self.entry_values[mid:]
+        self.entry_values = [self.entry_values[mid]]
 
-            # set current node to non-leaf properties
-            self.rids = None
-            self.next_node = None
-            self.is_leaf = False
-        else:
-            left_node.child_nodes = self.child_nodes[:mid+1]
-            right_node.child_nodes = self.child_nodes[mid+1:]
+        # split RIDs
+        left_node.rids = self.rids[:mid]
+        right_node.rids = self.rids[mid:]
 
+        # set current node to non-leaf properties
+        self.is_leaf = False
+        self.next_node = None
+        self.rids = []
         self.child_nodes = [left_node, right_node]
 
-        return
+    def split_nonleaf_node(self):
+        assert self.rids == [], ValueError
+
+        mid = self.order // 2
+        left_node = Column_Index_Node(self.order)
+        left_node.is_leaf = False
+        right_node = Column_Index_Node(self.order)
+        right_node.is_leaf = False
+
+        # make current node parent of two children
+        left_node.parent = self
+        right_node.parent = self
+
+        # set next node pointers
+        left_node.next_node = right_node
+        right_node.next_node = self.next_node
+
+        # split entry values
+        left_node.entry_values = self.entry_values[:mid]
+        right_node.entry_values = self.entry_values[mid+1:]
+        self.entry_values = [self.entry_values[mid]]
+
+        #split child nodes
+        left_node.child_nodes = self.child_nodes[:mid+1]
+        for child_node in left_node.child_nodes:
+            child_node.parent = left_node
+        right_node.child_nodes = self.child_nodes[mid+1:]
+        for child_node in right_node.child_nodes:
+            child_node.parent = right_node
+
+        self.child_nodes = [left_node, right_node]
 
     def is_full(self):
         return len(self.entry_values) == self.order
@@ -128,30 +151,77 @@ class Column_Index_Tree:
     def __len__(self)->int:
         return self.size
 
-    def find_child_node(self, prev_node:Column_Index_Node, entry_value)->tuple[Column_Index_Node,int]:
+    def find_node(self, prev_node:Column_Index_Node, entry_value)->Column_Index_Node:
         for i, cur_val in enumerate(prev_node.entry_values):
             if cur_val > entry_value:
-                return prev_node.child_nodes[i], i
-        return prev_node.child_nodes[i+1], i + 1
+                return prev_node.child_nodes[i]
+        return prev_node.child_nodes[i+1]
 
-    def merge(self, parent:Column_Index_Node, child:Column_Index_Node, index:int)->None:
-        if parent == None: return
+    def get_node_index(self, prev_node:Column_Index_Node, entry_value)->int:
+        for i, cur_val in enumerate(prev_node.entry_values):
+            if cur_val > entry_value:
+                return i
+        return i + 1
+
+    def merge(self, parent_tree:Column_Index_Node, child_tree:Column_Index_Node, index:int)->None:
+        if parent_tree == None: return
 
         # assign child node's child nodes' parent as parent node
-        for child_node in child.child_nodes:
-            child_node.parent = parent
+        for child_node in child_tree.child_nodes:
+            child_node.parent = parent_tree
 
         # add child node to parent child node array
-        pivot = child.entry_values[0]
-        parent.child_nodes.pop(index)
-        for i, item in enumerate(parent.entry_values):
+        pivot = child_tree.entry_values[0]
+        parent_tree.child_nodes.pop(index)
+        for i, item in enumerate(parent_tree.entry_values):
             if item > pivot:
-                parent.entry_values = parent.entry_values[:i] + [pivot] + parent.entry_values[i:]
-                parent.child_nodes = parent.child_nodes[:i] + child.child_nodes + parent.child_nodes[i:]
+                # get node pointers
+                ## previous node
+                prev_node = parent_tree.child_nodes[i-1]
+                while (not prev_node.is_leaf):
+                    prev_node = prev_node.child_nodes[-1]
+                ## next node
+                next_node = parent_tree.child_nodes[i]
+                while (not prev_node.is_leaf):
+                    next_node = next_node.child_nodes[0]
+
+                # fix node pointers for child tree leaf nodes
+                ## connect front of child tree
+                next_to_prev_leaf_node_pointer = child_tree.child_nodes[0]
+                while (not next_to_prev_leaf_node_pointer.is_leaf):
+                    next_to_prev_leaf_node_pointer = next_to_prev_leaf_node_pointer.child_nodes[0]
+                prev_node.next_node = next_to_prev_leaf_node_pointer
+                ## connect back of child tree
+                prev_from_next_leaf_node_pointer = child_tree.child_nodes[-1]
+                while (not prev_from_next_leaf_node_pointer.is_leaf):
+                    prev_from_next_leaf_node_pointer = prev_from_next_leaf_node_pointer.child_nodes[-1]
+                prev_from_next_leaf_node_pointer.next_node = next_node
+
+                # add child tree to parent tree
+                parent_tree.entry_values = parent_tree.entry_values[:i] + [pivot] + parent_tree.entry_values[i:]
+                parent_tree.child_nodes = parent_tree.child_nodes[:i] + child_tree.child_nodes + parent_tree.child_nodes[i:]
                 break
-            elif i + 1 == len(parent.entry_values):
-                parent.entry_values.append(pivot)
-                parent.child_nodes += child.child_nodes
+            elif i + 1 == len(parent_tree.entry_values):
+                # get node pointers
+                prev_node = parent_tree.child_nodes[-1]
+                while (not prev_node.is_leaf):
+                    prev_node = prev_node.child_nodes[-1]
+
+                # fix node pointers for child tree leaf nodes
+                ## connect front of child tree
+                next_to_prev_leaf_node_pointer = child_tree.child_nodes[0]
+                while (not next_to_prev_leaf_node_pointer.is_leaf):
+                    next_to_prev_leaf_node_pointer = next_to_prev_leaf_node_pointer.child_nodes[0]
+                prev_node.next_node = next_to_prev_leaf_node_pointer
+                ## connect back of child tree
+                last_leaf_node_pointer = child_tree.child_nodes[-1]
+                while (not last_leaf_node_pointer.is_leaf):
+                    last_leaf_node_pointer = last_leaf_node_pointer.child_nodes[-1]
+                last_leaf_node_pointer.next_node = None
+
+                ## add child tree to parent tree
+                parent_tree.entry_values.append(pivot)
+                parent_tree.child_nodes += child_tree.child_nodes
                 break
 
     def insert_value(self, entry_value, rid:int)->None:
@@ -166,15 +236,18 @@ class Column_Index_Tree:
         cur_node = self.root
         index = None
         while not cur_node.is_leaf:
-            cur_node, index = self.find_child_node(cur_node, entry_value)
+            cur_node = self.find_node(cur_node, entry_value)
         cur_node.insert_value_in_node(entry_value, rid)
 
+        value_to_find = entry_value
         while cur_node != None and cur_node.is_full():
-            # prev node was parent if cur_node is None
             cur_node.split_node()
+            split_node_root_value = cur_node.entry_values[0]
             if cur_node.parent:
+                index = self.get_node_index(cur_node.parent, value_to_find)
                 self.merge(cur_node.parent, cur_node, index)
             cur_node = cur_node.parent
+            value_to_find = split_node_root_value
 
         self.size += 1
 
@@ -185,13 +258,16 @@ class Column_Index_Tree:
         If the entry value cannot be found in the tree, an empty list
         will be returned.
         """
+
         cur_node = self.root
         while not cur_node.is_leaf:
             for i, val in enumerate(cur_node.entry_values):
                 if val > entry_value:
                     cur_node = cur_node.child_nodes[i]
+                    break
                 elif val == entry_value or i + 1 == len(cur_node.entry_values):
                     cur_node = cur_node.child_nodes[i+1]
+                    break
         try:
             return cur_node.rids[cur_node.entry_values.index(entry_value)]
         except ValueError:
@@ -233,34 +309,34 @@ class Column_Index_Tree:
             return_list += self.return_entry_values_lists(child_node)
         return return_list
 
-class Index:
+# class Index:
 
-    def __init__(self, table:Table):
-        # One index for each table. All are empty initially.
-        self.indices = [Column_Index_Tree()] *  table.num_columns
+#     def __init__(self, num_columns:int):
+#         # One index for each table. All are empty initially.
+#         self.indices = [Column_Index_Tree()] *  num_columns
 
-    def locate(self, value, column_index:int)->list[int]:
-        """
-        # returns the location of all records with the given value on column "column"
-        """
-        return self.indices[column_index].get_rids_equality_search(value)
-        
+#     def locate(self, value, column_index:int)->list[int]:
+#         """
+#         # returns the location of all records with the given value on column "column"
+#         """
+#         return self.indices[column_index].get_rids_equality_search(value)
 
-    def locate_range(self, begin, end, column_index:int):
-        """
-        # Returns the RIDs of all records with values in column
-        "column" between "begin" and "end"
-        """
-        pass
 
-    def create_index(self, column):
-        """
-        # optional: Create index on specific column
-        """
-        pass
+#     def locate_range(self, begin, end, column_index:int):
+#         """
+#         # Returns the RIDs of all records with values in column
+#         "column" between "begin" and "end"
+#         """
+#         pass
 
-    def drop_index(self, column):
-        """
-        # optional: Drop index of specific column
-        """
-        pass
+#     def create_index(self, column):
+#         """
+#         # optional: Create index on specific column
+#         """
+#         pass
+
+#     def drop_index(self, column):
+#         """
+#         # optional: Drop index of specific column
+#         """
+#         pass
