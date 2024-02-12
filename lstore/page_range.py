@@ -16,6 +16,8 @@ class Page_Range:
         # initialize the tail pages list with the first tail page
         self.tail_pages = [Tail_Page(self.num_columns, self.entry_size_for_columns, self.key_column)]
 
+        self.deleted_rids = [] # list of deleted rids
+
         self.tid = 0 # tid (rid) for tail records - decrease by 1 once a record is added or updated (for tails records)
         
 
@@ -30,6 +32,9 @@ class Page_Range:
     # increment the TID (RID for tails records)
     def inc_tid(self):
         self.tid -= 1
+
+    def delete_base_page(self, rid: int)->None:
+        self.deleted_rids.append(rid)
 
     # insert a new base page to the page range
     def insert_base_page(self)-> bool:
@@ -151,9 +156,8 @@ class Page_Range:
         page_index = abs(rid) // (RECORDS_PER_PAGE + 1)
         return page_index + 1
         
-
     # No sure if this should go in table.py or in page_range.py    
-    def get_schema_encoding(self,columns):
+    def get_schema_encoding(self,columns) -> int:
             schema_encoding = ''
             for item in columns:
                 # if value in column is not 'None' add 1
