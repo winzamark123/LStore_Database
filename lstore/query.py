@@ -32,6 +32,7 @@ class Query:
     def insert(self, *columns:tuple)->bool:
         latest_page_range = self.table.page_directory[-1]
 
+        #Check if the latest page_range has capacity
         if  latest_page_range.has_capacity() == False:
             print("INSERT: PAGE_RANGE IS FULL")
             self.table.insert_page_range()
@@ -39,18 +40,19 @@ class Query:
 
         latest_base_page = latest_page_range.base_pages[-1]
 
+        #Check if the latest base_page has capacity
         if latest_page_range.base_pages[-1].has_capacity() == False:
             print("INSERT: BASE_PAGE IS FULL")
             self.table.page_directory[-1].insert_base_page()
             latest_base_page = latest_page_range.base_pages[-1]
 
-
+        #Create a new record and insert it into the latest base_page
         new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
         insertSuccess = latest_base_page.insert_new_record(new_record)
         
         self.table.index.insert_record_to_index(columns, new_record.rid)
 
-        #Check 
+        #Checking 
         print("TOTAL_PAGE_RANGE", len(self.table.page_directory))
         for i in range(len(self.table.page_directory)):
             for j in range(len(self.table.page_directory[i].base_pages)):
@@ -92,8 +94,9 @@ class Query:
             record = self.table.page_directory[address[0]].base_pages[address[1]].get_record_with_rid(rids[addresses.index(address)])
 
             # Filter the record's columns based on projected_columns_index
-            filtered_record = [col for i, col in enumerate(record) if projected_columns_index[i] == 1]
-            records.append(filtered_record)
+            # filtered_record = [col for i, col in enumerate(record) if projected_columns_index[i] == 1]
+            # records.append(filtered_record)
+            records.append(record)
 
         print("SELECTED RECORDS", records)
 

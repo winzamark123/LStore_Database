@@ -293,11 +293,14 @@ class Column_Index_Tree:
 
         return_list = []
         while cur_node != None:
+            will_break = False
             for i, val in enumerate(cur_node.entry_values):
-                if val > upper_bound: break
+                if val > upper_bound:
+                    will_break = True
+                    break
                 if lower_bound <= val and val <= upper_bound:
                     return_list += cur_node.rids[i]
-            if val > upper_bound: break
+            if will_break: break
             cur_node = cur_node.next_node
         return return_list
 
@@ -310,7 +313,7 @@ class Column_Index_Tree:
 class Index:
 
     def __init__(self, num_columns:int, order:int)->None:
-        self.indices = [Column_Index_Tree(order)] * num_columns
+        self.indices = [Column_Index_Tree(order) for _ in range(num_columns)]
 
     def insert_record_to_index(self, record_columns, rid:int)->None:
         """
