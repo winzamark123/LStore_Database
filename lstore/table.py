@@ -15,7 +15,7 @@ class Table:
         self.num_columns = num_columns
         self.key_column = META_DATA_NUM_COLUMNS + key_index
 
-        self.index = Index(num_columns)
+        self.index = Index(num_columns, ORDER_CHOICE)
 
         # number of base records 
         self.num_base_records = 0

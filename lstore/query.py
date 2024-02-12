@@ -47,6 +47,8 @@ class Query:
 
         new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
         insertSuccess = latest_base_page.insert_new_record(new_record)
+        
+        self.table.index.insert_record_to_index(columns, new_record.rid)
 
         #Check 
         print("TOTAL_PAGE_RANGE", len(self.table.page_directory))
@@ -85,7 +87,10 @@ class Query:
         for address in addresses:
             cur_page_range = self.table.page_directory[address[0]]
             cur_base_page = cur_page_range.base_pages[address[1]]
+            
+            #Change get_record_with_rid (with Diego's Push)
             record = self.table.page_directory[address[0]].base_pages[address[1]].get_record_with_rid(rids[addresses.index(address)])
+
             # Filter the record's columns based on projected_columns_index
             filtered_record = [col for i, col in enumerate(record) if projected_columns_index[i] == 1]
             records.append(filtered_record)

@@ -1,5 +1,3 @@
-# from table import Table
-
 """
 A data structure holding indices for various columns of a table.
 Key column should be indexed by default, other columns can be indexed
@@ -311,37 +309,37 @@ class Column_Index_Tree:
 
 class Index:
 
-    def __init__(self, num_columns:int):
-        # One index for each table. All are empty initially.
-        self.indices = [Column_Index_Tree(4)] *  num_columns
+    def __init__(self, num_columns:int, order:int)->None:
+        self.indices = [Column_Index_Tree(order)] * num_columns
+
+    def insert_record_to_index(self, record_columns, rid:int)->None:
+        """
+        Inserts all entry values into the index with the record's associated
+        RID.
+
+        Note: all record columns must be initialized. If a record column
+        does not have a value, simply pass None as its element value.
+        """
+        for i, record_entry_value in enumerate(record_columns):
+            self.indices[i].insert_value(record_entry_value, rid)
 
     def locate(self, value, column_index:int)->list[int]:
         """
-        # returns the location of all records with the given value on column "column"
+        Returns the location of all records with the given value
+        within a specified column.
         """
-        print("LOCATE")
-        print("VALUE:", value)
-        print("COLUMN_INDEX:", column_index)
-        print("INDEX:", self.indices[column_index])
-        print("INDICES:", self.indices)
         return self.indices[column_index].get_rids_equality_search(value)
 
 
-    def locate_range(self, begin, end, column_index:int):
+    def locate_range(self, begin, end, column_index:int)->list[int]:
         """
-        # Returns the RIDs of all records with values in column
-        "column" between "begin" and "end"
+        Returns the RIDs of all records with values in a specified column
+        between "begin" and "end" (bounds-inclusive).
         """
-        pass
+        return self.indices[column_index].get_rids_range_search(begin, end)
 
-    def create_index(self, column):
+    def drop_index(self, column_index:int):
         """
-        # optional: Create index on specific column
-        """
-        pass
-
-    def drop_index(self, column):
-        """
-        # optional: Drop index of specific column
+        TODO?
         """
         pass
