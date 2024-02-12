@@ -341,6 +341,12 @@ class Index:
         """
         return self.indices[column_index].get_rids_range_search(begin, end)
 
+    def update_entry(self, entry_value, rid:int)->None:
+        """
+        Updates an RID-associated entry value.
+        """
+        pass
+
     def drop_index(self, column_index:int):
         """
         TODO?

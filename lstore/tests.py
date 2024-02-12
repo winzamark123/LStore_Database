@@ -294,6 +294,14 @@ class Test_Column_Index_Tree(TestCase):
     # test get range
     self.assertTrue(tree.get_rids_range_search(1,5) == [1,2,3,4,5])
 
+  def test_large_dataset(self):
+    tree = Column_Index_Tree(4)
+    for i in range(1,10001):
+      tree.insert_value(10000 - i,i)
+    
+    for i in range(1,10001):
+      self.assertTrue(tree.get_rids_equality_search(10000 - i) == [i])
+    self.assertTrue(tree.get_rids_range_search(1,10001) == [i for i in range(1,10001)])
 
 if __name__ == "__main__":
   main()
