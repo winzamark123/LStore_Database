@@ -295,6 +295,26 @@ class Tail_Page(Page):
     def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
         # Call the constructor of the parent class (Page)
         super().__init__(num_columns, entry_sizes, key_column, is_tail_page=True)
+
+        # returns value of indirection in for base records
+    def check_tail_record_indirection(self, rid:int)->int:
+            
+        # indirection column of base page
+        indirection_page = self.get_indirection_page()
+
+        indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
+
+        return indirection_value_base_record
+
+    # returns value of schema encoding in base record
+    def check_tail_record_schema_encoding(self, rid:int)->int:
+    
+        # indirection column of base page
+        schema_encoding_page = self.get_schema_encoding_page()
+
+        schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
+
+        return schema_encoding_value_base_record
         
 
 class Base_Page(Page):

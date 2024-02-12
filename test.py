@@ -1,8 +1,8 @@
 from lstore.page import *
 from lstore.record import Record
-from random import randint
+from random import randint, randrange, choice
 from time import process_time
-from page_range_2 import *
+from lstore.page_range_2 import * 
 
 # To make it work, uncomment all the print() statements in page.py to see the physical pages get updated 
 
@@ -10,7 +10,7 @@ from page_range_2 import *
 num_columns = 5 
 
 # key column 
-key = 0
+key = 0 + META_DATA_NUM_COLUMNS
 
 # These first 3 are for meta columns
 entry_size_for_columns = [2,COLUMN_SIZE,COLUMN_SIZE]
@@ -51,7 +51,7 @@ while True:
         current_base_page_index += 1
 
         # stop creating base pages after 3 base pages for this example
-        if current_base_page_index == 5:
+        if current_base_page_index == 3:
             break
         
         # Check if the current base page index exceeds the number of base pages
@@ -62,13 +62,41 @@ while True:
 
 insert_time_1 = process_time()
 
-print("Inserting records into 5 base pages took:  \t\t\t", insert_time_1 - insert_time_0)
-
-page_range.update(510,[None,None,6,None,None])
+print("Inserting records into 3 base pages took:  \t\t\t", insert_time_1 - insert_time_0)
 
 """
+UPDATE A CERTAIN RECORD
+
 """
-#UPDATE A CERTAIN RECORD
+
+
+print("\n\nUpdating Some Records!!!\n\n")
+
+# Measuring update Performance
+update_cols = [
+    [None, None, None, None, None],
+    [None, randrange(0, 100), None, None, None],
+    [None, None, randrange(0, 100), None, None],
+    [None, None, None, randrange(0, 100), None],
+    [None, None, None, None, randrange(0, 100)],
+]
+
+amount_of_records = 512 * len(page_range.base_pages)
+
+
+update_time_0 = process_time()
+for i in range(0, amount_of_records):
+    upgrade_rid = randint(1, amount_of_records)
+    update_col = choice(update_cols)
+    if len(update_col) == 5:
+        print(f"Before columns update: {update_col}")
+        page_range.update(upgrade_rid, update_col)
+
+update_time_1 = process_time()
+print(f"Updating 5 records took:  \t\t\t", update_time_1 - update_time_0)
+
+
+
 """
 
 print("\n\nUpdating Record!!")
