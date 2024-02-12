@@ -297,4 +297,3 @@ class Test_Column_Index_Tree(TestCase):
 
 if __name__ == "__main__":
   main()
-

@@ -1,5 +1,3 @@
-# from table import Table
-
 """
 A data structure holding indices for various columns of a table.
 Key column should be indexed by default, other columns can be indexed
@@ -309,34 +307,39 @@ class Column_Index_Tree:
             return_list += self.return_entry_values_lists(child_node)
         return return_list
 
-# class Index:
+class Index:
 
-#     def __init__(self, num_columns:int):
-#         # One index for each table. All are empty initially.
-#         self.indices = [Column_Index_Tree()] *  num_columns
+    def __init__(self, num_columns:int, order:int):
+        self.indices = [Column_Index_Tree(order)] *  num_columns
 
-#     def locate(self, value, column_index:int)->list[int]:
-#         """
-#         # returns the location of all records with the given value on column "column"
-#         """
-#         return self.indices[column_index].get_rids_equality_search(value)
+    def insert_record_to_index(self, record_columns, rid:int):
+        """
+        Inserts all entry values into the index with the record's associated
+        RID.
+
+        Note: all record columns must be initialized. If a record column
+        does not have a value, simply pass None as its element value.
+        """
+        for i, record_entry_value in enumerate(record_columns):
+            self.indices[i].insert_value(record_entry_value, rid)
+
+    def locate(self, value, column_index:int)->list[int]:
+        """
+        Returns the location of all records with the given value
+        within a specified column.
+        """
+        return self.indices[column_index].get_rids_equality_search(value)
 
 
-#     def locate_range(self, begin, end, column_index:int):
-#         """
-#         # Returns the RIDs of all records with values in column
-#         "column" between "begin" and "end"
-#         """
-#         pass
+    def locate_range(self, begin, end, column_index:int):
+        """
+        Returns the RIDs of all records with values in a specified column
+        between "begin" and "end" (bounds-inclusive).
+        """
+        return self.indices[column_index].get_rids_range_search(begin, end)
 
-#     def create_index(self, column):
-#         """
-#         # optional: Create index on specific column
-#         """
-#         pass
-
-#     def drop_index(self, column):
-#         """
-#         # optional: Drop index of specific column
-#         """
-#         pass
+    def drop_index(self, column_index:int):
+        """
+        
+        """
+        pass
