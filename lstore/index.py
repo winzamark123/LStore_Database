@@ -313,7 +313,7 @@ class Column_Index_Tree:
 class Index:
 
     def __init__(self, num_columns:int, order:int)->None:
-        self.indices = [Column_Index_Tree(order)] * num_columns
+        self.indices = [Column_Index_Tree(order) for _ in range(num_columns)]
 
     def insert_record_to_index(self, record_columns, rid:int)->None:
         """
