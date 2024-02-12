@@ -1,6 +1,5 @@
 from lstore.index import Index
 from lstore.config import *
-from lstore.page import Base_Page
 from time import time
 
 class Table:
@@ -15,7 +14,7 @@ class Table:
         self.num_columns = num_columns
         self.key_column = META_DATA_NUM_COLUMNS + key_index
 
-        self.index = Index(num_columns)
+        self.index = Index(num_columns, ORDER_CHOICE)
 
         # number of base records 
         self.num_base_records = 0
@@ -38,7 +37,7 @@ class Table:
         print("Key column: ", self.key_column)
         
 
-    def get_list_of_addresses(self, rids):
+    def get_list_of_addresses(self, rids)-> list:
         addreses = []
 
         for rid in rids:
