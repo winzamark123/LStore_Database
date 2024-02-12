@@ -309,10 +309,10 @@ class Column_Index_Tree:
 
 class Index:
 
-    def __init__(self, num_columns:int, order:int):
-        self.indices = [Column_Index_Tree(order)] *  num_columns
+    def __init__(self, num_columns:int, order:int)->None:
+        self.indices = [Column_Index_Tree(order)] * num_columns
 
-    def insert_record_to_index(self, record_columns, rid:int):
+    def insert_record_to_index(self, record_columns, rid:int)->None:
         """
         Inserts all entry values into the index with the record's associated
         RID.
@@ -331,7 +331,7 @@ class Index:
         return self.indices[column_index].get_rids_equality_search(value)
 
 
-    def locate_range(self, begin, end, column_index:int):
+    def locate_range(self, begin, end, column_index:int)->list[int]:
         """
         Returns the RIDs of all records with values in a specified column
         between "begin" and "end" (bounds-inclusive).
@@ -340,6 +340,6 @@ class Index:
 
     def drop_index(self, column_index:int):
         """
-        
+        TODO?
         """
         pass
