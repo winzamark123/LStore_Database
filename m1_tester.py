@@ -37,7 +37,7 @@ print("Insert finished")
 # Check inserted records using select query
 for key in records:
     # select function will return array of records 
-    # here we are sure that there is only one record in t hat array
+    # here we are sure that there is only one record in that array
     record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
     error = False
     for i, column in enumerate(record.columns):
