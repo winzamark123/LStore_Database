@@ -1,8 +1,8 @@
 from lstore.page import *
 from lstore.record import Record
-from random import randint, randrange, choice
+from random import randint, randrange, choice, shuffle
 from time import process_time
-from lstore.page_range_2 import * 
+from lstore.page_range import * 
 
 # To make it work, uncomment all the print() statements in page.py to see the physical pages get updated 
 
@@ -23,9 +23,9 @@ page_range = Page_Range(num_columns, entry_size_for_columns, key)
 print('Base Page: ',page_range.base_pages[0].page_number)
 print('Tail Page: ', page_range.tail_pages[0].page_number)
 
-#page_range.update_base_page(51, [None,1,None,None,None])
-
-
+"""
+INSERT RECORDS
+"""
 
 # Initialize a counter for records (RIDs)
 record_counter = 1
@@ -33,43 +33,43 @@ record_counter = 1
 # Initialize the index of the current base page
 current_base_page_index = 0
 
-"""
-#INSERT RECORDS
-"""
+base_page_amount = 3
 
 insert_time_0 = process_time()
 # Loop to keep adding records
 while True:
-    # Insert a new record into the current base page
-    if page_range.base_pages[current_base_page_index].insert_new_record(Record(record_counter, 906659672 + record_counter, (randint(1,20), randint(1,20), randint(1,20), randint(1,20)))):
-        print(f"Inserted record with RID {record_counter} into Base Page {current_base_page_index + 1}\n")
-        #if (record_counter == 10000):
-           #break
-        record_counter += 1
-    else:
-        # If the current base page is full, move to the next base page
-        current_base_page_index += 1
-
-        # stop creating base pages after 3 base pages for this example
-        if current_base_page_index == 3:
-            break
-        
-        # Check if the current base page index exceeds the number of base pages
-        if current_base_page_index >= len(page_range.base_pages):
-            # If so, add a new base page to the list
-            print(f"Base Page {current_base_page_index} is full. Adding a new base page.")
+    try:
+        # Insert a new record into the current base page
+        if page_range.base_pages[current_base_page_index].insert_new_record(Record(record_counter, 906659672 + record_counter, (randint(1,20), randint(1,20), randint(1,20), randint(1,20)))):
+            print(f"Inserted record with RID {record_counter} into Base Page {current_base_page_index + 1}\n")
+            record_counter += 1
+        else:
+            # If the current base page is full, add a new base page
+            print(f"Base Page {current_base_page_index + 1} is full. Adding a new base page.")
             page_range.insert_base_page()
+
+            # Move to the next base page
+            current_base_page_index += 1
+            
+            # Stop creating base pages after base_page_amount
+            if current_base_page_index >= base_page_amount:
+                break
+    except IndexError:
+        # If an index error occurs, it means we've reached the end of the base_pages list.
+        # Add a new base page to accommodate the new record.
+        print("Index Error: Adding a new base page.")
+        page_range.insert_base_page()
 
 insert_time_1 = process_time()
 
-print("Inserting records into 3 base pages took:  \t\t\t", insert_time_1 - insert_time_0)
+print(f"Inserting records into {base_page_amount} base page(s) took:  \t\t\t", insert_time_1 - insert_time_0)
+
+
 
 """
 UPDATE A CERTAIN RECORD
 
 """
-
-
 print("\n\nUpdating Some Records!!!\n\n")
 
 # Measuring update Performance
@@ -81,64 +81,29 @@ update_cols = [
     [None, None, None, None, randrange(0, 100)],
 ]
 
+
 amount_of_records = 512 * len(page_range.base_pages)
-
-
 update_time_0 = process_time()
-for i in range(0, amount_of_records):
-    upgrade_rid = randint(1, amount_of_records)
-    update_col = choice(update_cols)
-    if len(update_col) == 5:
-        print(f"Before columns update: {update_col}")
-        page_range.update(upgrade_rid, update_col)
+
+# Keep track of the number of records updated
+records_updated = 0 
+
+# updates record
+while records_updated < amount_of_records:
+    update_rid = randint(1,512 * base_page_amount)
+    update_columns = choice(update_cols)
+    page_range.update(rid=update_rid, columns_of_update=update_columns)
+    x = update_rid
+    records_updated += 1
 
 update_time_1 = process_time()
-print(f"Updating 5 records took:  \t\t\t", update_time_1 - update_time_0)
+
+print(f"Updating {records_updated} records took:  \t\t\t", update_time_1 - update_time_0)
 
 
+# return record wanted
+return_record = page_range.return_record(x)
 
-"""
-
-print("\n\nUpdating Record!!")
-
-# Student ID that's going to update , random Student ID for this testing
-upgrade_rid = randint(1,((512) * current_base_page_index))
-
-# Grade (1-4) they want to update
-grade_to_update = randint(1,4) 
-
-# new value for grade_to_update
-new_grade = randint(1,20)
-
-# "RID" for tail pages
-lid = 0
-
-
-insert_time_2 = process_time()
-# Iterate through each base page in list
-for base_page in page_range.base_pages:
-    try:
-        if(base_page.check_for_rid(upgrade_rid)):
-                indirection_page = base_page.get_indirection_page()
-
-
-                print(f'\nRID: ({upgrade_rid}) in Base Page {base_page.page_number}')
-                print(f'\nValue before Update for column ({indirection_page.column_number}): ({base_page.check_base_record_indirection(upgrade_rid)})\n')
-
-                lid -= 1
-                # update column (physical page) with new grade
-                if(base_page.update_indirection_base_column(lid, upgrade_rid)):
-                    print("Value was updated")
-                    print(f'\nValue after the Update for column ({indirection_page.column_number}): ({base_page.check_base_record_indirection(upgrade_rid)})\n')
-                    
-                break  # Exit loop if the student ID is found in any base page
-    except KeyError:
-        # If the student ID is not found in the current base page, continue searching in the next base page
-        continue
-else:
-    # If the loop completes without finding the student ID in any base page, print a message
-    print(f'RID ({upgrade_rid}) is not found in any base page.')
-insert_time_3 = process_time()
-
-print("Updating 1 column in a record took:  \t\t\t", insert_time_1 - insert_time_0)
-"""
+print(f'RID: {return_record.rid}')
+print(f'KEY: {return_record.key}')
+print(f'GRADES: {return_record.columns}')
