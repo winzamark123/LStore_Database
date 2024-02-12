@@ -293,11 +293,14 @@ class Column_Index_Tree:
 
         return_list = []
         while cur_node != None:
+            will_break = False
             for i, val in enumerate(cur_node.entry_values):
-                if val > upper_bound: break
+                if val > upper_bound:
+                    will_break = True
+                    break
                 if lower_bound <= val and val <= upper_bound:
                     return_list += cur_node.rids[i]
-            if val > upper_bound: break
+            if will_break: break
             cur_node = cur_node.next_node
         return return_list
 
