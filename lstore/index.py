@@ -348,6 +348,12 @@ class Index:
         pass
 
     def drop_index(self, column_index:int):
+        Returns the RIDs of all records with values in a specified column
+        between "begin" and "end" (bounds-inclusive).
+        """
+        return self.indices[column_index].get_rids_range_search(begin, end)
+
+    def drop_index(self, column_index:int):
         """
         TODO?
         """
