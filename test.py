@@ -52,13 +52,16 @@ while True:
             current_base_page_index += 1
             
             # Stop creating base pages after base_page_amount
-            if current_base_page_index >= base_page_amount:
+            if current_base_page_index == base_page_amount:
                 break
+
     except IndexError:
         # If an index error occurs, it means we've reached the end of the base_pages list.
         # Add a new base page to accommodate the new record.
-        print("Index Error: Adding a new base page.")
-        page_range.insert_base_page()
+        if (len(page_range.base_pages) != base_page_amount):
+            print("Index Error: Adding a new base page.")
+            page_range.insert_base_page()
+
 
 insert_time_1 = process_time()
 
@@ -72,48 +75,43 @@ UPDATE A CERTAIN RECORD
 """
 print("\n\nUpdating Some Records!!!\n\n")
 
-page_range.update(2,[None, None, 0, None, None])
-page_range.update(2,[None, None, 2, None, None])
+print(page_range.get_page_number(1025))
+
+
+# Measuring update Performance
+update_cols = [
+    [None, None, None, None, None],
+    [None, randrange(0, 100), None, None, None],
+    [None, None, randrange(0, 100), None, None],
+    [None, None, None, randrange(0, 100), None],
+    [None, None, None, None, randrange(0, 100)],
+]
+
+
+amount_of_records = 512 * base_page_amount
+update_time_0 = process_time()
+
+# Keep track of the number of records updated
+records_updated = 0 
+
+# updates record
+while records_updated < amount_of_records:
+    update_rid = randint(1,512 * base_page_amount)
+    update_columns = choice(update_cols)
+    page_range.update(rid=update_rid, columns_of_update=update_columns)
+    records_updated += 1
+    x = update_rid
+
+update_time_1 = process_time()
+
+print(f"Updating {records_updated} records took:  \t\t\t", update_time_1 - update_time_0)
+
+
+print("\t\t\n\n\nReturn Record !!\n\n\n")
 
 # return record wanted
-return_record = page_range.return_record(2)
+return_record = page_range.return_record(x)
 
 print(f'RID: {return_record.rid}')
 print(f'KEY: {return_record.key}')
 print(f'GRADES: {return_record.columns}')
-
-# # Measuring update Performance
-# update_cols = [
-#     [None, None, None, None, None],
-#     [None, randrange(0, 100), None, None, None],
-#     [None, None, randrange(0, 100), None, None],
-#     [None, None, None, randrange(0, 100), None],
-#     [None, None, None, None, randrange(0, 100)],
-# ]
-
-
-# amount_of_records = 512 * len(page_range.base_pages)
-# update_time_0 = process_time()
-
-# # Keep track of the number of records updated
-# records_updated = 0 
-
-# # updates record
-# while records_updated < amount_of_records:
-#     update_rid = randint(1,512 * base_page_amount)
-#     update_columns = choice(update_cols)
-#     page_range.update(rid=update_rid, columns_of_update=update_columns)
-#     x = update_rid
-#     records_updated += 1
-
-# update_time_1 = process_time()
-
-# print(f"Updating {records_updated} records took:  \t\t\t", update_time_1 - update_time_0)
-
-
-# # return record wanted
-# return_record = page_range.return_record(x)
-
-# print(f'RID: {return_record.rid}')
-# print(f'KEY: {return_record.key}')
-# print(f'GRADES: {return_record.columns}')

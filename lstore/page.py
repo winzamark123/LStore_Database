@@ -283,7 +283,7 @@ class Page:
 
     def has_capacity(self)->bool:
     # checks if page is full
-        if self.num_records == RECORDS_PER_PAGE:
+        if self.num_records >= RECORDS_PER_PAGE:
             print(f'Page is full of records on base_page ({self.page_number})')
             return False
         
