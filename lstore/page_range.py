@@ -144,43 +144,47 @@ class Page_Range:
             return True
         return False
 
-    # TODO: Complete delete function
+    # delete record (Lazy delete)
     def delete_record(self, rid:int)->int:
-        print('\t\t\n\n\nDelete record function\n\n\n')
+
         # gets base page number the RID is in
         base_page_number = self.get_page_number(rid)
 
         # base page that has RID 
-        base_page_to_work = self.search_list(self.base_pages, base_page_number)
+        base_page_to_work = self.search_list(self.base_pages, base_page_number, 1)
 
-        primary_key_page = base_page_to_work.get_primary_key_page()
+        # rid physical page
+        rid_page = base_page_to_work.get_rid_page()
 
-        delete_key = primary_key_page.value_exists_at_bytes(rid)
+        # rid that's getting deleted
+        delete_rid = rid_page.value_exists_at_bytes(rid)
 
         # update grades to equal 0
         for num in range(1, 5):
             base_page_to_work.get_page(num).value_exists_at_bytes(rid)
             base_page_to_work.get_page(num).write_to_physical_page(0, rid, update=True)
 
+        # updates base record indirection to point to 0 (meaning it's been deleted)
         base_page_to_work.update_indirection_base_column(0, rid)
+        
+        return delete_rid
 
 
-        print(delete_key)
-
-        pass
-
-
-         # return record object
+    # return record object
     def return_record(self, rid:int)->Record:
         # gets base page number the RID is in
         base_page_number = self.get_page_number(rid)
 
-        print(rid)
+        # print(rid)
         # base page that has RID 
         base_page_to_work = self.search_list(self.base_pages, base_page_number, 1)
 
         # retrieves indirection value for rid
         indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
+
+        if indirection_base_value == 0:
+            print("Record was deleted")
+            return
 
         # retrieves schema encoding value for rid
         schema_encoding_base_value = base_page_to_work.check_base_record_schema_encoding(rid)
@@ -240,7 +244,6 @@ class Page_Range:
         # print(f'Page list: {page_list}')
         
         for page in page_list:
-            print(f'{page.page_number} == {page_number}')
             if page.page_number == page_number:
                 page_to_work = page
                 return page_to_work
@@ -272,15 +275,15 @@ class Page_Range:
         
     # No sure if this should go in table.py or in page_range.py    
     def get_schema_encoding(self,columns:list):
-            schema_encoding = ''
-            for item in columns:
-                # if value in column is not 'None' add 1
-                if item or item == 0:
-                    schema_encoding = schema_encoding + '1'
-                # else add 0
-                else:
-                    schema_encoding = schema_encoding + '0'
-            return int(schema_encoding, 2)
+        schema_encoding = ''
+        for item in columns:
+            # if value in column is not 'None' add 1
+            if item or item == 0:
+                schema_encoding = schema_encoding + '1'
+            # else add 0
+            else:
+                schema_encoding = schema_encoding + '0'
+        return int(schema_encoding, 2)
     
     # help determine what columns have been updated
     def analyze_schema_encoding(self,schema_encoding: int, return_record:bool = False) -> list:
