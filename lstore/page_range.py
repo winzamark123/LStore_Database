@@ -1,5 +1,5 @@
 from lstore.config import *
-from lstore.page import Base_Page, Tail_Page, Physical_Page
+from lstore.page import Base_Page, Tail_Page, Page 
 from time import time
 from lstore.record import Record
 from random import randint
@@ -16,6 +16,7 @@ class Page_Range:
 
         # initialize the tail pages list with the first tail page
         self.tail_pages = [Tail_Page(self.num_columns, self.entry_size_for_columns, self.key_column)]
+        # self.tail_pages = []
 
         self.tid = 0 # tid (rid) for tail records - decrease by 1 once a record is added or updated (for tails records)
         
@@ -25,6 +26,8 @@ class Page_Range:
         if len(self.base_pages) >= NUM_BASE_PAGES:
             # checks if the last base page in the base page list is full
             if not self.base_pages[-1].has_capacity():
+                # print("FUNCTION PAGE_RANGE: has_capacity()")
+                # print(len(self.base_pages))
                 return False 
         return True
 
@@ -167,12 +170,12 @@ class Page_Range:
         pass
 
 
-        
-    # return record object
+         # return record object
     def return_record(self, rid:int)->Record:
         # gets base page number the RID is in
         base_page_number = self.get_page_number(rid)
 
+        print(rid)
         # base page that has RID 
         base_page_to_work = self.search_list(self.base_pages, base_page_number, 1)
 
@@ -182,34 +185,45 @@ class Page_Range:
         # retrieves schema encoding value for rid
         schema_encoding_base_value = base_page_to_work.check_base_record_schema_encoding(rid)
 
-        # gets tail page number the TID is in
-        tail_page_number = self.get_page_number(indirection_base_value)
+        if indirection_base_value != rid:
+            # gets tail page number the TID is in
+            tail_page_number = self.get_page_number(indirection_base_value)
 
-        # tail page TID is in
-        tail_page_to_work = self.search_list(self.tail_pages, tail_page_number, 0)
+            # tail page TID is in
+            tail_page_to_work = self.search_list(self.tail_pages, tail_page_number, 0)
 
-        # gets indexes of schema encoding that has 1s and 0s
-        list_of_columns_updated_0 = self.analyze_schema_encoding(schema_encoding_base_value, return_record=True)
-        list_of_columns_updated_1 = self.analyze_schema_encoding(schema_encoding_base_value)
-        
-        dict_values = {}
+            # gets indexes of schema encoding that has 1s and 0s
+            list_of_columns_updated_0 = self.analyze_schema_encoding(schema_encoding_base_value, return_record=True)
+            list_of_columns_updated_1 = self.analyze_schema_encoding(schema_encoding_base_value)
+            
+            dict_values = {}
 
-        if len(list_of_columns_updated_0) != 0:
-            for i in list_of_columns_updated_0:
-                x = base_page_to_work.get_value_at_column(rid,i)
-                dict_values[i] = x
+            if len(list_of_columns_updated_0) != 0:
+                for i in list_of_columns_updated_0:
+                    x = base_page_to_work.get_value_at_column(rid,i)
+                    dict_values[i] = x
 
-        if len(list_of_columns_updated_1) != 0:
-            for i in list_of_columns_updated_1:
-                x = tail_page_to_work.get_value_at_column(indirection_base_value,i)
-                dict_values[i] = x
-        
+            if len(list_of_columns_updated_1) != 0:
+                for i in list_of_columns_updated_1:
+                    x = tail_page_to_work.get_value_at_column(indirection_base_value,i)
+                    dict_values[i] = x
+            
 
-        # Sorting the dictionary based on keys
-        sorted_dict = {k: dict_values[k] for k in sorted(dict_values)}
+            # Sorting the dictionary based on keys
+            sorted_dict = {k: dict_values[k] for k in sorted(dict_values)}
 
-        # Extracting values and creating a tuple
-        values_tuple = tuple(sorted_dict.values())
+            # Extracting values and creating a tuple
+            values_tuple = tuple(sorted_dict.values())
+
+        elif indirection_base_value == rid:
+            return_list = []
+            for num in range(1, 5):
+                physical_page_of_column = base_page_to_work.get_page(num)
+                value_at_tail_record_column = physical_page_of_column.value_exists_at_bytes(indirection_base_value)
+                return_list.append(value_at_tail_record_column)
+
+            values_tuple = tuple(return_list)
+
 
         key_page = base_page_to_work.get_primary_key_page()
         
@@ -219,9 +233,12 @@ class Page_Range:
         # returns record wanted
         return Record(rid, stID, values_tuple)
 
-
     # search base and tail pages list to find the page we are going to use  
-    def search_list(self, page_list:list, page_number:int, type_of_list:int):
+    def search_list(self, page_list:list, page_number:int, type_of_list:int)->Page:
+        # print(f'Page number: {page_number}')
+        # print(f'Type of list: {type_of_list}')
+        # print(f'Page list: {page_list}')
+        
         for page in page_list:
             print(f'{page.page_number} == {page_number}')
             if page.page_number == page_number:
@@ -253,7 +270,6 @@ class Page_Range:
         page_index = (abs(rid) - 1) // RECORDS_PER_PAGE
         return page_index + 1
         
-
     # No sure if this should go in table.py or in page_range.py    
     def get_schema_encoding(self,columns:list):
             schema_encoding = ''
