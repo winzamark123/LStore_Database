@@ -21,8 +21,19 @@ class Query:
     # Return False if record doesn't exist or is locked due to 2PL
     """
     def delete(self, primary_key)->bool:
+        rids = []
+        rids = self.table.index.locate(primary_key, self.table.key_column_index)
+
+        addresses = []
+        addresses = self.table.get_list_of_addresses(rids)
+
+        for rid, address in zip(rids, addresses):
+            page_range_num = address[0]
+            cur_page_range = self.table.page_directory[page_range_num]
+            cur_page_range.delete_record(rid)
+
+        return True
         
-        pass
     
     
     """
