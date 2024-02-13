@@ -42,6 +42,7 @@ class Table:
         addreses = []
 
         for rid in rids:
+            rid -= 1
             page_range_num = rid // (RECORDS_PER_PAGE * NUM_BASE_PAGES)
             base_page_num = (rid // RECORDS_PER_PAGE) % NUM_BASE_PAGES
             addreses.append((page_range_num, base_page_num))

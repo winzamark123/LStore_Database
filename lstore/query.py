@@ -58,6 +58,7 @@ class Query:
         for i in range(len(self.table.page_directory)):
             for j in range(len(self.table.page_directory[i].base_pages)):
                 print("PAGE_RANGE", i, "BASE_PAGES", j, "TOTAL_RECORDS", self.table.page_directory[i].base_pages[j].num_records) 
+                print("Size of Page Range", len(self.table.page_directory[i].base_pages))
 
         return True if insertSuccess else False
     
@@ -86,9 +87,16 @@ class Query:
 
         #GET RECORDS
         records = [] # list of records
+
         for rid, address in zip(rids, addresses): #zip the rids and addresses together iterating through both
+            print("RID", rid)
+            print("ADDRESS", address)
+
             page_range_num = address[0]  # get the first element of the tuple
             cur_page_range = self.table.page_directory[page_range_num]
+            
+            print("PAGE_RANGE_NUM", page_range_num)
+            
             record_data = cur_page_range.return_record(rid)
 
             record_data_key = record_data.get_key() #get the key of the record
@@ -96,8 +104,9 @@ class Query:
 
             record = Record(rid, record_data_key, record_data_values) #create a new record object
             records.append(record)
-
         return records
+
+
 
     
 
