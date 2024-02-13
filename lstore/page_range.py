@@ -58,7 +58,7 @@ class Page_Range:
     # updates record
     def update(self, rid:int, columns_of_update:list)->bool:
         
-        print("\t\t\n\nNewUpdate!!")
+        # print("\t\t\n\nNewUpdate!!")
 
         # uses a copy of the list
         columns_of_update_copy = columns_of_update.copy()
@@ -100,7 +100,7 @@ class Page_Range:
 
         # checks if tail page has enough capacity
         if not self.tail_pages[-1].has_capacity(): 
-                print("")
+                print("Inserted a Tail Page")
                 self.insert_tail_pages() 
 
         # checks if the base record indirection is pointing to itself
@@ -109,8 +109,10 @@ class Page_Range:
         # else it's pointing to a tail record
         else:
             # gets tail page number the TID is in
+            print("INDIRECTION BASE VALUE:", indirection_base_value)
+            print("TAIL PAGE SIZE", len(self.tail_pages))
             tail_page_number = self.get_page_number(indirection_base_value)
-            print(tail_page_number)
+            print("TAIL PAGE NUMBER:", tail_page_number)
 
             # tail page TID is in
             tail_page_to_work = self.search_list(self.tail_pages, tail_page_number, 0)
