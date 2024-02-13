@@ -70,13 +70,13 @@ class Physical_Page:
 
     # using for testing 
     def value_exists_at_bytes(self, rid:int)->int:
-        # print('\nFunction: value_exists_at_bytes()')
+        print('\nFunction: value_exists_at_bytes()')
         offset = self.get_offset(rid)
         start = offset
         end = start + self.entry_size
         entry_bytes = self.data[start:end]
         value_in_page = int.from_bytes(entry_bytes, byteorder='big', signed=True)
-        # print(f"Value {value_in_page} was found at Bytes ({start} - {end}) in column {self.column_number}")
+        print(f"Value {value_in_page} was found at Bytes ({start} - {end}) in column {self.column_number}")
         return value_in_page
 
     # calculates our offset to know where the RID entry is at in the physical page
@@ -283,7 +283,7 @@ class Page:
 
     def has_capacity(self)->bool:
     # checks if page is full
-        if self.num_records == RECORDS_PER_PAGE:
+        if self.num_records >= RECORDS_PER_PAGE:
             print(f'Page is full of records on base_page ({self.page_number})')
             return False
         
