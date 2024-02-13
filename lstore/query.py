@@ -65,11 +65,11 @@ class Query:
         self.table.index.insert_record_to_index(columns, new_record.rid)
 
         #Checking 
-        print("TOTAL_PAGE_RANGE", len(self.table.page_directory))
-        for i in range(len(self.table.page_directory)):
-            for j in range(len(self.table.page_directory[i].base_pages)):
-                print("PAGE_RANGE", i, "BASE_PAGES", j, "TOTAL_RECORDS", self.table.page_directory[i].base_pages[j].num_records) 
-                print("Size of Page Range", len(self.table.page_directory[i].base_pages))
+        # print("TOTAL_PAGE_RANGE", len(self.table.page_directory))
+        # for i in range(len(self.table.page_directory)):
+        #     for j in range(len(self.table.page_directory[i].base_pages)):
+        #         print("PAGE_RANGE", i, "BASE_PAGES", j, "TOTAL_RECORDS", self.table.page_directory[i].base_pages[j].num_records) 
+        #         print("Size of Page Range", len(self.table.page_directory[i].base_pages))
 
         return True if insertSuccess else False
     
@@ -169,35 +169,38 @@ class Query:
     # Returns the summation of the given range upon success
     # Returns False if no record exists in the given range
     """
-    def sum(self, start_range: int, end_range: int, aggregate_column_index: int):
-        total_sum = 0
-        # get RIDs from the start_range key 
-        startRID = self.table.index.locate(start_range, self.table.key_index)
-
-        # get RIDs from the end_range key
-        endRID = self.table.index.locate(end_range, self.table.key_index)
-
-        print("Range LIST", start_range, end_range)
-        print("RID LIST", startRID, endRID)
-
-        range_of_rids = endRID[0] - startRID[0]
-        for i in range(range_of_rids):
-            startingKey = start_range + i
-            selected_records = self.select(startingKey, 0, [1] * self.table.num_columns)
-
-            # print("SELECTED RECORDS", selected_records) 
-            # Check if any records were returned
-            if selected_records:
-                # Assuming the first record is the one we're interested in
-                # and it has a method get_values() that returns all values including the key as the first item
-                record_values = selected_records[0].get_values()
-                
-                # Ensure the aggregate column index is within bounds of the record's values
-                if 0 <= aggregate_column_index < len(record_values):
-                    # Add the value from the specified column to the total sum
-                    total_sum += record_values[aggregate_column_index]
+    def sum(self, start_range, end_range, aggregate_column_index):
+        # TO DO: change this and try to use locate_range, double check on array pointers 
         
-        return total_sum
+        sum = 0
+        array = []
+        checker = False
+
+        for i in range(start_range,end_range+1):
+            rid = self.table.index.locate(i, self.table.key_column_index)
+            address = self.table.get_list_of_addresses(rid)
+            
+            #checks if rid exists
+            if rid:
+                checker = True
+                rid = rid[0]
+            else:
+                continue
+            
+            #if autograder indexes with 0 they want SIDs, address to .key
+            if aggregate_column_index == 0:
+                sum += self.table.page_directory[address[0][0]].return_record(rid).key
+                continue
+
+            #sum is index -1 because can't index 0 column correctly
+            sum += self.table.page_directory[address[0][0]].return_record(rid).columns[aggregate_column_index-1]
+
+        #checks if rids exist within the range, if not returns false
+        if checker:
+            return sum
+        else:
+            return checker
+        
 
 
     
