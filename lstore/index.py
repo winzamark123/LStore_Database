@@ -59,7 +59,7 @@ class Column_Index_Node:
             if entry_value == item:
                 self.rids[i].append(rid)
                 break
-            elif entry_value < item:
+            elif item > entry_value:
                 self.entry_values = self.entry_values[:i] + [entry_value] + self.entry_values[i:]
                 self.rids = self.rids[:i] + [[rid]] + self.rids[i:]
                 break
@@ -112,10 +112,6 @@ class Column_Index_Node:
         # make current node parent of two children
         left_node.parent = self
         right_node.parent = self
-
-        # set next node pointers
-        left_node.next_node = right_node
-        right_node.next_node = self.next_node
 
         # split entry values
         left_node.entry_values = self.entry_values[:mid]
@@ -175,20 +171,24 @@ class Column_Index_Tree:
             if item > pivot:
                 # get node pointers
                 ## previous node
-                prev_node = parent_tree.child_nodes[i-1]
-                while (not prev_node.is_leaf):
-                    prev_node = prev_node.child_nodes[-1]
+                if i == 0:
+                    prev_node = None
+                else:
+                    prev_node = parent_tree.child_nodes[i-1]
+                    while (not prev_node.is_leaf):
+                        prev_node = prev_node.child_nodes[-1]
                 ## next node
                 next_node = parent_tree.child_nodes[i]
-                while (not prev_node.is_leaf):
+                while (not next_node.is_leaf):
                     next_node = next_node.child_nodes[0]
 
                 # fix node pointers for child tree leaf nodes
                 ## connect front of child tree
-                next_to_prev_leaf_node_pointer = child_tree.child_nodes[0]
-                while (not next_to_prev_leaf_node_pointer.is_leaf):
-                    next_to_prev_leaf_node_pointer = next_to_prev_leaf_node_pointer.child_nodes[0]
-                prev_node.next_node = next_to_prev_leaf_node_pointer
+                if prev_node != None:
+                    next_to_prev_leaf_node_pointer = child_tree.child_nodes[0]
+                    while (not next_to_prev_leaf_node_pointer.is_leaf):
+                        next_to_prev_leaf_node_pointer = next_to_prev_leaf_node_pointer.child_nodes[0]
+                    prev_node.next_node = next_to_prev_leaf_node_pointer
                 ## connect back of child tree
                 prev_from_next_leaf_node_pointer = child_tree.child_nodes[-1]
                 while (not prev_from_next_leaf_node_pointer.is_leaf):
@@ -298,7 +298,7 @@ class Column_Index_Tree:
                 if val > upper_bound:
                     will_break = True
                     break
-                if lower_bound <= val and val <= upper_bound:
+                elif lower_bound <= val and val <= upper_bound:
                     return_list += cur_node.rids[i]
             if will_break: break
             cur_node = cur_node.next_node
@@ -348,13 +348,8 @@ class Index:
         pass
 
     def drop_index(self, column_index:int):
+        """
         Returns the RIDs of all records with values in a specified column
         between "begin" and "end" (bounds-inclusive).
-        """
-        return self.indices[column_index].get_rids_range_search(begin, end)
-
-    def drop_index(self, column_index:int):
-        """
-        TODO?
         """
         pass

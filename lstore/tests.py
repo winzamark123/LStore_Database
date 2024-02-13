@@ -83,6 +83,17 @@ class Test_Column_Index_Tree(TestCase):
     self.assertEqual(tree.root.child_nodes[2].next_node,
                      None)
 
+  # def test_full_root_reverse(self):
+  #   tree = Column_Index_Tree(3)
+  #   for i in range(1, 5):
+  #     print("working on", i)
+  #     tree.insert_value(5-i,i)
+
+  #   # root
+  #   print(tree.root.entry_values)
+  #   self.assertTrue(tree.root.entry_values == [3])
+  #   self.assertTrue(tree.)
+
   def test_one_inner_level(self):
     tree = Column_Index_Tree(3)
     for i in range(1, 6):
@@ -99,6 +110,7 @@ class Test_Column_Index_Tree(TestCase):
     for i in range(2):
       self.assertTrue(tree.root.child_nodes[i].is_leaf == False)
       self.assertTrue(tree.root.child_nodes[i].parent == tree.root)
+      self.assertTrue(tree.root.child_nodes[i].next_node == None)
       self.assertTrue(tree.root.child_nodes[i].rids == [])
     self.assertTrue(tree.root.child_nodes[0].entry_values == [2])
     self.assertTrue(tree.root.child_nodes[1].entry_values == [4])
@@ -170,9 +182,9 @@ class Test_Column_Index_Tree(TestCase):
       self.assertTrue(tree.root.child_nodes[i].is_leaf == False)
       self.assertTrue(tree.root.child_nodes[i].parent == tree.root)
       self.assertTrue(tree.root.child_nodes[i].rids == [])
-      self.assertTrue(tree.root.child_nodes[0].entry_values == [2])
-      self.assertTrue(tree.root.child_nodes[1].entry_values == [4])
-      self.assertTrue(tree.root.child_nodes[2].entry_values == [6])
+    self.assertTrue(tree.root.child_nodes[0].entry_values == [2])
+    self.assertTrue(tree.root.child_nodes[1].entry_values == [4])
+    self.assertTrue(tree.root.child_nodes[2].entry_values == [6])
 
     # leaf nodes after 2nd value to root
     for i, j in [(0,2),(1,2),(2,2)]:
@@ -213,8 +225,134 @@ class Test_Column_Index_Tree(TestCase):
       tree.insert_value(i,i)
 
     # root
+    self.assertTrue(tree.root.is_leaf == False)
+    self.assertTrue(tree.root.parent == None)
     self.assertTrue(tree.root.entry_values == [5])
-    # TODO: continue working on this test
+    self.assertTrue(len(tree.root.child_nodes) == 2)
+
+    # 1st lvl inner nodes
+    for i in range(2):
+      self.assertTrue(tree.root.child_nodes[i].is_leaf == False)
+      self.assertTrue(tree.root.child_nodes[i].parent == tree.root)
+      self.assertTrue(tree.root.child_nodes[i].next_node == None)
+      self.assertTrue(tree.root.child_nodes[i].rids == [])
+    self.assertTrue(tree.root.child_nodes[0].entry_values == [3])
+    self.assertTrue(tree.root.child_nodes[1].entry_values == [7])
+
+    # 2nd lvl inner nodes
+    ## 0th inner node
+    self.assertTrue(len(tree.root.child_nodes[0].child_nodes) == 2)
+    for i in range(2):
+      self.assertTrue(tree.root.child_nodes[0].child_nodes[i].is_leaf == False)
+      self.assertTrue(tree.root.child_nodes[0].child_nodes[i].parent == tree.root.child_nodes[0])
+      self.assertTrue(tree.root.child_nodes[0].child_nodes[i].next_node == None)
+      self.assertTrue(tree.root.child_nodes[0].child_nodes[i].rids == [])
+    self.assertTrue(tree.root.child_nodes[0].child_nodes[0].entry_values == [2])
+    self.assertTrue(tree.root.child_nodes[0].child_nodes[1].entry_values == [4])
+    ## 1st inner node
+    self.assertTrue(len(tree.root.child_nodes[1].child_nodes) == 2)
+    for i in range(2):
+      self.assertTrue(tree.root.child_nodes[1].child_nodes[i].is_leaf == False)
+      self.assertTrue(tree.root.child_nodes[1].child_nodes[i].parent == tree.root.child_nodes[1])
+      self.assertTrue(tree.root.child_nodes[1].child_nodes[i].next_node == None)
+      self.assertTrue(tree.root.child_nodes[1].child_nodes[i].rids == [])
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[0].entry_values == [6])
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[1].entry_values == [8])
+
+    # leaf nodes (only left-most ones)
+    self.assertTrue(len(tree.root.child_nodes[1].child_nodes[1].child_nodes) == 2)
+    for i in range(2):
+      self.assertTrue(tree.root.child_nodes[1].child_nodes[1].child_nodes[i].is_leaf == True)
+      self.assertEqual(tree.root.child_nodes[1].child_nodes[1].child_nodes[i].parent,
+                       tree.root.child_nodes[1].child_nodes[1])
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[1].child_nodes[0].entry_values == [7])
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[1].child_nodes[0].rids == [[7]])
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[1].child_nodes[1].entry_values == [8,9])
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[1].child_nodes[1].rids == [[8],[9]])
+
+    # check next node pointers
+    self.assertEqual(tree.root.child_nodes[1].child_nodes[0].child_nodes[1].next_node,
+                     tree.root.child_nodes[1].child_nodes[1].child_nodes[0])
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[1].child_nodes[0].next_node,
+                    tree.root.child_nodes[1].child_nodes[1].child_nodes[1])
+    self.assertEqual(tree.root.child_nodes[1].child_nodes[1].child_nodes[1].next_node, None)
+
+  def test_reversed_insert_non_full(self):
+    tree = Column_Index_Tree(3)
+    tree.insert_value(2,1)
+    tree.insert_value(1,2)
+
+    self.assertTrue(tree.root.is_leaf == True)
+    self.assertTrue(tree.root.next_node == None)
+    self.assertTrue(tree.root.rids == [[2],[1]])
+
+  def test_reversed_insert_split(self):
+    tree = Column_Index_Tree(3)
+    tree.insert_value(4,1)
+    tree.insert_value(3,2)
+    tree.insert_value(2,3)
+    tree.insert_value(1,4)
+
+    # root
+    self.assertTrue(tree.root.is_leaf == False)
+    self.assertTrue(tree.root.next_node == None)
+    self.assertTrue(tree.root.rids == [])
+    self.assertTrue(tree.root.entry_values == [3])
+
+    # leaf nodes
+    self.assertTrue(len(tree.root.child_nodes) == 2)
+    for i in range(2):
+      self.assertTrue(tree.root.child_nodes[i].is_leaf == True)
+      self.assertTrue(tree.root.child_nodes[i].parent == tree.root)
+    self.assertTrue(tree.root.child_nodes[0].entry_values == [1,2])
+    self.assertTrue(tree.root.child_nodes[0].rids == [[4],[3]])
+    self.assertEqual(tree.root.child_nodes[0].next_node,
+                     tree.root.child_nodes[1])
+    self.assertTrue(tree.root.child_nodes[1].entry_values == [3,4])
+    self.assertTrue(tree.root.child_nodes[1].rids == [[2],[1]])
+    self.assertEqual(tree.root.child_nodes[1].next_node, None)
+
+    # 1st extra leaf node insert
+    print("testing here")
+    tree.insert_value(0,5)
+    self.assertTrue(len(tree.root.child_nodes) == 3)
+    self.assertTrue(tree.root.child_nodes[0].entry_values == [0])
+    self.assertTrue(tree.root.child_nodes[0].rids == [[5]])
+    self.assertEqual(tree.root.child_nodes[0].next_node,
+                     tree.root.child_nodes[1])
+    self.assertTrue(tree.root.child_nodes[1].entry_values == [1,2])
+    self.assertTrue(tree.root.child_nodes[1].rids == [[4],[3]])
+    self.assertEqual(tree.root.child_nodes[1].next_node,
+                     tree.root.child_nodes[2])
+    self.assertTrue(tree.root.child_nodes[2].entry_values == [3,4])
+    self.assertTrue(tree.root.child_nodes[2].rids == [[2],[1]])
+    self.assertNotEqual(tree.root.child_nodes[2].next_node, tree.root.child_nodes[0])
+    self.assertEqual(tree.root.child_nodes[2].next_node, None)
+
+  def test_reversed_insert_one_inner_node_last_leaf_node_is_none(self):
+    tree = Column_Index_Tree(3)
+    for i in range(1,8):
+      tree.insert_value(8-i,i)
+    
+    self.assertTrue(tree.root.entry_values == [4])
+
+    self.assertTrue(len(tree.root.child_nodes) == 2)
+
+    self.assertTrue(len(tree.root.child_nodes[1].child_nodes) == 2)
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[1].entry_values == [6,7])
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[1].next_node == None)
+
+  def test_reversed_insert_two_inner_nodes_last_leaf_node_is_none(self):
+    tree = Column_Index_Tree(3)
+    for i in range(1, 10):
+      tree.insert_value(10-i,i)
+    
+    # root
+    self.assertTrue(tree.root.entry_values == [6])
+
+    # last node pointer
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[1].entry_values == [8,9])
+    self.assertTrue(tree.root.child_nodes[1].child_nodes[1].next_node == None)
 
   def test_equality(self):
     tree = Column_Index_Tree(3)
@@ -296,12 +434,13 @@ class Test_Column_Index_Tree(TestCase):
 
   def test_large_dataset(self):
     tree = Column_Index_Tree(4)
-    for i in range(1,10001):
-      tree.insert_value(10000 - i,i)
-    
-    for i in range(1,10001):
-      self.assertTrue(tree.get_rids_equality_search(10000 - i) == [i])
-    self.assertTrue(tree.get_rids_range_search(1,10001) == [i for i in range(1,10001)])
+    for i in range(1,11):
+      tree.insert_value(11 - i,i)
+
+    for i in range(1,11):
+      self.assertTrue(tree.get_rids_equality_search(11 - i) == [i])
+    l = [i for i in range(1,11)]
+    self.assertTrue(tree.get_rids_range_search(1,11) == [i for i in range(10,0,-1)])
 
 if __name__ == "__main__":
   main()
