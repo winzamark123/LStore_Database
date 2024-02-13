@@ -4,3 +4,6 @@ class Record:
         self.rid = rid
         self.key = key
         self.columns = columns
+    
+    def get_values(self):
+        return self.columns

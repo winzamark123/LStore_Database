@@ -69,7 +69,7 @@ class Query:
     # Returns False if record locked by TPL
     # Assume that select will never be called on a key that doesn't exist
     """
-    def select(self, search_key: int, search_key_index: int, projected_columns_index: list):
+    def select(self, search_key: int, search_key_index: int, projected_columns_index: list) -> Record:
         #search key: SID 
         #search_key_index: 0 (the column that the SID resides in)
         #projected_columns_index: what columns you want to show 
@@ -89,6 +89,7 @@ class Query:
             page_range_num = address[0]  # get the first element of the tuple
             cur_page_range = self.table.page_directory[page_range_num]
             record = cur_page_range.return_record(rid)
+            print("RECORD", record.get_values())
             records.append(record)
 
         print("SELECTED RECORDS", records)
