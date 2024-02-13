@@ -72,38 +72,48 @@ UPDATE A CERTAIN RECORD
 """
 print("\n\nUpdating Some Records!!!\n\n")
 
-# Measuring update Performance
-update_cols = [
-    [None, None, None, None, None],
-    [None, randrange(0, 100), None, None, None],
-    [None, None, randrange(0, 100), None, None],
-    [None, None, None, randrange(0, 100), None],
-    [None, None, None, None, randrange(0, 100)],
-]
-
-
-amount_of_records = 512 * len(page_range.base_pages)
-update_time_0 = process_time()
-
-# Keep track of the number of records updated
-records_updated = 0 
-
-# updates record
-while records_updated < amount_of_records:
-    update_rid = randint(1,512 * base_page_amount)
-    update_columns = choice(update_cols)
-    page_range.update(rid=update_rid, columns_of_update=update_columns)
-    x = update_rid
-    records_updated += 1
-
-update_time_1 = process_time()
-
-print(f"Updating {records_updated} records took:  \t\t\t", update_time_1 - update_time_0)
-
+page_range.update(2,[None, None, 0, None, None])
+page_range.update(2,[None, None, 2, None, None])
 
 # return record wanted
-return_record = page_range.return_record(x)
+return_record = page_range.return_record(2)
 
 print(f'RID: {return_record.rid}')
 print(f'KEY: {return_record.key}')
 print(f'GRADES: {return_record.columns}')
+
+# # Measuring update Performance
+# update_cols = [
+#     [None, None, None, None, None],
+#     [None, randrange(0, 100), None, None, None],
+#     [None, None, randrange(0, 100), None, None],
+#     [None, None, None, randrange(0, 100), None],
+#     [None, None, None, None, randrange(0, 100)],
+# ]
+
+
+# amount_of_records = 512 * len(page_range.base_pages)
+# update_time_0 = process_time()
+
+# # Keep track of the number of records updated
+# records_updated = 0 
+
+# # updates record
+# while records_updated < amount_of_records:
+#     update_rid = randint(1,512 * base_page_amount)
+#     update_columns = choice(update_cols)
+#     page_range.update(rid=update_rid, columns_of_update=update_columns)
+#     x = update_rid
+#     records_updated += 1
+
+# update_time_1 = process_time()
+
+# print(f"Updating {records_updated} records took:  \t\t\t", update_time_1 - update_time_0)
+
+
+# # return record wanted
+# return_record = page_range.return_record(x)
+
+# print(f'RID: {return_record.rid}')
+# print(f'KEY: {return_record.key}')
+# print(f'GRADES: {return_record.columns}')

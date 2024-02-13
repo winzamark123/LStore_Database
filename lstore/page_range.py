@@ -64,6 +64,7 @@ class Page_Range:
 
         # if list passed is full of None, then no update needs to happen
         if none_counter == 5:
+            print('List is full of Nones')
             return True
 
 
@@ -84,8 +85,6 @@ class Page_Range:
 
         # list of the the updated columns in tail record using the schema encoding
         list_of_columns_updated_2 = self.analyze_schema_encoding(new_schema_encoding)
-        print(list_of_columns_updated_2)
-
 
         # update TID 
         self.inc_tid()
@@ -110,7 +109,6 @@ class Page_Range:
 
             # list of the the updated columns in tail record using the schema encoding
             list_of_columns_updated = self.analyze_schema_encoding(schema_encoding_tail_value)
-            print(list_of_columns_updated)
 
             update_list = [None] * 5 # Initialize update_list with five None values
 
@@ -222,7 +220,7 @@ class Page_Range:
             schema_encoding = ''
             for item in columns:
                 # if value in column is not 'None' add 1
-                if item:
+                if item or item == 0:
                     schema_encoding = schema_encoding + '1'
                 # else add 0
                 else:
