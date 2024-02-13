@@ -94,9 +94,9 @@ class Page_Range:
         # update TID 
         self.inc_tid()
 
-        print(f"Updating for RID: {rid}")
-        print(f"Indirection for RID: {indirection_base_value}")
-        print(f"Incremented tid: {self.tid}")
+        # print(f"Updating for RID: {rid}")
+        # print(f"Indirection for RID: {indirection_base_value}")
+        # print(f"Incremented tid: {self.tid}")
 
         # checks if tail page has enough capacity
         if not self.tail_pages[-1].has_capacity(): 
@@ -175,7 +175,7 @@ class Page_Range:
         # gets base page number the RID is in
         base_page_number = self.get_page_number(rid)
 
-        print(rid)
+        # print(rid)
         # base page that has RID 
         base_page_to_work = self.search_list(self.base_pages, base_page_number, 1)
 
@@ -240,7 +240,7 @@ class Page_Range:
         # print(f'Page list: {page_list}')
         
         for page in page_list:
-            print(f'{page.page_number} == {page_number}')
+            # print(f'{page.page_number} == {page_number}')
             if page.page_number == page_number:
                 page_to_work = page
                 return page_to_work

@@ -16,6 +16,7 @@ class Table:
         self.key_column = META_DATA_NUM_COLUMNS + key_index
         self.deleted_rids = []
         self.index = Index(num_columns, ORDER_CHOICE)
+        self.key_column_index = key_index
 
         # number of base records 
         self.num_base_records = 0

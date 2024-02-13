@@ -89,13 +89,13 @@ class Query:
         records = [] # list of records
 
         for rid, address in zip(rids, addresses): #zip the rids and addresses together iterating through both
-            print("RID", rid)
-            print("ADDRESS", address)
+            # print("RID", rid)
+            # print("ADDRESS", address)
 
             page_range_num = address[0]  # get the first element of the tuple
             cur_page_range = self.table.page_directory[page_range_num]
             
-            print("PAGE_RANGE_NUM", page_range_num)
+            # print("PAGE_RANGE_NUM", page_range_num)
             
             record_data = cur_page_range.return_record(rid)
 
@@ -133,9 +133,21 @@ class Query:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, primary_key, *columns):
-        #insert but for the TailPage
-        #increment in PageRange 
-        pass
+        rid = self.table.index.locate(primary_key, self.table.key_column_index)
+
+        #checks if rid exists
+        if rid:
+            #
+            column_list = list(columns)
+            address = self.table.get_list_of_addresses(rid)
+            rid = rid[0]
+            
+            #updates here
+            self.table.page_directory[address[0][0]].update(rid,column_list)
+            return True
+
+        else:
+            return False
 
     
     """
@@ -146,8 +158,36 @@ class Query:
     # Returns the summation of the given range upon success
     # Returns False if no record exists in the given range
     """
-    def sum(self, start_range, end_range, aggregate_column_index):
-        pass
+    def sum(self, start_range: int, end_range: int, aggregate_column_index: int):
+        total_sum = 0
+        # get RIDs from the start_range key 
+        startRID = self.table.index.locate(start_range, self.table.key_index)
+
+        # get RIDs from the end_range key
+        endRID = self.table.index.locate(end_range, self.table.key_index)
+
+        print("Range LIST", start_range, end_range)
+        print("RID LIST", startRID, endRID)
+
+        range_of_rids = endRID[0] - startRID[0]
+        for i in range(range_of_rids):
+            startingKey = start_range + i
+            selected_records = self.select(startingKey, 0, [1] * self.table.num_columns)
+
+            # print("SELECTED RECORDS", selected_records) 
+            # Check if any records were returned
+            if selected_records:
+                # Assuming the first record is the one we're interested in
+                # and it has a method get_values() that returns all values including the key as the first item
+                record_values = selected_records[0].get_values()
+                
+                # Ensure the aggregate column index is within bounds of the record's values
+                if 0 <= aggregate_column_index < len(record_values):
+                    # Add the value from the specified column to the total sum
+                    total_sum += record_values[aggregate_column_index]
+        
+        return total_sum
+
 
     
     """
