@@ -21,21 +21,7 @@ class Query:
     # Return False if record doesn't exist or is locked due to 2PL
     """
     def delete(self, primary_key)->bool:
-        #Convert the primary_key to RID with Indexing
-        rids = self.table.index.locate(primary_key, self.table.key)
-        print("DELETING RIDS", rids)
-
-        #GET Page_RANGE and Base_page from get_address in table.py
-        addresses = [] #list of addresses (page_range_num, base_page_num)
-        addresses = self.table.get_list_of_addresses(rids)
-
-        for (page_range_num, base_page_num) in addresses:
-            cur_page_range = self.table.page_directory[page_range_num]
-            cur_base_page = cur_page_range.base_pages[base_page_num]
-            cur_base_page.delete_record(rids[addresses.index((page_range_num, base_page_num))])
-
-
-        return True #if deleteSuccess else False
+        pass
     
     
     """
@@ -98,18 +84,11 @@ class Query:
         addresses = []
         addresses = self.table.get_list_of_addresses(rids) #list of addresses (page_range_num, base_page_num)
 
-        # Get record_with_rid from Base_page using table.py
         records = []
-        for address in addresses:
-            cur_page_range = self.table.page_directory[address[0]]
-            cur_base_page = cur_page_range.base_pages[address[1]]
-            
-            #Change get_record_with_rid (with Diego's Push)
-            record = cur_base_page.get_record_with_rid(rids[addresses.index(address)])
-
-            # Filter the record's columns based on projected_columns_index
-            # filtered_record = [col for i, col in enumerate(record) if projected_columns_index[i] == 1]
-            # records.append(filtered_record)
+        for rid, address in zip(rids, addresses):
+            page_range_num = address[0]  # get the first element of the tuple
+            cur_page_range = self.table.page_directory[page_range_num]
+            record = cur_page_range.return_record(rid)
             records.append(record)
 
         print("SELECTED RECORDS", records)
