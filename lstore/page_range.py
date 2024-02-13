@@ -19,6 +19,10 @@ class Page_Range:
         # self.tail_pages = []
 
         self.tid = 0 # tid (rid) for tail records - decrease by 1 once a record is added or updated (for tails records)
+
+        self.amount_tail_pages = 1
+
+        self.tail_pages[0].page_number = 1
         
 
     # checks if the page range has capacity for more records
@@ -40,9 +44,6 @@ class Page_Range:
         # checks the last base page in the base page list to see if it's full
         if not self.base_pages[-1].has_capacity():   
             self.base_pages.append(Base_Page(self.num_columns, self.entry_size_for_columns, self.key_column))
-            print("Function: insert_base_page()")
-            print("Total base pages in page range: ", len(self.base_pages))
-            print("===============================")
             return True
         
         # failed to insert a new base page
@@ -50,15 +51,12 @@ class Page_Range:
     
     # insert a new tail page to the page range
     def insert_tail_pages(self)->None:
+        self.amount_tail_pages += 1
         self.tail_pages.append(Tail_Page(self.num_columns, self.entry_size_for_columns, self.key_column))
-        print("Function: insert_tail_page()")
-        print("Total tail pages in page range: ", len(self.tail_pages))
-        print("===============================")
+        self.tail_pages[self.amount_tail_pages - 1].page_number = self.amount_tail_pages
 
     # updates record
     def update(self, rid:int, columns_of_update:list)->bool:
-        
-        # print("\t\t\n\nNewUpdate!!")
 
         # uses a copy of the list
         columns_of_update_copy = columns_of_update.copy()
@@ -94,13 +92,9 @@ class Page_Range:
         # update TID 
         self.inc_tid()
 
-        print(f"Updating for RID: {rid}")
-        print(f"Indirection for RID: {indirection_base_value}")
-        print(f"Incremented tid: {self.tid}")
-
         # checks if tail page has enough capacity
         if not self.tail_pages[-1].has_capacity(): 
-                print("Inserted a Tail Page")
+                #print("Inserted a Tail Page")
                 self.insert_tail_pages() 
 
         # checks if the base record indirection is pointing to itself
@@ -109,10 +103,7 @@ class Page_Range:
         # else it's pointing to a tail record
         else:
             # gets tail page number the TID is in
-            print("INDIRECTION BASE VALUE:", indirection_base_value)
-            print("TAIL PAGE SIZE", len(self.tail_pages))
             tail_page_number = self.get_page_number(indirection_base_value)
-            print("TAIL PAGE NUMBER:", tail_page_number)
 
             # tail page TID is in
             tail_page_to_work = self.search_list(self.tail_pages, tail_page_number, 0)
@@ -136,7 +127,6 @@ class Page_Range:
             for i, item in enumerate(columns_of_update_copy):
                 if isinstance(item, int):
                     update_list[i] = item
-
 
             # inserts new tail record with previous tail record data (Cumulative)
             self.insert_tail_record(self.tid, new_schema_encoding, indirection_base_value, update_list)
@@ -185,7 +175,6 @@ class Page_Range:
         indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
 
         if indirection_base_value == 0:
-            print("Record was deleted")
             return
 
         # retrieves schema encoding value for rid
@@ -241,9 +230,6 @@ class Page_Range:
 
     # search base and tail pages list to find the page we are going to use  
     def search_list(self, page_list:list, page_number:int, type_of_list:int)->Page:
-        # print(f'Page number: {page_number}')
-        # print(f'Type of list: {type_of_list}')
-        # print(f'Page list: {page_list}')
         
         for page in page_list:
             if page.page_number == page_number:

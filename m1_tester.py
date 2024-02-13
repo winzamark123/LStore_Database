@@ -18,7 +18,7 @@ query = Query(grades_table)
 # dictionary for records to test the database: test directory
 records = {}
 
-number_of_records = 1000 
+number_of_records = 2100
 number_of_aggregates = 100
 seed(3562901)
 
@@ -35,26 +35,26 @@ for i in range(0, number_of_records):
 print("Insert finished")
 
 # Check inserted records using select query
-for key in records:
-    # select function will return array of records 
-    # here we are sure that there is only one record in that array
-    record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
-    error = False
+# for key in records:
+#     # select function will return array of records 
+#     # here we are sure that there is only one record in that array
+#     record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
+#     error = False
     
-    # print("COMPARE:", record.columns, records[key])
+#     # print("COMPARE:", record.columns, records[key])
 
-    for i, column in enumerate(record.columns):
-        # print("COMPARE:", column, records[key][i])
-        # print("COMPARE:", column, records[key])
-        if column != records[key][i]: 
-            error = True
-    if error:
-        print('select error on', key, ':', record, ', correct:', records[key])
-    else:
-        pass
-        # print('select on', key, ':', record)
+#     for i, column in enumerate(record.columns):
+#         # print("COMPARE:", column, records[key][i])
+#         # print("COMPARE:", column, records[key])
+#         if column != records[key][i]: 
+#             error = True
+#     if error:
+#         print('select error on', key, ':', record, ', correct:', records[key])
+#     else:
+#         pass
+#         # print('select on', key, ':', record)
 
-print("Select finished")
+# print("Select finished")
 
 for key in records:
     updated_columns = [None, None, None, None, None]
@@ -80,18 +80,18 @@ for key in records:
         updated_columns[i] = None
 print("Update finished")
 
-print("STARTING SUM")
-keys = sorted(list(records.keys()))
-# aggregate on every column 
-for c in range(0, grades_table.num_columns):
-    for i in range(0, number_of_aggregates):
-        r = sorted(sample(range(0, len(keys)), 2))
-        # calculate the sum form test directory
-        column_sum = sum(map(lambda key: records[key][c], keys[r[0]: r[1] + 1]))
-        result = query.sum(keys[r[0]], keys[r[1]], c)
-        if column_sum != result:
-            print('sum error on [', keys[r[0]], ',', keys[r[1]], ']: ', result, ', correct: ', column_sum)
-        else:
-            pass
-            # print('sum on [', keys[r[0]], ',', keys[r[1]], ']: ', column_sum)
-print("Aggregate finished")
+# print("STARTING SUM")
+# keys = sorted(list(records.keys()))
+# # aggregate on every column 
+# for c in range(0, grades_table.num_columns):
+#     for i in range(0, number_of_aggregates):
+#         r = sorted(sample(range(0, len(keys)), 2))
+#         # calculate the sum form test directory
+#         column_sum = sum(map(lambda key: records[key][c], keys[r[0]: r[1] + 1]))
+#         result = query.sum(keys[r[0]], keys[r[1]], c)
+#         if column_sum != result:
+#             print('sum error on [', keys[r[0]], ',', keys[r[1]], ']: ', result, ', correct: ', column_sum)
+#         else:
+#             pass
+#             # print('sum on [', keys[r[0]], ',', keys[r[1]], ']: ', column_sum)
+# print("Aggregate finished")

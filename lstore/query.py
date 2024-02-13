@@ -46,7 +46,7 @@ class Query:
 
         #Check if the latest page_range has capacity
         if  latest_page_range.has_capacity() == False:
-            print("INSERT: PAGE_RANGE IS FULL")
+            #print("INSERT: PAGE_RANGE IS FULL")
             self.table.insert_page_range()
             latest_page_range = self.table.page_directory[-1]
 
@@ -54,7 +54,7 @@ class Query:
 
         #Check if the latest base_page has capacity
         if latest_page_range.base_pages[-1].has_capacity() == False:
-            print("INSERT: BASE_PAGE IS FULL")
+            #print("INSERT: BASE_PAGE IS FULL")
             self.table.page_directory[-1].insert_base_page()
             latest_base_page = latest_page_range.base_pages[-1]
 

@@ -42,7 +42,7 @@ class Physical_Page:
         # Convert integer to (entry_size) bytes
         value_bytes = int.to_bytes(value, self.entry_size, byteorder='big', signed=True)
         self.data[start:end] = value_bytes
-        print(f'Inserted value ({value}) in page ({self.column_number}) into Bytes ({start} - {end})')
+        #print(f'Inserted value ({value}) in page ({self.column_number}) into Bytes ({start} - {end})')
 
         # Increment num_records only if update is False
         if not update:
@@ -52,7 +52,7 @@ class Physical_Page:
 
     # checks if a value is in physical page
     def check_value_in_page(self, value_to_find:int, rid:int)->bool:
-        print('\nFunction: check_value_in_page')
+        #print('\nFunction: check_value_in_page')
         offset = self.get_offset(rid)
         start = offset
         end = start + self.entry_size
@@ -62,10 +62,10 @@ class Physical_Page:
 
         # if value in entry_bytes match value we're trying to find, then we print that we found it (we can change it to return True or false)
         if(entry_value == value_to_find):
-            print(f"Value {entry_value} was found at Bytes ({start} - {end})")
+            #print(f"Value {entry_value} was found at Bytes ({start} - {end})")
             return True
         else:
-            print(f"value {entry_value} was not found at Bytes ({start} - {end})")
+            #print(f"value {entry_value} was not found at Bytes ({start} - {end})")
             return False
 
     def value_exists_at_bytes(self, rid:int)->int:
@@ -183,7 +183,7 @@ class Page:
         # grabs rid page
         rid_page = self.get_rid_page()
 
-        print(f'RID ({rid} getting inserted)')
+        #print(f'RID ({rid} getting inserted)')
         # checks if RID exists)
         if(rid_page.check_value_in_page(rid,rid) == False): 
 
@@ -231,7 +231,7 @@ class Page:
                 # gets page which corresponds to each column
                 page_to_write = self.get_page(column_number=column_num) 
                 page_to_write.write_to_physical_page(value=column_data, rid=rid)
-            print("\nRecord Inserted!")
+            #print("\nRecord Inserted!")
             self.num_records += 1
             return True
         else:
@@ -283,7 +283,7 @@ class Page:
     def has_capacity(self)->bool:
     # checks if page is full
         if self.num_records >= RECORDS_PER_PAGE:
-            print(f'Page is full of records on base_page ({self.page_number})')
+            #print(f'Page is full of records on base_page ({self.page_number})')
             return False
         
         return True
