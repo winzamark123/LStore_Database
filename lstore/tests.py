@@ -1,5 +1,6 @@
 from unittest import TestCase, main
-from index import Column_Index_Tree
+from random import choice, randint, sample, seed
+from index import Index, Column_Index_Tree
 
 # NOTE: you have to start your functions w/ 'test_'
 # link about it: https://www.freecodecamp.org/news/how-to-write-unit-tests-for-python-functions/#:~:text=Each%20of%20the%20tests%20that,methods%20should%20start%20with%20test_%20.
@@ -82,17 +83,6 @@ class Test_Column_Index_Tree(TestCase):
                      tree.root.child_nodes[2])
     self.assertEqual(tree.root.child_nodes[2].next_node,
                      None)
-
-  # def test_full_root_reverse(self):
-  #   tree = Column_Index_Tree(3)
-  #   for i in range(1, 5):
-  #     print("working on", i)
-  #     tree.insert_value(5-i,i)
-
-  #   # root
-  #   print(tree.root.entry_values)
-  #   self.assertTrue(tree.root.entry_values == [3])
-  #   self.assertTrue(tree.)
 
   def test_one_inner_level(self):
     tree = Column_Index_Tree(3)
@@ -333,7 +323,7 @@ class Test_Column_Index_Tree(TestCase):
     tree = Column_Index_Tree(3)
     for i in range(1,8):
       tree.insert_value(8-i,i)
-    
+
     self.assertTrue(tree.root.entry_values == [4])
 
     self.assertTrue(len(tree.root.child_nodes) == 2)
@@ -346,7 +336,7 @@ class Test_Column_Index_Tree(TestCase):
     tree = Column_Index_Tree(3)
     for i in range(1, 10):
       tree.insert_value(10-i,i)
-    
+
     # root
     self.assertTrue(tree.root.entry_values == [6])
 
@@ -441,6 +431,35 @@ class Test_Column_Index_Tree(TestCase):
       self.assertTrue(tree.get_rids_equality_search(11 - i) == [i])
     l = [i for i in range(1,11)]
     self.assertTrue(tree.get_rids_range_search(1,11) == [i for i in range(10,0,-1)])
+
+  def test_identified_sum_error(self):
+    SEED_VAL = 3562901
+    NUM_RECORDS = 1000
+    NUM_COLUMNS = 5
+    ORDER = 4
+
+    index = Index(NUM_COLUMNS, ORDER)
+    records_dict = dict()
+    rids_dict = dict()
+
+    seed(SEED_VAL)
+    rid_val = 1
+    for _ in range(NUM_RECORDS):
+      key = 92106429 + randint(0, NUM_RECORDS)
+      while key in records_dict:
+        key = 92106429 + randint(0, NUM_RECORDS)
+      records_dict[key] = [key, randint(0, 20), randint(0, 20), randint(0, 20), randint(0, 20)]
+      rids_dict[rid_val] = key 
+      for i, entry_val in enumerate(records_dict[key]):
+        index.indices[i].insert_value(entry_val, rid_val)
+      rid_val += 1
+
+    LOWER_BOUND = 92106481
+    UPPER_BOUND = 92106818
+    rids = index.indices[0].get_rids_range_search(LOWER_BOUND, UPPER_BOUND)
+    for rid in rids:
+      self.assertTrue(LOWER_BOUND <= rids_dict[rid] and rids_dict[rid] <= UPPER_BOUND)
+
 
 if __name__ == "__main__":
   main()
