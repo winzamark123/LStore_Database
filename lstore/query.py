@@ -78,28 +78,24 @@ class Query:
         #Convert SID to RID with Indexing
         rids = [] #list of rids
         rids = self.table.index.locate(search_key, search_key_index) #list of rids (page_range_num, base_page_num, record_num
-        print("SELECTED RIDS", rids)
 
         #GET Page_RANGE and Base_page from get_address in table.py
         addresses = []
         addresses = self.table.get_list_of_addresses(rids) #list of addresses (page_range_num, base_page_num)
 
-        records = []
-        for rid, address in zip(rids, addresses):
+        #GET RECORDS
+        records = [] # list of records
+        for rid, address in zip(rids, addresses): #zip the rids and addresses together iterating through both
             page_range_num = address[0]  # get the first element of the tuple
             cur_page_range = self.table.page_directory[page_range_num]
             record_data = cur_page_range.return_record(rid)
 
-            record_data_key = record_data.get_key()
-            record_data_values = record_data.get_values()
-            record = Record(rid, record_data_key, record_data_values)
-            print("RECORD RID", record.rid)
-            print("RECORD KEY", record.key)
-            print("RECORD VALUES", record.get_values())
+            record_data_key = record_data.get_key() #get the key of the record
+            record_data_values = record_data.get_values() #get the values of the record
 
+            record = Record(rid, record_data_key, record_data_values) #create a new record object
             records.append(record)
 
-        print("SELECTED RECORDS", records)
         return records
 
     
