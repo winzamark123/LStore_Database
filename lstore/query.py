@@ -88,13 +88,21 @@ class Query:
         for rid, address in zip(rids, addresses):
             page_range_num = address[0]  # get the first element of the tuple
             cur_page_range = self.table.page_directory[page_range_num]
-            record = cur_page_range.return_record(rid)
-            print("RECORD", record.get_values())
+            record_data = cur_page_range.return_record(rid)
+
+            record_data_key = record_data.get_key()
+            record_data_values = record_data.get_values()
+            record = Record(rid, record_data_key, record_data_values)
+            print("RECORD RID", record.rid)
+            print("RECORD KEY", record.key)
+            print("RECORD VALUES", record.get_values())
+
             records.append(record)
 
         print("SELECTED RECORDS", records)
-
         return records
+
+    
 
 
     

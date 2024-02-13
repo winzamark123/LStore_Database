@@ -5,5 +5,8 @@ class Record:
         self.key = key
         self.columns = columns
     
+    def get_key(self):
+        return self.key
+    
     def get_values(self):
-        return self.columns
+        return (self.key,) + tuple(self.columns)

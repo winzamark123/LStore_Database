@@ -40,14 +40,21 @@ for key in records:
     # here we are sure that there is only one record in that array
     record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
     error = False
+    
+    # print("COMPARE:", record.columns, records[key])
+
     for i, column in enumerate(record.columns):
-        if column != records[key][i]:
+        # print("COMPARE:", column, records[key][i])
+        # print("COMPARE:", column, records[key])
+        if column != records[key][i]: 
             error = True
     if error:
         print('select error on', key, ':', record, ', correct:', records[key])
     else:
         pass
         # print('select on', key, ':', record)
+
+print("Select finished")
 
 # for key in records:
 #     updated_columns = [None, None, None, None, None]
