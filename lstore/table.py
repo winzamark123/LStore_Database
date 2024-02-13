@@ -57,6 +57,6 @@ class Table:
     def insert_page_range(self)-> bool:
         if not self.page_directory[-1].has_capacity():
             self.page_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column))
-            print("Function: insert_page_range(), Total page ranges: ", len(self.page_directory))
+            #print("Function: insert_page_range(), Total page ranges: ", len(self.page_directory))
             return True
         return False 

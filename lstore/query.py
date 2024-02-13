@@ -46,7 +46,7 @@ class Query:
 
         #Check if the latest page_range has capacity
         if  latest_page_range.has_capacity() == False:
-            print("INSERT: PAGE_RANGE IS FULL")
+            #print("INSERT: PAGE_RANGE IS FULL")
             self.table.insert_page_range()
             latest_page_range = self.table.page_directory[-1]
 
@@ -54,7 +54,7 @@ class Query:
 
         #Check if the latest base_page has capacity
         if latest_page_range.base_pages[-1].has_capacity() == False:
-            print("INSERT: BASE_PAGE IS FULL")
+            #print("INSERT: BASE_PAGE IS FULL")
             self.table.page_directory[-1].insert_base_page()
             latest_base_page = latest_page_range.base_pages[-1]
 
@@ -144,21 +144,19 @@ class Query:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, primary_key, *columns):
-        rid = self.table.index.locate(primary_key, self.table.key_column_index)
+        rids = self.table.index.locate(primary_key, self.table.key_column_index)
+        addresses = self.table.get_list_of_addresses(rids) 
 
-        #checks if rid exists
-        if rid:
-            #
-            column_list = list(columns)
-            address = self.table.get_list_of_addresses(rid)
-            rid = rid[0]
-            
-            #updates here
-            self.table.page_directory[address[0][0]].update(rid,column_list)
-            return True
+        columns_as_list = list(columns)
 
-        else:
-            return False
+        for rid, address in zip(rids, addresses):
+            page_range_num = address[0]
+            cur_page_range = self.table.page_directory[page_range_num]
+            cur_page_range.update(rid, columns_as_list)
+
+        return True
+
+     
 
     
     """
