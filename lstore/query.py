@@ -168,36 +168,30 @@ class Query:
     # Returns False if no record exists in the given range
     """
 
-    def sum_new(self, start_range, end_range, aggregate_column_index):
+    def sum(self, start_range, end_range, aggregate_column_index):
+        #FOR MILESTONE 2 IMPLEMENTATION: think about accessing the base page column itself and iterate through that directly, need to be able to handle 
+        #ranges that span multiple page ranges
+
         rids = self.table.index.locate_range(start_range,end_range, 0)
         addresses = self.table.get_list_of_addresses(rids)
         sum = 0
 
+
+        #
         if rids:
-            if aggregate_column_index == 0:
-                for i in range(len(addresses)):
-                    sum += self.table.page_directory[addresses[i][0]].return_record(rids[i]).key
+            for i in range(len(addresses)):
+                sum += self.table.page_directory[addresses[i][0]].return_column_value(rids[i], aggregate_column_index)
         
-                return sum
+            return sum
             
-            else:
-                for i in range(len(addresses)):
-                    sum += self.table.page_directory[addresses[i][0]].return_record(rids[i]).columns[aggregate_column_index-1]
-            
-                return sum
         else:
             return False
 
         
     
-    def sum(self, start_range, end_range, aggregate_column_index):
+    def sum_old(self, start_range, end_range, aggregate_column_index):
         # TO DO: change this and try to use locate_range, double check on array pointers 
         
-        
-
-
-
-
         sum = 0
         array = []
         checker = False

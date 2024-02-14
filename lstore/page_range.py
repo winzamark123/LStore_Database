@@ -249,14 +249,14 @@ class Page_Range:
         list_of_columns_updated_1 = self.analyze_schema_encoding(schema_encoding_base_value)
 
         if column_number in list_of_columns_updated_0:
-            print("In base record")
+            #print("In base record")
             return base_page_to_work.get_value_at_column(rid,column_number)
 
         if column_number in list_of_columns_updated_1:
-            print("In tail record")
+            #print("In tail record")
             # retrieves indirection value for rid
             indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
-            print(indirection_base_value)
+            #print(indirection_base_value)
 
             if indirection_base_value == 0:
                 return
@@ -267,7 +267,7 @@ class Page_Range:
             # tail page TID is in
             tail_page_to_work = self.search_list(self.tail_pages, tail_page_number, 0)
 
-            print(tail_page_to_work.get_page(column_number).value_exists_at_bytes(indirection_base_value))
+            #print(tail_page_to_work.get_page(column_number).value_exists_at_bytes(indirection_base_value))
 
             return tail_page_to_work.get_value_at_column(indirection_base_value,column_number)
 
