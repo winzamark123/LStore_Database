@@ -45,6 +45,7 @@ class Column_Index_Node:
 
         self.parent:Column_Index_Node            = None
         self.next_node:Column_Index_Node         = None
+        self.prev_node:Column_Index_Node         = None
         self.is_leaf:bool                        = True
 
     def insert_value_in_node(self, entry_value, rid:int):
@@ -84,11 +85,23 @@ class Column_Index_Node:
         # set next node pointers
         left_node.next_node = right_node
         right_node.next_node = self.next_node
+        if (self.next_node):
+            self.next_node.prev_node = right_node
+        left_node.prev_node = self.prev_node
+        if (self.prev_node):
+            self.prev_node.next_node = left_node
+        right_node.prev_node = left_node
 
         # split entry values
         left_node.entry_values = self.entry_values[:mid]
         right_node.entry_values = self.entry_values[mid:]
         self.entry_values = [self.entry_values[mid]]
+
+        print("self", self.entry_values)
+        print("left node", left_node.entry_values)
+        print("\tpointers", left_node.prev_node, left_node.next_node)
+        print("right node", right_node.entry_values)
+        print("\tpointers", right_node.prev_node, right_node.next_node)
 
         # split RIDs
         left_node.rids = self.rids[:mid]
@@ -101,6 +114,8 @@ class Column_Index_Node:
         self.child_nodes = [left_node, right_node]
 
     def split_nonleaf_node(self):
+        assert self.next_node == None, ValueError
+        assert self.prev_node == None, ValueError
         assert self.rids == [], ValueError
 
         mid = self.order // 2
@@ -132,8 +147,7 @@ class Column_Index_Node:
         return len(self.entry_values) == self.order
 
     def __str__(self):
-        return (f"entry values: {str(self.entry_values)}\n" +
-               f"has {len(self.child_nodes)} children")
+        return (f"entry values: {str(self.entry_values)} (has {len(self.child_nodes)} children)")
 
 class Column_Index_Tree:
 
@@ -167,33 +181,27 @@ class Column_Index_Tree:
         # add child node to parent child node array
         pivot = child_tree.entry_values[0]
         parent_tree.child_nodes.pop(index)
+
+        print("inserting", child_tree, " into ", parent_tree)
         for i, item in enumerate(parent_tree.entry_values):
             if item > pivot:
-                # get node pointers
-                ## previous node
-                if i == 0:
-                    prev_node = None
-                else:
-                    prev_node = parent_tree.child_nodes[i-1]
-                    while (not prev_node.is_leaf):
-                        prev_node = prev_node.child_nodes[-1]
-                ## next node
-                next_node = parent_tree.child_nodes[i]
-                while (not next_node.is_leaf):
-                    next_node = next_node.child_nodes[0]
 
-                # fix node pointers for child tree leaf nodes
-                ## connect front of child tree
-                if prev_node != None:
-                    next_to_prev_leaf_node_pointer = child_tree.child_nodes[0]
-                    while (not next_to_prev_leaf_node_pointer.is_leaf):
-                        next_to_prev_leaf_node_pointer = next_to_prev_leaf_node_pointer.child_nodes[0]
-                    prev_node.next_node = next_to_prev_leaf_node_pointer
-                ## connect back of child tree
-                prev_from_next_leaf_node_pointer = child_tree.child_nodes[-1]
-                while (not prev_from_next_leaf_node_pointer.is_leaf):
-                    prev_from_next_leaf_node_pointer = prev_from_next_leaf_node_pointer.child_nodes[-1]
-                prev_from_next_leaf_node_pointer.next_node = next_node
+                # child_front_node = child_tree.child_nodes[0]
+                # while (not child_front_node.is_leaf):
+                #     child_front_node = child_front_node.child_nodes[0]
+                
+                # child_back_node = child_tree.child_nodes[-1]
+                # while (not child_back_node.is_leaf):
+                #     child_back_node = child_back_node.child_nodes[-1]
+                
+                # print("child tree front pointer:", child_front_node.entry_values)
+                # print("\tprev node is:", child_front_node.prev_node.entry_values if child_front_node.prev_node else "None")
+                # print("\tand prev node points to:", child_front_node.prev_node.next_node.entry_values if (child_front_node.prev_node and child_front_node.prev_node.next_node) else "None")
+                # print("\tis prev node a leaf?", child_front_node.prev_node.is_leaf if child_front_node.prev_node else "N/A")
+
+                # print("child tree back pointer:", child_back_node.entry_values)
+                # print("\tprev node is:", child_back_node.prev_node.entry_values if child_back_node.prev_node else "None")
+                # print("\tand prev node points to:", child_back_node.prev_node.next_node.entry_values if (child_back_node.prev_node and child_back_node.prev_node.next_node) else "None")
 
                 # add child tree to parent tree
                 parent_tree.entry_values = parent_tree.entry_values[:i] + [pivot] + parent_tree.entry_values[i:]
@@ -205,17 +213,18 @@ class Column_Index_Tree:
                 while (not prev_node.is_leaf):
                     prev_node = prev_node.child_nodes[-1]
 
-                # fix node pointers for child tree leaf nodes
-                ## connect front of child tree
-                next_to_prev_leaf_node_pointer = child_tree.child_nodes[0]
-                while (not next_to_prev_leaf_node_pointer.is_leaf):
-                    next_to_prev_leaf_node_pointer = next_to_prev_leaf_node_pointer.child_nodes[0]
-                prev_node.next_node = next_to_prev_leaf_node_pointer
-                ## connect back of child tree
-                last_leaf_node_pointer = child_tree.child_nodes[-1]
-                while (not last_leaf_node_pointer.is_leaf):
-                    last_leaf_node_pointer = last_leaf_node_pointer.child_nodes[-1]
-                last_leaf_node_pointer.next_node = None
+                # # fix node pointers for child tree leaf nodes
+                # ## connect front of child tree
+                # child_front_node = child_tree.child_nodes[0]
+                # while (not child_front_node.is_leaf):
+                #     child_front_node = child_front_node.child_nodes[0]
+                # prev_node.next_node = child_front_node
+                # child_front_node.prev_node = prev_node
+                # ## connect back of child tree
+                # child_back_node = child_tree.child_nodes[-1]
+                # while (not child_back_node.is_leaf):
+                #     child_back_node = child_back_node.child_nodes[-1]
+                # child_back_node.next_node = None
 
                 ## add child tree to parent tree
                 parent_tree.entry_values.append(pivot)
