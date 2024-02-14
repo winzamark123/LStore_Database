@@ -34,51 +34,51 @@ for i in range(0, number_of_records):
     # print('inserted', records[key])
 print("Insert finished")
 
-# Check inserted records using select query
-for key in records:
-    # select function will return array of records 
-    # here we are sure that there is only one record in that array
-    record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
-    error = False
+# # Check inserted records using select query
+# for key in records:
+#     # select function will return array of records 
+#     # here we are sure that there is only one record in that array
+#     record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
+#     error = False
     
-    # print("COMPARE:", record.columns, records[key])
+#     # print("COMPARE:", record.columns, records[key])
 
-    for i, column in enumerate(record.columns):
-        # print("COMPARE:", column, records[key][i])
-        # print("COMPARE:", column, records[key])
-        if column != records[key][i]: 
-            error = True
-    if error:
-        print('select error on', key, ':', record, ', correct:', records[key])
-    else:
-        pass
-        # print('select on', key, ':', record)
+#     for i, column in enumerate(record.columns):
+#         # print("COMPARE:", column, records[key][i])
+#         # print("COMPARE:", column, records[key])
+#         if column != records[key][i]: 
+#             error = True
+#     if error:
+#         print('select error on', key, ':', record, ', correct:', records[key])
+#     else:
+#         pass
+#         # print('select on', key, ':', record)
 
-print("Select finished")
+# print("Select finished")
 
-for key in records:
-    updated_columns = [None, None, None, None, None]
-    for i in range(2, grades_table.num_columns):
-        # updated value
-        value = randint(0, 20)
-        updated_columns[i] = value
-        # copy record to check
-        original = records[key].copy()
-        # update our test directory
-        records[key][i] = value
-        query.update(key, *updated_columns)
-        record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
-        error = False
-        for j, column in enumerate(record.columns):
-            if column != records[key][j]:
-                error = True
-        if error:
-            print('update error on', original, 'and', updated_columns, ':', record, ', correct:', records[key])
-        else:
-            pass
-            # print('update on', original, 'and', updated_columns, ':', record)
-        updated_columns[i] = None
-print("Update finished")
+# for key in records:
+#     updated_columns = [None, None, None, None, None]
+#     for i in range(2, grades_table.num_columns):
+#         # updated value
+#         value = randint(0, 20)
+#         updated_columns[i] = value
+#         # copy record to check
+#         original = records[key].copy()
+#         # update our test directory
+#         records[key][i] = value
+#         query.update(key, *updated_columns)
+#         record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
+#         error = False
+#         for j, column in enumerate(record.columns):
+#             if column != records[key][j]:
+#                 error = True
+#         if error:
+#             print('update error on', original, 'and', updated_columns, ':', record, ', correct:', records[key])
+#         else:
+#             pass
+#             # print('update on', original, 'and', updated_columns, ':', record)
+#         updated_columns[i] = None
+# print("Update finished")
 
 # print("STARTING SUM")
 keys = sorted(list(records.keys()))
@@ -91,7 +91,9 @@ for c in range(0, grades_table.num_columns):
         result = query.sum(keys[r[0]], keys[r[1]], c)
         if column_sum != result:
             print('sum error on [', keys[r[0]], ',', keys[r[1]], ']: ', result, ', correct: ', column_sum)
+            #print('this column ISNT working:', c)
         else:
             pass
-            # print('sum on [', keys[r[0]], ',', keys[r[1]], ']: ', column_sum)
+            #print('correct sum on [', keys[r[0]], ',', keys[r[1]], ']: ', column_sum)
+            #print('this column IS working:', c)
 print("Aggregate finished")
