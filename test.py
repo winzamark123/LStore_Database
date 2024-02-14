@@ -115,3 +115,7 @@ return_record = page_range.return_record(x)
 print(f'RID: {return_record.rid}')
 print(f'KEY: {return_record.key}')
 print(f'GRADES: {return_record.columns}')
+
+for i in range(200):
+    s = randint(0,4)
+    print(f"Value at column {s} = {page_range.return_column_value(x, s)}")

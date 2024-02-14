@@ -34,11 +34,6 @@ class Table:
         #CREATE THE PAGE DIRECTORY with SIZE BASED ON THE num_columns 
         self.page_directory = [Page_Range(num_columns, self.entry_size_for_columns, self.key_column)]
 
-        print("Table created: ", self.name)
-        print("Number of columns: ", self.num_columns)
-        print("Key column: ", self.key_column)
-        
-
     def get_list_of_addresses(self, rids)-> list:
         addreses = []
 

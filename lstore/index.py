@@ -45,6 +45,7 @@ class Column_Index_Node:
 
         self.parent:Column_Index_Node            = None
         self.next_node:Column_Index_Node         = None
+        self.prev_node:Column_Index_Node         = None
         self.is_leaf:bool                        = True
 
     def insert_value_in_node(self, entry_value, rid:int):
@@ -59,7 +60,7 @@ class Column_Index_Node:
             if entry_value == item:
                 self.rids[i].append(rid)
                 break
-            elif entry_value < item:
+            elif item > entry_value:
                 self.entry_values = self.entry_values[:i] + [entry_value] + self.entry_values[i:]
                 self.rids = self.rids[:i] + [[rid]] + self.rids[i:]
                 break
@@ -84,6 +85,12 @@ class Column_Index_Node:
         # set next node pointers
         left_node.next_node = right_node
         right_node.next_node = self.next_node
+        if (self.next_node):
+            self.next_node.prev_node = right_node
+        left_node.prev_node = self.prev_node
+        if (self.prev_node):
+            self.prev_node.next_node = left_node
+        right_node.prev_node = left_node
 
         # split entry values
         left_node.entry_values = self.entry_values[:mid]
@@ -101,6 +108,8 @@ class Column_Index_Node:
         self.child_nodes = [left_node, right_node]
 
     def split_nonleaf_node(self):
+        assert self.next_node == None, ValueError
+        assert self.prev_node == None, ValueError
         assert self.rids == [], ValueError
 
         mid = self.order // 2
@@ -112,10 +121,6 @@ class Column_Index_Node:
         # make current node parent of two children
         left_node.parent = self
         right_node.parent = self
-
-        # set next node pointers
-        left_node.next_node = right_node
-        right_node.next_node = self.next_node
 
         # split entry values
         left_node.entry_values = self.entry_values[:mid]
@@ -136,8 +141,7 @@ class Column_Index_Node:
         return len(self.entry_values) == self.order
 
     def __str__(self):
-        return (f"entry values: {str(self.entry_values)}\n" +
-               f"has {len(self.child_nodes)} children")
+        return (f"entry values: {str(self.entry_values)} (has {len(self.child_nodes)} children)")
 
 class Column_Index_Tree:
 
@@ -171,52 +175,14 @@ class Column_Index_Tree:
         # add child node to parent child node array
         pivot = child_tree.entry_values[0]
         parent_tree.child_nodes.pop(index)
+
         for i, item in enumerate(parent_tree.entry_values):
             if item > pivot:
-                # get node pointers
-                ## previous node
-                prev_node = parent_tree.child_nodes[i-1]
-                while (not prev_node.is_leaf):
-                    prev_node = prev_node.child_nodes[-1]
-                ## next node
-                next_node = parent_tree.child_nodes[i]
-                while (not prev_node.is_leaf):
-                    next_node = next_node.child_nodes[0]
-
-                # fix node pointers for child tree leaf nodes
-                ## connect front of child tree
-                next_to_prev_leaf_node_pointer = child_tree.child_nodes[0]
-                while (not next_to_prev_leaf_node_pointer.is_leaf):
-                    next_to_prev_leaf_node_pointer = next_to_prev_leaf_node_pointer.child_nodes[0]
-                prev_node.next_node = next_to_prev_leaf_node_pointer
-                ## connect back of child tree
-                prev_from_next_leaf_node_pointer = child_tree.child_nodes[-1]
-                while (not prev_from_next_leaf_node_pointer.is_leaf):
-                    prev_from_next_leaf_node_pointer = prev_from_next_leaf_node_pointer.child_nodes[-1]
-                prev_from_next_leaf_node_pointer.next_node = next_node
-
                 # add child tree to parent tree
                 parent_tree.entry_values = parent_tree.entry_values[:i] + [pivot] + parent_tree.entry_values[i:]
                 parent_tree.child_nodes = parent_tree.child_nodes[:i] + child_tree.child_nodes + parent_tree.child_nodes[i:]
                 break
             elif i + 1 == len(parent_tree.entry_values):
-                # get node pointers
-                prev_node = parent_tree.child_nodes[-1]
-                while (not prev_node.is_leaf):
-                    prev_node = prev_node.child_nodes[-1]
-
-                # fix node pointers for child tree leaf nodes
-                ## connect front of child tree
-                next_to_prev_leaf_node_pointer = child_tree.child_nodes[0]
-                while (not next_to_prev_leaf_node_pointer.is_leaf):
-                    next_to_prev_leaf_node_pointer = next_to_prev_leaf_node_pointer.child_nodes[0]
-                prev_node.next_node = next_to_prev_leaf_node_pointer
-                ## connect back of child tree
-                last_leaf_node_pointer = child_tree.child_nodes[-1]
-                while (not last_leaf_node_pointer.is_leaf):
-                    last_leaf_node_pointer = last_leaf_node_pointer.child_nodes[-1]
-                last_leaf_node_pointer.next_node = None
-
                 ## add child tree to parent tree
                 parent_tree.entry_values.append(pivot)
                 parent_tree.child_nodes += child_tree.child_nodes
@@ -298,7 +264,7 @@ class Column_Index_Tree:
                 if val > upper_bound:
                     will_break = True
                     break
-                if lower_bound <= val and val <= upper_bound:
+                elif lower_bound <= val and val <= upper_bound:
                     return_list += cur_node.rids[i]
             if will_break: break
             cur_node = cur_node.next_node
@@ -341,8 +307,15 @@ class Index:
         """
         return self.indices[column_index].get_rids_range_search(begin, end)
 
+    def update_entry(self, entry_value, rid:int)->None:
+        """
+        Updates an RID-associated entry value.
+        """
+        pass
+
     def drop_index(self, column_index:int):
         """
-        TODO?
+        Returns the RIDs of all records with values in a specified column
+        between "begin" and "end" (bounds-inclusive).
         """
         pass
