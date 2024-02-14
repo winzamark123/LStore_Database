@@ -4,7 +4,7 @@ from time import process_time
 from random import choice, randrange
 
 # Student Id and 4 grades
-number_of_records = 15000
+number_of_records = 10000
 number_of_aggregates = 100
 
 db = Database()
