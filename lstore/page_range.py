@@ -228,6 +228,51 @@ class Page_Range:
         # returns record wanted
         return Record(rid, stID, values_tuple)
 
+    def return_column_value(self, rid:int ,column_number:int):
+            
+        # gets base page number the RID is in
+        base_page_number = self.get_page_number(rid)
+
+        # base page that has RID 
+        base_page_to_work = self.search_list(self.base_pages, base_page_number, 1)
+
+        # if column wanted is 0, then we return key
+        if column_number == 0:
+            key_page = base_page_to_work.get_primary_key_page()
+            return key_page.value_exists_at_bytes(rid)
+
+        # retrieves schema encoding value for rid
+        schema_encoding_base_value = base_page_to_work.check_base_record_schema_encoding(rid)
+
+        # gets indexes of schema encoding that has 1s and 0s
+        list_of_columns_updated_0 = self.analyze_schema_encoding(schema_encoding_base_value, return_record=True)
+        list_of_columns_updated_1 = self.analyze_schema_encoding(schema_encoding_base_value)
+
+        if column_number in list_of_columns_updated_0:
+            print("In base record")
+            return base_page_to_work.get_value_at_column(rid,column_number)
+
+        if column_number in list_of_columns_updated_1:
+            print("In tail record")
+            # retrieves indirection value for rid
+            indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
+            print(indirection_base_value)
+
+            if indirection_base_value == 0:
+                return
+
+            # gets tail page number the TID is in
+            tail_page_number = self.get_page_number(indirection_base_value)
+
+            # tail page TID is in
+            tail_page_to_work = self.search_list(self.tail_pages, tail_page_number, 0)
+
+            print(tail_page_to_work.get_page(column_number).value_exists_at_bytes(indirection_base_value))
+
+            return tail_page_to_work.get_value_at_column(indirection_base_value,column_number)
+
+        print("Doesn't exist in this page_range")
+
     # search base and tail pages list to find the page we are going to use  
     def search_list(self, page_list:list, page_number:int, type_of_list:int)->Page:
         
@@ -243,7 +288,6 @@ class Page_Range:
 
     # inserts tail record into tail page
     def insert_tail_record(self, tid:int, schema_encoding:int, indirection:int , columns:list):
-
         # takes first item in list out since it's just for the key column
         columns.pop(0)
 

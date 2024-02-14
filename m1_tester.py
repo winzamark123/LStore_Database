@@ -1,5 +1,6 @@
 from lstore.db import Database
 from lstore.query import Query
+from time import process_time
 
 from random import choice, randint, sample, seed
 
@@ -19,9 +20,10 @@ query = Query(grades_table)
 records = {}
 
 number_of_records = 1000
-number_of_aggregates = 100
+number_of_aggregates = 1000
 seed(3562901)
 
+insert_time_0 = process_time()
 for i in range(0, number_of_records):
     key = 92106429 + randint(0, number_of_records)
 
@@ -32,8 +34,12 @@ for i in range(0, number_of_records):
     records[key] = [key, randint(0, 20), randint(0, 20), randint(0, 20), randint(0, 20)]
     query.insert(*records[key])
     # print('inserted', records[key])
+insert_time_1 = process_time()
 print("Insert finished")
 
+print(f"Inserting {number_of_records} records took:  \t\t\t", insert_time_1 - insert_time_0)
+
+select_time_0 = process_time()
 # Check inserted records using select query
 for key in records:
     # select function will return array of records 
@@ -53,8 +59,11 @@ for key in records:
     else:
         pass
         # print('select on', key, ':', record)
-
+select_time_1 = process_time()
 print("Select finished")
+
+update_time_0 = process_time()
+print(f"Selecting {number_of_records} records took:  \t\t\t", select_time_1 - select_time_0)
 
 for key in records:
     updated_columns = [None, None, None, None, None]
@@ -78,9 +87,13 @@ for key in records:
             pass
             # print('update on', original, 'and', updated_columns, ':', record)
         updated_columns[i] = None
+update_time_1 = process_time()
 print("Update finished")
+print(f"Updating {number_of_records} records took:  \t\t\t", update_time_1 - update_time_0)
 
-# print("STARTING SUM")
+
+# # print("STARTING SUM")
+agg_time_0 = process_time()
 keys = sorted(list(records.keys()))
 # aggregate on every column 
 for c in range(0, grades_table.num_columns):
@@ -94,4 +107,7 @@ for c in range(0, grades_table.num_columns):
         else:
             pass
             # print('sum on [', keys[r[0]], ',', keys[r[1]], ']: ', column_sum)
+agg_time_1 = process_time()
 print("Aggregate finished")
+print("Aggregate 10k of 100 record batch took:\t", agg_time_1 - agg_time_0)
+
