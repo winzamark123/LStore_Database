@@ -1,5 +1,6 @@
 from lstore.db import Database
 from lstore.query import Query
+from time import process_time
 
 from random import choice, randint, sample, seed
 
@@ -22,6 +23,7 @@ number_of_records = 10000
 number_of_aggregates = 100
 seed(3562901)
 
+insert_time_0 = process_time()
 for i in range(0, number_of_records):
     key = 92106429 + randint(0, number_of_records)
 
@@ -32,6 +34,7 @@ for i in range(0, number_of_records):
     records[key] = [key, randint(0, 20), randint(0, 20), randint(0, 20), randint(0, 20)]
     query.insert(*records[key])
     # print('inserted', records[key])
+insert_time_1 = process_time()
 print("Insert finished")
 
 # # Check inserted records using select query
@@ -80,7 +83,8 @@ print("Insert finished")
 #         updated_columns[i] = None
 # print("Update finished")
 
-# print("STARTING SUM")
+# # print("STARTING SUM")
+agg_time_0 = process_time()
 keys = sorted(list(records.keys()))
 # aggregate on every column 
 for c in range(0, grades_table.num_columns):
@@ -97,3 +101,5 @@ for c in range(0, grades_table.num_columns):
             #print('correct sum on [', keys[r[0]], ',', keys[r[1]], ']: ', column_sum)
             #print('this column IS working:', c)
 print("Aggregate finished")
+print("Aggregate 10k of 100 record batch took:\t", agg_time_1 - agg_time_0)
+
