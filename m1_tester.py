@@ -19,7 +19,7 @@ query = Query(grades_table)
 # dictionary for records to test the database: test directory
 records = {}
 
-number_of_records = 15000
+number_of_records = 1000
 number_of_aggregates = 100
 seed(3562901)
 
@@ -109,4 +109,4 @@ for c in range(0, grades_table.num_columns):
             # print('sum on [', keys[r[0]], ',', keys[r[1]], ']: ', column_sum)
 agg_time_1 = process_time()
 print("Aggregate finished")
-print("Aggregate 10k of 100 record batch took:\t", agg_time_1 - agg_time_0)
+print("Aggregate 1000 of 100 record batch took:\t", agg_time_1 - agg_time_0)

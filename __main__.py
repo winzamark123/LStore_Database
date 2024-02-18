@@ -13,7 +13,6 @@ query = Query(grades_table)
 keys = []
 
 
-num_records = 35000
 
 insert_time_0 = process_time()
 for i in range(0, number_of_records):
@@ -21,7 +20,7 @@ for i in range(0, number_of_records):
     keys.append(906659671 + i)
 insert_time_1 = process_time()
 
-print(f"Inserting {num_records} records took:  \t\t\t", insert_time_1 - insert_time_0)
+print(f"Inserting {number_of_records} records took:  \t\t\t", insert_time_1 - insert_time_0)
 
 # Measuring update Performance
 update_cols = [
@@ -36,14 +35,14 @@ update_time_0 = process_time()
 for i in range(0, number_of_records):
     query.update(choice(keys), *(choice(update_cols)))
 update_time_1 = process_time()
-print(f"Updating {num_records} records took:  \t\t\t", update_time_1 - update_time_0)
+print(f"Updating {number_of_records} records took:  \t\t\t", update_time_1 - update_time_0)
 
 # Measuring Select Performance
 select_time_0 = process_time()
 for i in range(0, number_of_records):
     query.select(choice(keys),0 , [1, 1, 1, 1, 1])
 select_time_1 = process_time()
-print(f"Selecting {num_records} records took:  \t\t\t", select_time_1 - select_time_0)
+print(f"Selecting {number_of_records} records took:  \t\t\t", select_time_1 - select_time_0)
 
 # Measuring Aggregate Performance
 agg_time_0 = process_time()
@@ -52,11 +51,11 @@ for i in range(0, number_of_records, number_of_aggregates):
     end_value = start_value + 100
     result = query.sum(start_value, end_value - 1, randrange(0, 5))
 agg_time_1 = process_time()
-print(f"Aggregate {num_records} of 100 record batch took:\t", agg_time_1 - agg_time_0)
+print(f"Aggregate {number_of_records} of 100 record batch took:\t", agg_time_1 - agg_time_0)
 
 # Measuring Delete Performance
 delete_time_0 = process_time()
 for i in range(0, number_of_records):
     query.delete(906659671 + i)
 delete_time_1 = process_time()
-print(f"Deleting {num_records} records took:  \t\t\t", delete_time_1 - delete_time_0)
+print(f"Deleting {number_of_records} records took:  \t\t\t", delete_time_1 - delete_time_0)
