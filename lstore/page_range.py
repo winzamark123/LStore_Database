@@ -24,7 +24,6 @@ class Page_Range:
 
         self.tail_pages[0].page_number = 1
         
-
     # checks if the page range has capacity for more records
     def has_capacity(self)-> bool:
         if len(self.base_pages) >= NUM_BASE_PAGES:
@@ -161,7 +160,6 @@ class Page_Range:
         
         return delete_rid
 
-
     # return record object
     def return_record(self, rid:int)->Record:
         # gets base page number the RID is in
@@ -228,6 +226,7 @@ class Page_Range:
         # returns record wanted
         return Record(rid, stID, values_tuple)
 
+    # return record object
     def return_column_value(self, rid:int ,column_number:int):
             
         # gets base page number the RID is in
