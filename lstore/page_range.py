@@ -74,7 +74,7 @@ class Page_Range:
         base_page_number = self.get_page_number(rid)
 
         # base page that has RID 
-        base_page_to_work = self.search_list(self.base_pages, base_page_number, 1)
+        base_page_to_work = self._search_list(self.base_pages, base_page_number, 1)
 
         # retrieves indirection value for rid
         indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
@@ -98,14 +98,14 @@ class Page_Range:
 
         # checks if the base record indirection is pointing to itself
         if indirection_base_value == rid:
-            self.insert_tail_record(self.tid, new_schema_encoding, rid, columns_of_update_copy)
+            self._insert_tail_record(self.tid, new_schema_encoding, rid, columns_of_update_copy)
         # else it's pointing to a tail record
         else:
             # gets tail page number the TID is in
             tail_page_number = self.get_page_number(indirection_base_value)
 
             # tail page TID is in
-            tail_page_to_work = self.search_list(self.tail_pages, tail_page_number, 0)
+            tail_page_to_work = self._search_list(self.tail_pages, tail_page_number, 0)
 
             # retrieves schema encoding value for tid
             schema_encoding_tail_value = tail_page_to_work.check_tail_record_schema_encoding(indirection_base_value)
@@ -128,7 +128,7 @@ class Page_Range:
                     update_list[i] = item
 
             # inserts new tail record with previous tail record data (Cumulative)
-            self.insert_tail_record(self.tid, new_schema_encoding, indirection_base_value, update_list)
+            self._insert_tail_record(self.tid, new_schema_encoding, indirection_base_value, update_list)
 
         # update to the base page occurred 
         if base_page_to_work.update_indirection_base_column(self.tid, rid) and base_page_to_work.update_schema_encoding_base_column(new_schema_encoding, rid):
@@ -142,7 +142,7 @@ class Page_Range:
         base_page_number = self.get_page_number(rid)
 
         # base page that has RID 
-        base_page_to_work = self.search_list(self.base_pages, base_page_number, 1)
+        base_page_to_work = self._search_list(self.base_pages, base_page_number, 1)
 
         # rid physical page
         rid_page = base_page_to_work.get_rid_page()
@@ -167,7 +167,7 @@ class Page_Range:
 
         # print(rid)
         # base page that has RID 
-        base_page_to_work = self.search_list(self.base_pages, base_page_number, 1)
+        base_page_to_work = self._search_list(self.base_pages, base_page_number, 1)
 
         # retrieves indirection value for rid
         indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
@@ -183,7 +183,7 @@ class Page_Range:
             tail_page_number = self.get_page_number(indirection_base_value)
 
             # tail page TID is in
-            tail_page_to_work = self.search_list(self.tail_pages, tail_page_number, 0)
+            tail_page_to_work = self._search_list(self.tail_pages, tail_page_number, 0)
 
             # gets indexes of schema encoding that has 1s and 0s
             list_of_columns_updated_0 = self.analyze_schema_encoding(schema_encoding_base_value, return_record=True)
@@ -233,7 +233,7 @@ class Page_Range:
         base_page_number = self.get_page_number(rid)
 
         # base page that has RID 
-        base_page_to_work = self.search_list(self.base_pages, base_page_number, 1)
+        base_page_to_work = self._search_list(self.base_pages, base_page_number, 1)
 
         # if column wanted is 0, then we return key
         if column_number == 0:
@@ -264,7 +264,7 @@ class Page_Range:
             tail_page_number = self.get_page_number(indirection_base_value)
 
             # tail page TID is in
-            tail_page_to_work = self.search_list(self.tail_pages, tail_page_number, 0)
+            tail_page_to_work = self._search_list(self.tail_pages, tail_page_number, 0)
 
             #print(tail_page_to_work.get_page(column_number).value_exists_at_bytes(indirection_base_value))
 
@@ -273,7 +273,7 @@ class Page_Range:
         print("Doesn't exist in this page_range")
 
     # search base and tail pages list to find the page we are going to use  
-    def search_list(self, page_list:list, page_number:int, type_of_list:int)->Page:
+    def _search_list(self, page_list:list, page_number:int, type_of_list:int)->Page:
         
         for page in page_list:
             if page.page_number == page_number:
@@ -286,7 +286,7 @@ class Page_Range:
                 print("TID is not in any of tail pages")
 
     # inserts tail record into tail page
-    def insert_tail_record(self, tid:int, schema_encoding:int, indirection:int , columns:list):
+    def _insert_tail_record(self, tid:int, schema_encoding:int, indirection:int , columns:list):
         # takes first item in list out since it's just for the key column
         columns.pop(0)
 
