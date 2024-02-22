@@ -44,7 +44,7 @@ class Page:
     def update_indirection_base_column(self, new_value_LID:int, rid:int,)->bool:
 
             # indirection physical_page(column) of base page 
-            indirection_page = self.get_indirection_page() 
+            indirection_page = self._get_indirection_page() 
 
             # update indirection of base record with LID
             indirection_page.write_to_physical_page(new_value_LID, rid, update=True)
@@ -55,35 +55,12 @@ class Page:
     def update_schema_encoding_base_column(self, new_value_encoding:int, rid:int)->bool:
 
             # schema encoding physical_page(column) of base page 
-            schema_encoding_page = self.get_schema_encoding_page() 
+            schema_encoding_page = self._get_schema_encoding_page() 
 
             # update schema encoding of base record with LID
             schema_encoding_page.write_to_physical_page(new_value_encoding, rid, update=True)
 
             return True
-
-    # gets RID that's associated with a key (Student ID)
-    def get_rid_for_key(self, key_value:int)->int:
-        key_page = self.get_primary_key_page()
-        entry_size = key_page.entry_size
-
-        rid_page = self.get_rid_page()
-
-        # Iterate over the entire byte array
-        for offset in range(0, len(key_page.data), entry_size):
-            # Read the value at the current offset
-            entry_bytes = key_page.data[offset:offset+entry_size]
-            entry_value = int.from_bytes(entry_bytes, byteorder='big')
-
-            # Check if the entry value matches the key value
-            if entry_value == key_value:
-                # Calculate the RID based on the offset
-                rid_to_look = (offset // entry_size) + 1
-                rid_to_return = rid_page.value_exists_at_bytes(rid_to_look)
-                return rid_to_return
-
-        # If key is not found, raise a KeyError
-        raise KeyError(f"Key {key_value} not found in the primary key column.")
 
     # inserts new record to Base Page or Tail Page
     def insert_new_record(self, new_record: Record, indirection_value:int = 0, schema_encoding:int = 0, update: bool=False)->bool:
@@ -103,10 +80,10 @@ class Page:
         if(rid_page.check_value_in_page(rid,rid) == False): 
 
             # grabs schema encoding page
-            schema_encoding_page = self.get_schema_encoding_page()
+            schema_encoding_page = self._get_schema_encoding_page()
 
             # grabs Indirection page
-            indirection_page = self.get_indirection_page()
+            indirection_page = self._get_indirection_page()
 
             # if not update record then we pass the key, if not then we don't need key in tail records 
             if not update:
@@ -165,13 +142,13 @@ class Page:
                 return physical_Page
 
     # returns physical_page(column) that has the Indirections
-    def get_indirection_page(self)->Physical_Page:
+    def _get_indirection_page(self)->Physical_Page:
         for physical_Page in self.physical_pages:
             if(physical_Page.column_number == INDIRECTION_COLUMN):
                 return physical_Page
 
     # returns physical_page(column) that has the Schema Encodings
-    def get_schema_encoding_page(self)->Physical_Page:
+    def _get_schema_encoding_page(self)->Physical_Page:
         for physical_Page in self.physical_pages:
             if(physical_Page.column_number == SCHEMA_ENCODING):
                 return physical_Page
@@ -187,13 +164,6 @@ class Page:
         column_page = self.get_page(column_to_index)
 
         return column_page.value_exists_at_bytes(rid)
-
-    # checks if RID is in Base_page or Tail_Page
-    def check_for_rid(self, rid:int)->bool:
-        rid_page = self.get_rid_page()
-
-        # returns if RID is in page
-        return rid_page.check_value_in_page(rid,rid) 
 
     def has_capacity(self)->bool:
     # checks if page is full
@@ -216,7 +186,7 @@ class Tail_Page(Page):
     def check_tail_record_indirection(self, rid:int)->int:
             
         # indirection column of base page
-        indirection_page = self.get_indirection_page()
+        indirection_page = self._get_indirection_page()
 
         indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
 
@@ -226,7 +196,7 @@ class Tail_Page(Page):
     def check_tail_record_schema_encoding(self, rid:int)->int:
     
         # indirection column of base page
-        schema_encoding_page = self.get_schema_encoding_page()
+        schema_encoding_page = self._get_schema_encoding_page()
 
         schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
 
@@ -243,7 +213,7 @@ class Base_Page(Page):
     def check_base_record_indirection(self, rid:int)->int:
             
         # indirection column of base page
-        indirection_page = self.get_indirection_page()
+        indirection_page = self._get_indirection_page()
 
         indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
 
@@ -253,7 +223,7 @@ class Base_Page(Page):
     def check_base_record_schema_encoding(self, rid:int)->int:
     
         # indirection column of base page
-        schema_encoding_page = self.get_schema_encoding_page()
+        schema_encoding_page = self._get_schema_encoding_page()
 
         schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
 
