@@ -34,6 +34,7 @@ class Table:
         #CREATE THE PAGE DIRECTORY with SIZE BASED ON THE num_columns 
         self.page_directory = [Page_Range(num_columns, self.entry_size_for_columns, self.key_column)]
 
+    # Get Page Range and Base Page from RID
     def get_list_of_addresses(self, rids)-> list:
         addreses = []
 
@@ -45,10 +46,12 @@ class Table:
         #return page_range_num, base_page_num
         return addreses
 
+    # Increment RID for base records
     def inc_rid(self)-> int:
         self.rid += 1
         return self.rid # returns unique new RID for base records
 
+    # insert new page_range into page_directory
     def insert_page_range(self)-> bool:
         if not self.page_directory[-1].has_capacity():
             self.page_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column))
