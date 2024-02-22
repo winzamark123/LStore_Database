@@ -4,7 +4,7 @@ class Physical_Page:
     :param entry_size: int          # size of entry in bytes for this page (column)
     :param column_number: int       # number of this page (column) in the base page or tail page
     :param page_number: int         # page_number of this physical page corresponds to the base page it's on
-
+    
     """
     def __init__(self, entry_size:int, column_number:int):
         self.num_records = 0
