@@ -1,21 +1,29 @@
 from lstore.table import Table
 
+import os 
 class Database():
 
     def __init__(self):
         self.tables = {}
         pass
 
-    # Not required for milestone1
-    # This is gonna be used for opening and reading files 
-    #===========================
     def open(self, path):
+        """
+        Takes in a path from the root of the directory and opens the database at that location
+        """
+
+        if os.path.isdir(path):
+            self.root_name = path
+
+
+
+
+
         pass
     
     def close(self):
         pass
     
-    #===========================
     """
     # Creates a new table
     :param name: string         #Table name

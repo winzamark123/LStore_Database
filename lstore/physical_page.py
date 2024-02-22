@@ -31,7 +31,7 @@ class Physical_Page:
             raise OverflowError("Not enough space in physical page or Reached record limit")
 
         # Gets offset with RID
-        offset = self.get_offset(rid) 
+        offset = self.__get_offset(rid) 
         start = offset
         # Stop writing at (32 bytes + 8 bytes) = 40 bytes
         end = start + self.entry_size
@@ -50,7 +50,7 @@ class Physical_Page:
     # checks if a value is in physical page
     def check_value_in_page(self, value_to_find:int, rid:int)->bool:
         #print('\nFunction: check_value_in_page')
-        offset = self.get_offset(rid)
+        offset = self.__get_offset(rid)
         start = offset
         end = start + self.entry_size
         entry_bytes = self.data[start:end]
@@ -67,7 +67,7 @@ class Physical_Page:
 
     def value_exists_at_bytes(self, rid:int)->int:
         # print('\nFunction: value_exists_at_bytes()')
-        offset = self.get_offset(rid)
+        offset = self.__get_offset(rid)
         start = offset
         end = start + self.entry_size
         entry_bytes = self.data[start:end]
@@ -76,7 +76,7 @@ class Physical_Page:
         return value_in_page
 
     # calculates our offset to know where the RID entry is at in the physical page
-    def get_offset(self, rid:int)->int:
+    def __get_offset(self, rid:int)->int:
         if(rid < 0):
             rid = abs(rid)
         if self.column_number == 0:
