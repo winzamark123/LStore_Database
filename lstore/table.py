@@ -57,24 +57,21 @@ class Table:
         return False 
 
     # convert table to dictionary for disk storage
-    def table_to_disk(self) -> dict:
+    def meta_table_to_disk(self) -> dict:
         table_data = {
             "name": self.name,
             "num_columns": self.num_columns,
             "key_column": self.key_column,
-            "deleted_rids": self.deleted_rids,
-            # "index": self.index,
             "key_column_index": self.key_column_index,
             "rid": self.rid,
             "tid": self.tid,
             "entry_size_for_columns": self.entry_size_for_columns,
-            # "page_directory": self.page_directory
         }
 
         return table_data
 
     @staticmethod
-    def disk_to_table(data) -> 'Table':
+    def meta_disk_to_table(data) -> 'Table':
         # Reconstruct the Table object from a dictionary
         table = Table(data['name'], data['num_columns'], data['key_column'])
         table.key_column_index = data['key_column_index'],
@@ -82,7 +79,4 @@ class Table:
         table.tid = data['tid'], 
         table.tid = data['entry_size_for_columns'], 
         table.tid = data['page_directory']
-        table.deleted_rids = data.get('deleted_rids', [])
-        table.index = data.get('index', None)
-        # Set other attributes as needed
         return table

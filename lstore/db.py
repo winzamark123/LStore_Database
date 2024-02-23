@@ -22,6 +22,8 @@ class Database():
             os.makedirs(path_name)
             print("Database directory created at:", path_name)
         
+
+        
     def close(self):
         for table_name, table in self.tables.items():
             disk = self.disks[table_name]

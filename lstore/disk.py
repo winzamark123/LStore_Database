@@ -22,7 +22,7 @@ class Disk():
                 # file.write(empty_page.physical_pages.to_bytes())
     
     def save_table_metadata(self, table:Table) -> bool:
-        table_data = table.table_to_disk()
+        table_data = table.meta_table_to_disk()
         table_file = os.path.join(self.path_name, '_metadata.json')
         try: 
             with open(table_file, 'w') as file:
@@ -38,12 +38,27 @@ class Disk():
         try: 
             with open(table_metadata_file, 'r') as file:
                 table_data = json.load(file)
-                table = Table.disk_to_table(table_data)
+                table = Table.meta_disk_to_table(table_data)
                 return table
         except Exception as e:
             print("Error loading table metadata:", e)
             return None
 
+    def load_page(self, page_num: int) -> Page:
+        page_num_file = os.path.join(self.path_name, str(page_num))
+        try:
+            with open(page_num_file, 'rb') as file:
+                num_records = int.from_bytes(file.read(4), byteorder='big')
+                physical_pages = int.from_bytes(file.read(4), byteorder='big')
+                page = Page(page_num, [0], num_records)
+                page.physical_pages = physical_pages
+                return page
+        except Exception as e:
+            print("Error loading page:", e)
+            return None
+        pass
         
+    def save_page(self, page: Page) -> bool:
+        pass   
 
         
