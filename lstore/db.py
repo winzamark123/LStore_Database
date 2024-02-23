@@ -1,10 +1,13 @@
 from lstore.table import Table
+import pickle
+import json 
 
 import os 
 class Database():
 
     def __init__(self):
         self.tables = {}
+        self.path_name = None
         pass
 
     def open(self, path):
@@ -12,17 +15,32 @@ class Database():
         Takes in a path from the root of the directory and opens the database at that location
         """
 
-        if os.path.isdir(path):
-            self.root_name = path
+        self.path_name = path  # Store the path name
 
+    # Check if the database directory exists
+        if not os.path.exists(path):
+            os.makedirs(path)  # Create the directory if it doesn't exist
+            print("Database directory created at:", path)
+        else:
+            print("Opening existing database at:", path)
+            # Define a specific file for the database
+            db_file = os.path.join(path, 'database.json')
+            if os.path.exists(db_file):
+                with open(db_file, 'r') as file:
+                    # Load and decode the database state
+                    self.tables = json.load(file)
+                    print("Database loaded successfully.")
 
-
-
-
-        pass
     
     def close(self):
-        pass
+        db_file = os.path.join(self.path_name, 'database.json')  # Define the file path
+        with open(db_file, 'w') as file:
+            # Serialize and save the database state
+            data = self.tables[self.path_name].get_table_data()
+            json.dump(data, file)
+        print("Database state saved to:", db_file)
+
+        
     
     """
     # Creates a new table
@@ -60,4 +78,5 @@ class Database():
         if name in self.tables:
             return self.tables[name]
         else:
+            print("Table does not exist")
             return None

@@ -18,9 +18,6 @@ class Table:
         self.index = Index(num_columns, ORDER_CHOICE)
         self.key_column_index = key_index
 
-        # number of base records 
-        self.num_base_records = 0
-
         # rid for base records - increase by 1 only when a record is added (for base records)
         self.rid = 0
 
@@ -58,3 +55,43 @@ class Table:
             #print("Function: insert_page_range(), Total page ranges: ", len(self.page_directory))
             return True
         return False 
+
+    # get table data to write to disk
+    def get_table_data(self):
+        table_data = {
+            "name": self.name,
+            "num_columns": self.num_columns,
+            "key_column": self.key_column,
+            "deleted_rids": self.deleted_rids,
+            "index": self.index,
+            "key_column_index": self.key_column_index,
+            "rid": self.rid,
+            "tid": self.tid,
+            "entry_size_for_columns": self.entry_size_for_columns,
+            "page_directory": self.page_directory
+        }
+
+        return table_data
+
+    def convert_to_dict(self):
+        # Convert the Table object to a dictionary
+        table_data = {
+            "name": self.name,
+            "num_columns": self.num_columns,
+            "key_column": self.key_column,
+            "deleted_rids": self.deleted_rids,
+            "index": self.index,
+            "key_column_index": self.key_column_index,
+            "rid": self.rid,
+            "tid": self.tid,
+            "entry_size_for_columns": self.entry_size_for_columns,
+            "page_directory": self.page_directory
+        }
+        return table_data
+
+    # @staticmethod
+    def from_dict(data):
+        # Reconstruct the Table object from a dictionary
+        table = Table(data['name'], data['columns'])
+        # Set other attributes as needed
+        return table
