@@ -1,7 +1,7 @@
 import os 
 import json
 from lstore.table import Table
-from lstore.page import Page
+from lstore.physical_page import Physical_Page
 
 class Disk():
     def __init__(self, db_name:str, table_name:str, num_columns:int):
@@ -44,13 +44,13 @@ class Disk():
             print("Error loading table metadata:", e)
             return None
 
-    def load_page(self, page_num: int) -> Page:
-        page_num_file = os.path.join(self.path_name, str(page_num))
+    def load_page(self, col_num: int) -> Physical_Page:
+        page_num_file = os.path.join(self.path_name, str(col_num))
         try:
             with open(page_num_file, 'rb') as file:
                 num_records = int.from_bytes(file.read(4), byteorder='big')
                 physical_pages = int.from_bytes(file.read(4), byteorder='big')
-                page = Page(page_num, [0], num_records)
+                page = Physical_Page(col_num, [0], num_records)
                 page.physical_pages = physical_pages
                 return page
         except Exception as e:
@@ -58,7 +58,7 @@ class Disk():
             return None
         pass
         
-    def save_page(self, page: Page) -> bool:
+    def save_page(self, physical_page: Physical_Page) -> bool:
         pass   
 
         

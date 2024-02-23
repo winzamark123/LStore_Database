@@ -1,8 +1,8 @@
 import lstore.db as Database
 import lstore.table as Table
 import lstore.frame as Frame
-import lstore.page as Page
 import lstore.config as Config
+import lstore.physical_page as Physical_Page
 
 class Bufferpool():
     def __init__(self, db:Database, table:Table):
@@ -20,7 +20,6 @@ class Bufferpool():
             self.evict_frame()
             self.import_frame()
 
-    
     def has_capacity(self):
         return self.cur_size <= self.max_size
     
@@ -30,12 +29,15 @@ class Bufferpool():
     #     self.page_list.append(page)
     #     self.cur_size += 1
     #     return frame
-    def import_frame(self):
-        self.db.disk[self.table].load_page()
+
+    def import_frame(self, physical_page: Physical_Page):
+        self.cur_size += 1
+        frame = Frame(self.db.disk[self.table].load_page())
 
         pass
     
     def evict_frame(self):
+
         pass 
 
 
