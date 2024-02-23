@@ -5,14 +5,14 @@ from lstore.page import Page
 
 class Disk():
     def __init__(self, db_name:str, table_name:str, num_columns:int):
-        path_name = os.getcwd() + '/' + db_name + '/' + table_name # /*/ECS165/Grades
+        self.path_name = os.getcwd() + '/' + db_name + '/' + table_name # /*/ECS165/Grades
 
-        if not os.path.exists(path_name):
-            os.makedirs(path_name)
-            print("Table directory created at:", path_name)
+        if not os.path.exists(self.path_name):
+            os.makedirs(self.path_name)
+            print("Table directory created at:", self.path_name)
         
         for column_index in range(num_columns):
-            file_name = path_name + '/' + str(column_index)
+            file_name = self.path_name + '/' + str(column_index)
             if not os.path.exists(file_name):
                 file = open(file_name, 'wb')
 

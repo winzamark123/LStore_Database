@@ -56,7 +56,6 @@ class Table:
             return True
         return False 
 
-
     # convert table to dictionary for disk storage
     def table_to_disk(self) -> dict:
         table_data = {
@@ -64,12 +63,12 @@ class Table:
             "num_columns": self.num_columns,
             "key_column": self.key_column,
             "deleted_rids": self.deleted_rids,
-            "index": self.index,
+            # "index": self.index,
             "key_column_index": self.key_column_index,
             "rid": self.rid,
             "tid": self.tid,
             "entry_size_for_columns": self.entry_size_for_columns,
-            "page_directory": self.page_directory
+            # "page_directory": self.page_directory
         }
 
         return table_data

@@ -41,7 +41,7 @@ class Database():
         
         new_table = Table(table_name, num_columns, key_index)
         self.tables[table_name] = new_table
-        self.disks[new_table] = Disk(self.db_name, table_name, num_columns)
+        self.disks[table_name] = Disk(self.db_name, table_name, num_columns)
         print(f"Table {table_name} created")
 
         return new_table
