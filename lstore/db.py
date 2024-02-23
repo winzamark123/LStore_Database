@@ -10,26 +10,14 @@ class Database():
         self.path_name = None
         pass
 
-    def open(self, path):
+    def open(self, db_name:str) -> None:
+
         """
         Takes in a path from the root of the directory and opens the database at that location
         """
 
         self.path_name = path  # Store the path name
 
-    # Check if the database directory exists
-        if not os.path.exists(path):
-            os.makedirs(path)  # Create the directory if it doesn't exist
-            print("Database directory created at:", path)
-        else:
-            print("Opening existing database at:", path)
-            # Define a specific file for the database
-            db_file = os.path.join(path, 'database.json')
-            if os.path.exists(db_file):
-                with open(db_file, 'r') as file:
-                    # Load and decode the database state
-                    self.tables = json.load(file)
-                    print("Database loaded successfully.")
 
     
     def close(self):

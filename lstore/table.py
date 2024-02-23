@@ -23,7 +23,7 @@ class Table:
 
         # tid (rid) for tail records - decrease by 1 once a record is added or updated (for tails records)
         self.tid = 0
-
+    
         self.entry_size_for_columns = [2,8,8]
         for i in range(num_columns): 
             self.entry_size_for_columns.append(COLUMN_SIZE)
@@ -56,8 +56,9 @@ class Table:
             return True
         return False 
 
-    # get table data to write to disk
-    def get_table_data(self):
+
+    # convert table to dictionary for disk storage
+    def table_to_disk(self) -> dict:
         table_data = {
             "name": self.name,
             "num_columns": self.num_columns,
@@ -73,25 +74,16 @@ class Table:
 
         return table_data
 
-    def convert_to_dict(self):
-        # Convert the Table object to a dictionary
-        table_data = {
-            "name": self.name,
-            "num_columns": self.num_columns,
-            "key_column": self.key_column,
-            "deleted_rids": self.deleted_rids,
-            "index": self.index,
-            "key_column_index": self.key_column_index,
-            "rid": self.rid,
-            "tid": self.tid,
-            "entry_size_for_columns": self.entry_size_for_columns,
-            "page_directory": self.page_directory
-        }
-        return table_data
-
-    # @staticmethod
-    def from_dict(data):
+    @staticmethod
+    def disk_to_table(data) -> 'Table':
         # Reconstruct the Table object from a dictionary
-        table = Table(data['name'], data['columns'])
+        table = Table(data['name'], data['num_columns'], data['key_column'])
+        table.key_column_index = data['key_column_index'],
+        table.rid = data['rid'] 
+        table.tid = data['tid'], 
+        table.tid = data['entry_size_for_columns'], 
+        table.tid = data['page_directory']
+        table.deleted_rids = data.get('deleted_rids', [])
+        table.index = data.get('index', None)
         # Set other attributes as needed
         return table
