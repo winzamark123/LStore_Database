@@ -13,7 +13,7 @@ num_columns = 5
 key = 0 + META_DATA_NUM_COLUMNS
 
 # These first 3 are for meta columns
-entry_size_for_columns = [2,COLUMN_SIZE,COLUMN_SIZE]
+entry_size_for_columns = [2,COLUMN_SIZE,COLUMN_SIZE, COLUMN_SIZE]
 
 # adds to list depending on how many columns are asked from user
 for i in range(num_columns): 
@@ -92,13 +92,16 @@ update_time_0 = process_time()
 # Keep track of the number of records updated
 records_updated = 0 
 
+updated_rids = []
+
 # updates record
 while records_updated < amount_of_records:
     update_rid = randint(1,512 * base_page_amount)
     update_columns = choice(update_cols)
     page_range.update(rid=update_rid, columns_of_update=update_columns)
     records_updated += 1
-    x = update_rid
+    updated_rids.append(update_rid)
+
 
 update_time_1 = process_time()
 
@@ -107,11 +110,10 @@ print(f"Updating {records_updated} records took:  \t\t\t", update_time_1 - updat
 
 print("\t\t\n\n\nReturn Record !!\n\n\n")
 
-# return record wanted
-return_record = page_range.return_record(x)
-
-print(f'RID: {return_record.rid}')
-print(f'KEY: {return_record.key}')
-print(f'GRADES: {return_record.columns}')
+for rids in updated_rids:
+    return_record = page_range.return_record(rids)
+    print(f'\n\nRID: {return_record.rid}')
+    print(f'KEY: {return_record.key}')
+    print(f'GRADES: {return_record.columns}')
 
 

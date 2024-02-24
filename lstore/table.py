@@ -24,9 +24,11 @@ class Table:
         # tid (rid) for tail records - decrease by 1 once a record is added or updated (for tails records)
         self.tid = 0
     
-        self.entry_size_for_columns = [2,8,8]
-        for i in range(num_columns): 
-            self.entry_size_for_columns.append(COLUMN_SIZE)
+        self.entry_size_for_columns = [2]
+
+        for _ in range(META_DATA_NUM_COLUMNS):
+            self.entry_size_for_columns(COLUMN_SIZE)
+
 
         #CREATE THE PAGE DIRECTORY with SIZE BASED ON THE num_columns 
         self.page_directory = [Page_Range(num_columns, self.entry_size_for_columns, self.key_column)]

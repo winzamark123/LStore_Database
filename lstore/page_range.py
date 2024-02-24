@@ -107,11 +107,11 @@ class Page_Range:
 
             # make copy of base record for first update to record to keep hold of original base record after merging
             print('\ncreating copy of base page record first')
-            self.tail_pages[-1].insert_new_record(base_page_record, indirection_value=rid, schema_encoding=schema_encoding_base_value, update=True)
+            self.tail_pages[-1].insert_new_record(base_page_record,indirection_value=rid, Base_RID=rid, schema_encoding=schema_encoding_base_value, update=True)
 
             self.inc_tid()
             print('\nappending the update now to copy of base page in tail page')
-            self.__insert_tail_record(self.tid, schema_encoding=new_schema_encoding, indirection=first_copy_tid, columns=columns_of_update_copy)
+            self.__insert_tail_record(self.tid, schema_encoding=new_schema_encoding, Base_rid=rid, indirection=first_copy_tid, columns=columns_of_update_copy)
         # else it's pointing to a tail record
         else:
             print('\nappending to a tail page regular')
@@ -142,7 +142,7 @@ class Page_Range:
                     update_list[i] = item
 
             # inserts new tail record with previous tail record data (Cumulative)
-            self.__insert_tail_record(self.tid, new_schema_encoding, indirection_base_value, update_list)
+            self.__insert_tail_record(self.tid, new_schema_encoding, rid ,indirection_base_value, update_list)
 
         # update to the base page occurred 
         if base_page_to_work.update_indirection_base_column(self.tid, rid) and base_page_to_work.update_schema_encoding_base_column(new_schema_encoding, rid):
@@ -300,7 +300,7 @@ class Page_Range:
                 print("TID is not in any of tail pages")
 
     # inserts tail record into tail page
-    def __insert_tail_record(self, tid:int, schema_encoding:int, indirection:int , columns:list):
+    def __insert_tail_record(self, tid:int, schema_encoding:int, Base_rid:int, indirection:int , columns:list):
         # takes first item in list out since it's just for the key column
         columns.pop(0)
 
@@ -311,7 +311,7 @@ class Page_Range:
 
         new_tuple = tuple(columns)
         new_tail_record = Record(tid, 0, new_tuple)
-        self.tail_pages[-1].insert_new_record(new_tail_record, indirection, schema_encoding, update=True)
+        self.tail_pages[-1].insert_new_record(new_tail_record, indirection, Base_rid, schema_encoding, update=True)
 
     # returns base page number that the rid is on (each base page and tail page have a page number)
     def __get_page_number(self, rid: int) -> int:
