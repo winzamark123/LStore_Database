@@ -98,9 +98,23 @@ class Page_Range:
 
         # checks if the base record indirection is pointing to itself
         if indirection_base_value == rid:
-            self.__insert_tail_record(self.tid, new_schema_encoding, rid, columns_of_update_copy)
+            # return original record
+            base_page_record = self.return_record(rid)
+
+            first_copy_tid = self.tid
+
+            base_page_record.rid = first_copy_tid
+
+            # make copy of base record for first update to record to keep hold of original base record after merging
+            print('\ncreating copy of base page record first')
+            self.tail_pages[-1].insert_new_record(base_page_record, indirection_value=rid, schema_encoding=schema_encoding_base_value, update=True)
+
+            self.inc_tid()
+            print('\nappending the update now to copy of base page in tail page')
+            self.__insert_tail_record(self.tid, schema_encoding=new_schema_encoding, indirection=first_copy_tid, columns=columns_of_update_copy)
         # else it's pointing to a tail record
         else:
+            print('\nappending to a tail page regular')
             # gets tail page number the TID is in
             tail_page_number = self.__get_page_number(indirection_base_value)
 

@@ -12,14 +12,14 @@ class Physical_Page:
         self.entry_size = entry_size 
         self.column_number = column_number 
         self.updates = 0
-        if(column_number == 0):
+        if(column_number == INDIRECTION_COLUMN):
             self.data = bytearray(INDIRECTION_PAGE_SIZE) # Indirection column is smaller
         else:
             self.data = bytearray(PHYSICAL_PAGE_SIZE)
 
     # checks capacity of page
     def has_capacity(self)->bool:
-        if(self.column_number == 0):
+        if(self.column_number == INDIRECTION_COLUMN):
             return ((self.num_records + 1) * self.entry_size <= INDIRECTION_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
         else:
             return ((self.num_records + 1) * self.entry_size <= PHYSICAL_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
@@ -39,7 +39,7 @@ class Physical_Page:
         # Convert integer to (entry_size) bytes
         value_bytes = int.to_bytes(value, self.entry_size, byteorder='big', signed=True)
         self.data[start:end] = value_bytes
-        #print(f'Inserted value ({value}) in page ({self.column_number}) into Bytes ({start} - {end})')
+        print(f'Inserted value ({value}) in page ({self.column_number}) into Bytes ({start} - {end})')
 
         # Increment num_records only if update is False
         if not update:
