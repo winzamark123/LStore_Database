@@ -203,11 +203,20 @@ class Column_Index_Tree:
     def __len__(self)->int:
         return self.size
 
-    def find_child_node(self, prev_node:Column_Index_Node, entry_value)->Column_Index_Node:
-        for i, item in enumerate(prev_node.entry_values):
+    def find_child_node(self, node:Column_Index_Node, entry_value)->Column_Index_Node:
+        for i, item in enumerate(node.entry_values):
             if item.key > entry_value:
-                return prev_node.child_nodes[i]
-        return prev_node.child_nodes[i+1]
+                return node.child_nodes[i]
+        return node.child_nodes[i+1]
+
+    def find_non_leaf_reference(self, node:Column_Index_Node, entry_value)->tuple[Column_Index_Node, int]:
+        while node != None:
+            node = node.parent
+            if entry_value in node.get_keys():
+                return node, node.get_keys().index(entry_value)
+        raise ValueError
+        
+
 
     def get_index_for_split_node(self, prev_node:Column_Index_Node, entry_value)->int:
         for i, item in enumerate(prev_node.entry_values):
@@ -331,11 +340,17 @@ class Column_Index_Tree:
         # case 1: entry value is not found in any non-leaf nodes
         if index != 0:
             del cur_node.entry_values[index]
-        else:
-            # TODO
-            raise ValueError
+            return
         
-        return
+        # TODO: determine if deleting from root is its own case
+
+        reference_node, reference_index = self.find_non_leaf_reference(cur_node, entry_value)
+        # case 2: entry value is at beginning of leaf node but can be replaced by the next entry value
+        if len(cur_node.entry_values) > 1:
+            del cur_node.entry_values[0]
+            reference_node.entry_values[reference_index] = deepcopy(cur_node.entry_values[0])
+            reference_node.entry_values[reference_index].set_as_non_leaf()
+            return
 
 
 class Index:
