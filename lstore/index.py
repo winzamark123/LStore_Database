@@ -59,7 +59,9 @@ class Entry_Value:
 
         Returns ValueError if RID not found.
         """
-        assert self.is_leaf and not rid in self.rids, ValueError
+        assert self.is_leaf, ValueError
+
+        if rid in self.rids: raise ValueError
         self.rids.add(rid)
 
     def delete_rid(self, rid:int)->None:
@@ -69,7 +71,9 @@ class Entry_Value:
         Returns ValueError if RID not found.
         """
 
-        assert self.is_leaf and rid in self.rids, ValueError
+        assert self.is_leaf, ValueError
+
+        if rid not in self.rids: raise ValueError
         self.rids.remove(rid)
 
 class Column_Index_Node:
@@ -105,7 +109,7 @@ class Column_Index_Node:
                 item.add_rid(rid)
                 break
             elif item.key > entry_value:
-                self.entry_values = self.entry_values[:i] + [self.create_entry_value_object(entry_value, rid)] + self.entry_values[i:]
+                self.entry_values.insert(i, self.create_entry_value_object(entry_value, rid))
                 break
             elif i + 1 == len(self.entry_values):
                 self.entry_values.append(self.create_entry_value_object(entry_value, rid))
@@ -225,7 +229,7 @@ class Column_Index_Tree:
         for i, item in enumerate(parent_tree.entry_values):
             if item.key > pivot.key:
                 # add child tree to parent tree
-                parent_tree.entry_values = parent_tree.entry_values[:i] + [pivot] + parent_tree.entry_values[i:]
+                parent_tree.entry_values.insert(i, pivot)
                 parent_tree.child_nodes = parent_tree.child_nodes[:i] + child_tree.child_nodes + parent_tree.child_nodes[i:]
                 break
             elif i + 1 == len(parent_tree.entry_values):
@@ -309,7 +313,8 @@ class Column_Index_Tree:
         while not cur_node.is_leaf:
             cur_node = self.find_child_node(cur_node, entry_value)
         try:
-            entry_value_object = cur_node.entry_values[cur_node.get_keys().index(entry_value)]
+            index = cur_node.get_keys().index(entry_value)
+            entry_value_object = cur_node.entry_values[index]
         except ValueError:
             print(f"Error: Entry value {entry_value} not found.")
             return
@@ -318,9 +323,19 @@ class Column_Index_Tree:
         try:
             entry_value_object.delete_rid(rid)
         except ValueError:
-            print(f"Error: RID value {rid} no associated with entry value {entry_value}.")
+            print(f"Error: RID value {rid} is not associated with entry value {entry_value}.")
             return
+        # stop deletion process if entry value still has associated RIDs
+        if len(entry_value_object.rids): return
 
+        # case 1: entry value is not found in any non-leaf nodes
+        if index != 0:
+            del cur_node.entry_values[index]
+        else:
+            # TODO
+            raise ValueError
+        
+        return
 
 
 class Index:

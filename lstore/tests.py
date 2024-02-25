@@ -1,6 +1,8 @@
 from unittest import TestCase, main
 from random import choice, randint, sample, seed
 from index import Index, Column_Index_Tree, Column_Index_Node
+import sys
+import io
 
 # NOTE: you have to start your functions w/ 'test_'
 # link about it: https://www.freecodecamp.org/news/how-to-write-unit-tests-for-python-functions/#:~:text=Each%20of%20the%20tests%20that,methods%20should%20start%20with%20test_%20.
@@ -479,94 +481,95 @@ class Test_Column_Index_Tree(TestCase):
     self.assertEqual(tree.root.child_nodes[0].child_nodes[1].next_node,
                      tree.root.child_nodes[1].child_nodes[0])
 
-  # def test_random_inserts_node_pointers(self):
-  #   tree = Column_Index_Tree(3)
-  #   seed(9000)
+  def test_random_inserts_node_pointers(self):
+    tree = Column_Index_Tree(3)
+    seed(9000)
 
-  #   key_dict = dict()
-  #   for i in range(1,22):
-  #     key = randint(1,22)
-  #     while key in key_dict:
-  #       key = randint(1,22)
-  #     key_dict[key] = i
+    key_dict = dict()
+    for i in range(1,22):
+      key = randint(1,22)
+      while key in key_dict:
+        key = randint(1,22)
+      tree.insert_value(key,i)
+      key_dict[key] = i
 
 
-  #   num_levels = 0
-  #   first_leaf_node = tree.root
-  #   while not first_leaf_node.is_leaf:
-  #     first_leaf_node = first_leaf_node.child_nodes[0]
-  #     num_levels += 1
-  #   self.assertTrue(num_levels == 3)
+    num_levels = 0
+    node = tree.root
+    while not node.is_leaf:
+      node = node.child_nodes[0]
+      num_levels += 1
+    self.assertTrue(num_levels == 3)
 
-  #   # get leaf nodes
-  #   leaf_nodes:list[Column_Index_Node] = []
-  #   for i in range(len(tree.root.child_nodes)):
-  #     for j in range(len(tree.root.child_nodes[i].child_nodes)):
-  #       for k in range(len(tree.root.child_nodes[i].child_nodes[j].child_nodes)):
-  #         self.assertTrue(tree.root.child_nodes[i].child_nodes[j].child_nodes[k].is_leaf)
-  #         leaf_nodes.append(tree.root.child_nodes[i].child_nodes[j].child_nodes[k])
+    # get leaf nodes
+    leaf_nodes:list[Column_Index_Node] = []
+    for i in range(len(tree.root.child_nodes)):
+      for j in range(len(tree.root.child_nodes[i].child_nodes)):
+        for k in range(len(tree.root.child_nodes[i].child_nodes[j].child_nodes)):
+          self.assertTrue(tree.root.child_nodes[i].child_nodes[j].child_nodes[k].is_leaf)
+          leaf_nodes.append(tree.root.child_nodes[i].child_nodes[j].child_nodes[k])
 
-  #   # check tree
-  #   ## root
-  #   self.assertTrue(tree.root.is_leaf == False)
-  #   self.assertTrue(tree.root.parent == None)
-  #   self.assertTrue(tree.root.next_node == None)
-  #   self.assertTrue(tree.root.get_keys() == [12])
-  #   self.assertTrue(tree.root.rids == [])
-  #   ## 1st inner nodes
-  #   self.assertTrue(len(tree.root.child_nodes) == 2)
-  #   for i in range(2):
-  #     self.assertTrue(tree.root.child_nodes[i].is_leaf == False)
-  #     self.assertTrue(tree.root.child_nodes[i].parent == tree.root)
-  #     self.assertTrue(tree.root.child_nodes[i].next_node == None)
-  #     self.assertTrue(tree.root.child_nodes[i].rids == [])
-  #   self.assertTrue(tree.root.child_nodes[0].get_keys() == [6,8])
-  #   self.assertTrue(tree.root.child_nodes[1].get_keys() == [15,20])
-  #   ## 2nd inner nodes
-  #   second_inner_nodes:list[Column_Index_Node] = []
-  #   for i in range(2):
-  #     self.assertTrue(len(tree.root.child_nodes[i].child_nodes) == 3)
-  #     for j in range(3):
-  #       test_node = tree.root.child_nodes[i].child_nodes[j]
-  #       second_inner_nodes.append(test_node)
-  #       self.assertTrue(test_node.is_leaf == False)
-  #       self.assertTrue(test_node.parent == tree.root.child_nodes[i])
-  #       self.assertTrue(test_node.next_node == None)
-  #       self.assertTrue(test_node.rids == [])
-  #   self.assertEqual([node.get_keys() for node in second_inner_nodes],
-  #                    [[3,5],[7],[10],[14],[16,18],[21]])
-  #   # leaf nodes
-  #   leaf_node_evs = {
-  #     0: [2],
-  #     1: [3,4],
-  #     2: [5],
-  #     3: [6],
-  #     4: [7],
-  #     5: [8,9],
-  #     6: [10,11],
-  #     7: [12,13],
-  #     8: [14],
-  #     9: [15],
-  #     10: [16,17],
-  #     11: [18,19],
-  #     12: [20],
-  #     13: [21,22]
-  #   }
-  #   leaf_nodes:list[Column_Index_Node] = []
-  #   for i in range(2):
-  #     for j in range(3):
-  #       for k in range(len(tree.root.child_nodes[i].child_nodes[j].child_nodes)):
-  #         test_node = tree.root.child_nodes[i].child_nodes[j].child_nodes[k]
-  #         leaf_nodes.append(test_node)
-  #         self.assertTrue(test_node.is_leaf == True)
-  #         self.assertTrue(test_node.parent == tree.root.child_nodes[i].child_nodes[j])
-  #         self.assertTrue(test_node.child_nodes == [])
-  #   for i, ln in enumerate(leaf_nodes):
-  #     self.assertTrue(ln.get_keys() == leaf_node_evs[i])
-  #     if i + 1 == len(leaf_nodes):
-  #       self.assertTrue(ln.next_node == None)
-  #     else:
-  #       self.assertTrue(ln.next_node == leaf_nodes[i+1])
+    # check tree
+    ## root
+    self.assertTrue(tree.root.is_leaf == False)
+    self.assertTrue(tree.root.parent == None)
+    self.assertTrue(tree.root.next_node == None)
+    self.assertTrue(tree.root.get_keys() == [12])
+    self.assertTrue(tree.root.get_rids() == [])
+    ## 1st inner nodes
+    self.assertTrue(len(tree.root.child_nodes) == 2)
+    for i in range(2):
+      self.assertTrue(tree.root.child_nodes[i].is_leaf == False)
+      self.assertTrue(tree.root.child_nodes[i].parent == tree.root)
+      self.assertTrue(tree.root.child_nodes[i].next_node == None)
+      self.assertTrue(tree.root.child_nodes[i].get_rids() == [])
+    self.assertTrue(tree.root.child_nodes[0].get_keys() == [6,8])
+    self.assertTrue(tree.root.child_nodes[1].get_keys() == [15,20])
+    ## 2nd inner nodes
+    second_inner_nodes:list[Column_Index_Node] = []
+    for i in range(2):
+      self.assertTrue(len(tree.root.child_nodes[i].child_nodes) == 3)
+      for j in range(3):
+        test_node = tree.root.child_nodes[i].child_nodes[j]
+        second_inner_nodes.append(test_node)
+        self.assertTrue(test_node.is_leaf == False)
+        self.assertTrue(test_node.parent == tree.root.child_nodes[i])
+        self.assertTrue(test_node.next_node == None)
+        self.assertTrue(test_node.get_rids() == [])
+    self.assertEqual([node.get_keys() for node in second_inner_nodes],
+                     [[3,5],[7],[10],[14],[16,18],[21]])
+    # leaf nodes
+    leaf_node_evs = {
+      0: [2],
+      1: [3,4],
+      2: [5],
+      3: [6],
+      4: [7],
+      5: [8,9],
+      6: [10,11],
+      7: [12,13],
+      8: [14],
+      9: [15],
+      10: [16,17],
+      11: [18,19],
+      12: [20],
+      13: [21,22]
+    }
+    leaf_nodes:list[Column_Index_Node] = []
+    for i in range(2):
+      for j in range(3):
+        for k in range(len(tree.root.child_nodes[i].child_nodes[j].child_nodes)):
+          test_node = tree.root.child_nodes[i].child_nodes[j].child_nodes[k]
+          leaf_nodes.append(test_node)
+          self.assertTrue(test_node.is_leaf == True)
+          self.assertTrue(test_node.parent == tree.root.child_nodes[i].child_nodes[j])
+          self.assertTrue(test_node.child_nodes == [])
+    for i, ln in enumerate(leaf_nodes):
+      self.assertTrue(ln.get_keys() == leaf_node_evs[i])
+      if i + 1 == len(leaf_nodes):
+        self.assertTrue(ln.next_node == None)
+      else:
+        self.assertTrue(ln.next_node == leaf_nodes[i+1])
 
   def test_identified_sum_error(self):
     SEED_VAL = 3562901
@@ -618,19 +621,37 @@ class Test_Column_Index_Tree(TestCase):
     for rid in rids:
       self.assertTrue(LOWER_BOUND <= rids_dict[rid] and rids_dict[rid] <= UPPER_BOUND)
 
-  def test_delete_case_1(self):
-    return
+  def test_delete_invalid(self):
     tree = Column_Index_Tree(3)
     seed(100)
-    with open("test_delete_case_1_tree.txt", 'w') as f:
-      vals_set = set()
-      for i in range(1, 11):
+    vals_set = set()
+    for i in range(1, 11):
+      val = randint(1, 99)
+      if val in vals_set:
         val = randint(1, 99)
-        if val in vals_set:
-          val = randint(1, 99)
-        vals_set.add(val)
-        f.write(f"{val}\n")
-        tree.insert_value(val, i)
+      tree.insert_value(val, i)
+      vals_set.add(val)
+    
+    temp_io = io.StringIO()
+    sys.stdout = temp_io
+    tree.delete_entry(101, 123)
+    self.assertEqual(temp_io.getvalue(), "Error: Entry value 101 not found.\n")
+    temp_io.truncate()
+    temp_io.seek(0)
+    tree.delete_entry(19, 2)
+    self.assertEqual(temp_io.getvalue(), "Error: RID value 2 is not associated with entry value 19.\n")
+    sys.stdout = sys.__stdout__
+
+  def test_delete_case_1(self):
+    tree = Column_Index_Tree(3)
+    seed(100)
+    vals_set = set()
+    for i in range(1, 11):
+      val = randint(1, 99)
+      if val in vals_set:
+        val = randint(1, 99)
+      tree.insert_value(val, i)
+      vals_set.add(val)
     # 19 1
     # 59 2
     # 99 3
@@ -646,7 +667,7 @@ class Test_Column_Index_Tree(TestCase):
     self.assertTrue(tree.root.child_nodes[1].child_nodes[1].is_leaf)
     old_left = tree.root.child_nodes[1].child_nodes[1].prev_node
     old_right = tree.root.child_nodes[1].child_nodes[1].next_node
-    tree.delete(56, 9)
+    tree.delete_entry(56, 9)
     self.assertTrue(tree.root.child_nodes[1].child_nodes[1].is_leaf)
     self.assertTrue(tree.root.child_nodes[1].child_nodes[1].get_keys() == [51])
     new_left = tree.root.child_nodes[1].child_nodes[1].prev_node
@@ -658,7 +679,7 @@ class Test_Column_Index_Tree(TestCase):
     self.assertTrue(tree.root.child_nodes[2].child_nodes[0].is_leaf)
     old_left = tree.root.child_nodes[2].child_nodes[0].prev_node
     old_right = tree.root.child_nodes[2].child_nodes[0].next_node
-    tree.delete(65, 10)
+    tree.delete_entry(65, 10)
     self.assertTrue(tree.root.child_nodes[2].child_nodes[0].is_leaf)
     self.assertTrue(tree.root.child_nodes[2].child_nodes[0].get_keys() == [59])
     new_left = tree.root.child_nodes[2].child_nodes[0].prev_node
@@ -670,7 +691,7 @@ class Test_Column_Index_Tree(TestCase):
     self.assertTrue(tree.root.child_nodes[2].child_nodes[2].is_leaf)
     old_left = tree.root.child_nodes[2].child_nodes[2].prev_node
     old_right = tree.root.child_nodes[2].child_nodes[2].next_node
-    tree.delete(99, 3)
+    tree.delete_entry(99, 3)
     self.assertTrue(tree.root.child_nodes[2].child_nodes[2].is_leaf)
     self.assertTrue(tree.root.child_nodes[2].child_nodes[2].get_keys() == [94])
     new_left = tree.root.child_nodes[2].child_nodes[2].prev_node
