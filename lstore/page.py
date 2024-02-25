@@ -40,6 +40,8 @@ class Page:
 
         self.num_records = 0
 
+        self.last_record = 0
+
     # updates indirection column with new LID
     def update_indirection_base_column(self, new_value_LID:int, rid:int,)->bool:
 

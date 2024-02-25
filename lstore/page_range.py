@@ -6,6 +6,10 @@ from random import randint
 import math
 
 class Page_Range:
+
+    # starts at -1 to have counter match index for page directory
+    page_range_counter = -1
+
     def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
         self.num_columns = num_columns # number of columns in the table
         self.entry_size_for_columns = entry_sizes # list of the size of each physical page in base pages in Bytes [2,8,8] - These first 3 sizes are for the meta columns
@@ -23,6 +27,16 @@ class Page_Range:
         self.amount_tail_pages = 1
 
         self.tail_pages[0].page_number = 1
+
+        Page_Range.page_range_counter += 1
+
+        # each page range has a unique id   
+        self.page_range_number = Page_Range.page_range_counter
+
+        # number of updates to this page range
+        self.num_updates = 0
+
+        self.tps_for_range = 0
         
     # checks if the page range has capacity for more records
     def has_capacity(self)-> bool:
@@ -146,6 +160,7 @@ class Page_Range:
 
         # update to the base page occurred 
         if base_page_to_work.update_indirection_base_column(self.tid, rid) and base_page_to_work.update_schema_encoding_base_column(new_schema_encoding, rid):
+            self.num_updates += 1
             return True
         return False
 

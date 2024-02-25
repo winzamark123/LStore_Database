@@ -2,6 +2,8 @@ from lstore.index import Index
 from lstore.config import *
 from time import time
 from lstore.page_range import Page_Range
+import threading
+import copy
 
 class Table:
     """
@@ -26,8 +28,8 @@ class Table:
     
         self.entry_size_for_columns = [2]
 
-        for _ in range(META_DATA_NUM_COLUMNS):
-            self.entry_size_for_columns(COLUMN_SIZE)
+        for _ in range(META_DATA_NUM_COLUMNS - 1 + num_columns):
+            self.entry_size_for_columns.append(COLUMN_SIZE)
 
 
         #CREATE THE PAGE DIRECTORY with SIZE BASED ON THE num_columns 
@@ -82,3 +84,50 @@ class Table:
         table.tid = data['entry_size_for_columns'], 
         table.tid = data['page_directory']
         return table
+
+    # TODO: complete merge (in the works)
+    def __merge(self, page_range:Page_Range):
+        
+        # records that need updating in base page
+        updated_records = {}
+
+        # iterate backwards through tail pages list
+        for tail_page in reversed(page_range.tail_pages):
+
+            # base_rid page in tail page
+            base_rid_page = tail_page.get_base_rid_page()
+            tid_page = tail_page.get_rid_page()
+            print(tid_page.column_number)
+
+            for i in range(0, len(base_rid_page.data), COLUMN_SIZE):
+                # Extract 8 bytes at a time using slicing
+                base_rid_for_tail_record_bytes = base_rid_page.data[i:i+COLUMN_SIZE]
+
+                base_rid_for_tail_record_value = int.from_bytes(entry_bytes, byteorder='big')
+
+                tid_for_tail_record_bytes = tid_page.data[i:i+COLUMN_SIZE]
+
+                tid_for_tail_record_value = int.from_bytes(entry_bytes, byteorder='big')
+                
+                # adds rid if rid is not in update_records dictionary
+                if base_rid_for_tail_record not in updated_records:
+                    updated_records[base_rid_for_tail_record_value] = tid_for_tail_record_value
+                    
+
+        # base_pages_to_update = []
+
+        
+
+        # for base_page in page_range.base_pages:
+        #     schema_encoding_page = base_page._get_schema_encoding_page()
+
+
+        #     pass
+    
+    # checks if merging needs to happen
+    def __merge_checker(self, page_range_num):
+        if self.page_directory[page_range_num].num_updates % MERGE_THRESHOLD == 0:
+            # creates deep copy of page range
+            page_range_copy = copy.deepcopy(self.page_directory[page_range_num])
+            merging_thread = threading.Thread(target=self.__merge())
+            merging_thread.start()

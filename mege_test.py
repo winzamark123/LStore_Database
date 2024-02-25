@@ -3,6 +3,7 @@ from lstore.record import Record
 from time import process_time
 from random import randint, randrange, choice, shuffle
 from lstore.page_range import * 
+import copy
 
 # To make it work, uncomment all the print() statements in page.py to see the physical pages get updated 
 
@@ -95,12 +96,14 @@ records_updated = 0
 updated_rids = []
 
 # updates record
-while records_updated < amount_of_records:
-    update_rid = randint(1,512 * base_page_amount)
+while records_updated < 5:
+    update_rid = randint(1,10)
     update_columns = choice(update_cols)
-    page_range.update(rid=update_rid, columns_of_update=update_columns)
-    records_updated += 1
-    updated_rids.append(update_rid)
+    if (page_range.update(rid=update_rid, columns_of_update=update_columns)):
+        records_updated += 1
+        updated_rids.append(update_rid)
+    else: 
+        print('update came back false\n')
 
 
 update_time_1 = process_time()
@@ -110,10 +113,62 @@ print(f"Updating {records_updated} records took:  \t\t\t", update_time_1 - updat
 
 print("\t\t\n\n\nReturn Record !!\n\n\n")
 
-for rids in updated_rids:
-    return_record = page_range.return_record(rids)
-    print(f'\n\nRID: {return_record.rid}')
-    print(f'KEY: {return_record.key}')
-    print(f'GRADES: {return_record.columns}')
+print(updated_rids)
+
+# return_record = 0
+
+# for rids in updated_rids:
+#     return_record = page_range.return_record(rids)
+#     print(f'\n\nRID: {return_record.rid}')
+#     print(f'KEY: {return_record.key}')
+#     print(f'GRADES: {return_record.columns}')
 
 
+@staticmethod
+def __merge(page_ranges:Page_Range):
+    
+    # records that need updating in base page
+    updated_records = {}
+
+    # iterate backwards through tail pages list
+    for tail_page in reversed(page_ranges.tail_pages):
+
+        # base_rid and tid page in tail page
+        base_rid_page = tail_page.get_base_rid_page()
+        tid_page = tail_page.physical_pages[1]
+
+        amount_records = tid_page.num_records
+        
+        print(tail_page.num_records * COLUMN_SIZE)
+        for i in range(PHYSICAL_PAGE_SIZE - COLUMN_SIZE, -1, -COLUMN_SIZE):
+            # Extract 8 bytes at a time using slicing
+            base_rid_for_tail_record_bytes = base_rid_page.data[i:i+COLUMN_SIZE]
+
+            base_rid_for_tail_record_value = int.from_bytes(base_rid_for_tail_record_bytes, byteorder='big', signed=True)
+
+            # breaks out of loop if 0 meaning it's reached end of tail records in a tail page
+            if base_rid_for_tail_record_value == 0:
+                continue
+
+            tid_for_tail_record_bytes = tid_page.data[i:i+COLUMN_SIZE]
+
+            print(tid_for_tail_record_bytes)
+
+            tid_for_tail_record_value = -(int.from_bytes(tid_for_tail_record_bytes, byteorder='big', signed=True))
+
+            print(tid_for_tail_record_value)
+            
+            print(base_rid_for_tail_record_value)
+            # adds rid if rid is not in update_records dictionary
+            if base_rid_for_tail_record_value not in updated_records.values():
+                updated_records[-(tid_for_tail_record_value)] = base_rid_for_tail_record_value 
+
+    
+    for key, value in updated_records.items():
+        print(f'\nDict Pair: {key} = {value}')
+
+s = copy.deepcopy(page_range)
+__merge(s)
+
+for base_page in page_range.tail_pages:
+    print(base_page.num_records)

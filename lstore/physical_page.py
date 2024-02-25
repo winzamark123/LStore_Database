@@ -12,14 +12,14 @@ class Physical_Page:
         self.entry_size = entry_size 
         self.column_number = column_number 
         self.updates = 0
-        if(column_number == INDIRECTION_COLUMN):
+        if(column_number == 0):
             self.data = bytearray(INDIRECTION_PAGE_SIZE) # Indirection column is smaller
         else:
             self.data = bytearray(PHYSICAL_PAGE_SIZE)
 
     # checks capacity of page
     def has_capacity(self)->bool:
-        if(self.column_number == INDIRECTION_COLUMN):
+        if(self.column_number == 0):
             return ((self.num_records + 1) * self.entry_size <= INDIRECTION_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
         else:
             return ((self.num_records + 1) * self.entry_size <= PHYSICAL_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)

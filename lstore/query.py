@@ -1,6 +1,7 @@
 from lstore.table import Table 
 from lstore.record import Record
 from lstore.index import Index
+import copy
 
 class Query:
     """
@@ -151,8 +152,12 @@ class Query:
 
         for rid, address in zip(rids, addresses):
             page_range_num = address[0]
+            print(page_range_num)
             cur_page_range = self.table.page_directory[page_range_num]
             cur_page_range.update(rid, columns_as_list)
+
+            # checks if page range needs merging
+            self.table.__merge_checker(page_range_num)
 
         return True
 
