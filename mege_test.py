@@ -96,14 +96,13 @@ records_updated = 0
 updated_rids = []
 
 # updates record
-while records_updated < 5:
-    update_rid = randint(1,10)
+while records_updated < 1024:
+    update_rid = randint(1, 512 * base_page_amount - 1)
     update_columns = choice(update_cols)
+    print(f'\n{update_columns}')
     if (page_range.update(rid=update_rid, columns_of_update=update_columns)):
         records_updated += 1
         updated_rids.append(update_rid)
-    else: 
-        print('update came back false\n')
 
 
 update_time_1 = process_time()
@@ -113,7 +112,6 @@ print(f"Updating {records_updated} records took:  \t\t\t", update_time_1 - updat
 
 print("\t\t\n\n\nReturn Record !!\n\n\n")
 
-print(updated_rids)
 
 # return_record = 0
 
@@ -125,50 +123,96 @@ print(updated_rids)
 
 
 @staticmethod
-def __merge(page_ranges:Page_Range):
+def __merge(page_range:Page_Range):
     
     # records that need updating in base page
     updated_records = {}
 
     # iterate backwards through tail pages list
-    for tail_page in reversed(page_ranges.tail_pages):
+    for tail_page in reversed(page_range.tail_pages):
 
         # base_rid and tid page in tail page
         base_rid_page = tail_page.get_base_rid_page()
         tid_page = tail_page.physical_pages[1]
-
-        amount_records = tid_page.num_records
         
-        print(tail_page.num_records * COLUMN_SIZE)
+        # jumps straight to the last tail record (TODO: make it jump to very last tail record even if tail page isn't full)
         for i in range(PHYSICAL_PAGE_SIZE - COLUMN_SIZE, -1, -COLUMN_SIZE):
             # Extract 8 bytes at a time using slicing
             base_rid_for_tail_record_bytes = base_rid_page.data[i:i+COLUMN_SIZE]
 
             base_rid_for_tail_record_value = int.from_bytes(base_rid_for_tail_record_bytes, byteorder='big', signed=True)
 
-            # breaks out of loop if 0 meaning it's reached end of tail records in a tail page
+            # continue through loop meaning it's at a tail record that hasn't been set
             if base_rid_for_tail_record_value == 0:
                 continue
 
             tid_for_tail_record_bytes = tid_page.data[i:i+COLUMN_SIZE]
 
-            print(tid_for_tail_record_bytes)
-
             tid_for_tail_record_value = -(int.from_bytes(tid_for_tail_record_bytes, byteorder='big', signed=True))
 
-            print(tid_for_tail_record_value)
-            
-            print(base_rid_for_tail_record_value)
-            # adds rid if rid is not in update_records dictionary
+            # adds rid if rid is not in update_records dictionary - used to know what base pages to use
             if base_rid_for_tail_record_value not in updated_records.values():
                 updated_records[-(tid_for_tail_record_value)] = base_rid_for_tail_record_value 
 
-    
-    for key, value in updated_records.items():
-        print(f'\nDict Pair: {key} = {value}')
+
+    # rids to base_pages
+    rid_to_base = {}
+
+    # base_page numbers
+    base_pages_to_get = []
+
+    for value in updated_records.values():
+        base_page_num = page_range.get_page_number(value)
+        rid_to_base[value] = base_page_num
+
+        if base_page_num not in base_pages_to_get:
+            base_pages_to_get.append(base_page_num)
+
+    # sorts list
+    base_pages_to_get.sort()
+
+    i = 0
+    # iterate through base pages in page range to find the base pages we are merging
+    for base_page in page_range.base_pages:
+        if i < len(base_pages_to_get) and base_page.page_number == base_pages_to_get[i]:
+
+            # iterate through rids that are updated and their corresponding base page
+            for key, value in rid_to_base.items():
+                if value == base_page.page_number:
+                    schema_encoding_for_rid = base_page.check_base_record_schema_encoding(key)
+
+                    # let's us know what columns have been updated
+                    update_cols_for_rid = page_range.analyze_schema_encoding(schema_encoding_for_rid)
+
+                    for column in update_cols_for_rid:
+
+                        # updated values of specific columns
+                        updated_val = page_range.return_column_value(key,column)
+
+                        print(f'schema encoding: {base_page.check_base_record_schema_encoding(key)} : {update_cols_for_rid} -> [{column} : {updated_val}]  -> RID : {key} -> Page_Num {base_page.page_number}')
+
+                        # TODO: Merge_Update()
+                    pass
+            
+            
+            i += 1
+            
+            
+    # for key, value in updated_records.items():
+    #     print(f'\nDict Pair: {key} = {value}')
+    #     counter_2 += 1
+
+    # print(f"counter : {counter_2}")
 
 s = copy.deepcopy(page_range)
 __merge(s)
 
-for base_page in page_range.tail_pages:
-    print(base_page.num_records)
+# for base_page in page_range.tail_pages:
+#     print(base_page.num_records)
+
+
+# for rids in updated_rids:
+#     return_record = page_range.return_record(rids)
+#     print(f'\n\nRID: {return_record.rid}')
+#     print(f'KEY: {return_record.key}')
+#     print(f'GRADES: {return_record.columns}')
