@@ -150,7 +150,7 @@ class Query:
         columns_as_list = list(columns)
 
         for rid, address in zip(rids, addresses):
-            page_range_num = address[0]
+            page_range_num = int(address[0])
             cur_page_range = self.table.page_directory[page_range_num]
             cur_page_range.update(rid, columns_as_list)
 
@@ -173,7 +173,7 @@ class Query:
         #ranges that span multiple page ranges
 
         rids = self.table.index.locate_range(start_range,end_range, 0)
-        addresses = self.table.get_list_of_addresses(rids)
+        addresses = self.table.get_list_of_addresses(list(rids))
         sum = 0
 
 

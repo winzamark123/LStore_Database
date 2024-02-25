@@ -1,6 +1,8 @@
+from copy import deepcopy
+
 """
 A data structure holding indices for various columns of a table.
-Key column should be indexed by default, other columns can be indexed
+entry_value column should be indexed by default, other columns can be indexed
 through this object. Indices are usually B-Trees, but other data
 structures can be used as well.
 
@@ -16,18 +18,18 @@ Time Complexities (found from wiki: https://en.wikipedia.org/wiki/B%2B_tree#Char
     - removing a located record time: O(log_b(n))
     - range query w/ k elements time: O(log_b(n) + k) -> O(n)
 
-Each node's key contains:
-    - key: column value
+Each node's entry_value contains:
+    - entry_value: column value
     - value: base RID of specific column value (index of record in physical space)
 Thus nodes will be created with record_info w/ indices:
-    - 0: primary key
+    - 0: primary entry_value
     - 1: base RID
 (maybe make it a dictionary/hash-table instead w/ list of RIDs?)
 
-Q: Each key will store a base RID, but what happens when we update the column?
-A: When we update the column, the record 'key' associated to the RID will be
-   removed and re-inserted with the new value as 'key' and the same RID as
-   'value' (assuming 'key' and 'value' are utilized in dictionary implementation)
+Q: Each entry_value will store a base RID, but what happens when we update the column?
+A: When we update the column, the record 'entry_value' associated to the RID will be
+   removed and re-inserted with the new value as 'entry_value' and the same RID as
+   'value' (assuming 'entry_value' and 'value' are utilized in dictionary implementation)
     - "when a new version of a record is created (i.e., a new tail record),
        first, all indexes defined on unaffected columns do not have to
        be modified and, second, only the affected indexes are modified
@@ -35,12 +37,46 @@ A: When we update the column, the record 'key' associated to the RID will be
        and not the newly created tail records." pg. 543
 """
 
+class Entry_Value:
+
+    def __init__(self, key, starting_rid:int)->None:
+        self.key           = key
+        self.rids:set[int] = {starting_rid}
+        self.is_leaf:bool  = True
+
+    def __str__(self)->str:
+        return f"{self.key}: {str(self.rids)}"
+
+    def set_as_non_leaf(self)->None:
+        assert self.is_leaf, ValueError
+
+        self.is_leaf = False
+        self.rids = {}
+
+    def add_rid(self, rid:int)->None:
+        """
+        Adds RID to the entry value object.
+
+        Returns ValueError if RID not found.
+        """
+        assert self.is_leaf and not rid in self.rids, ValueError
+        self.rids.add(rid)
+
+    def delete_rid(self, rid:int)->None:
+        """
+        Deletes RID from the entry value object.
+
+        Returns ValueError if RID not found.
+        """
+
+        assert self.is_leaf and rid in self.rids, ValueError
+        self.rids.remove(rid)
+
 class Column_Index_Node:
 
     def __init__(self, order:int)->None:
         self.order:int                           = order
-        self.entry_values:list                   = []
-        self.rids:list[list[int]]                = [] # only used for leaf nodes (i:i w/ entry_values)
+        self.entry_values:list[Entry_Value]      = []
         self.child_nodes:list[Column_Index_Node] = [] # only used for non-leaf nodes (i:i+1 w/ entry_values)
 
         self.parent:Column_Index_Node            = None
@@ -48,27 +84,32 @@ class Column_Index_Node:
         self.prev_node:Column_Index_Node         = None
         self.is_leaf:bool                        = True
 
-    def insert_value_in_node(self, entry_value, rid:int):
+    def __len(self)->int:
+        return len(self.entry_values)
+
+    def __str__(self)->str:
+        return (f"entry values: {str(self.get_keys())} (has {len(self.child_nodes)} children)")
+
+    def create_entry_value_object(self, entry_value, rid:int)->Entry_Value:
+        return Entry_Value(entry_value, rid)
+
+    def insert_value_in_node(self, entry_value, rid:int)->None:
         assert self.is_leaf, ValueError
 
         if not self.entry_values:
-            self.entry_values.append(entry_value)
-            self.rids.append([rid])
+            self.entry_values.append(self.create_entry_value_object(entry_value, rid))
             return
 
         for i, item in enumerate(self.entry_values):
-            if entry_value == item:
-                self.rids[i].append(rid)
+            if item.key == entry_value:
+                item.add_rid(rid)
                 break
-            elif item > entry_value:
-                self.entry_values = self.entry_values[:i] + [entry_value] + self.entry_values[i:]
-                self.rids = self.rids[:i] + [[rid]] + self.rids[i:]
+            elif item.key > entry_value:
+                self.entry_values = self.entry_values[:i] + [self.create_entry_value_object(entry_value, rid)] + self.entry_values[i:]
                 break
             elif i + 1 == len(self.entry_values):
-                self.entry_values.append(entry_value)
-                self.rids.append([rid])
+                self.entry_values.append(self.create_entry_value_object(entry_value, rid))
                 break
-        return
 
     def split_node(self)->None:
         self.split_leaf_node() if self.is_leaf else self.split_nonleaf_node()
@@ -95,22 +136,18 @@ class Column_Index_Node:
         # split entry values
         left_node.entry_values = self.entry_values[:mid]
         right_node.entry_values = self.entry_values[mid:]
-        self.entry_values = [self.entry_values[mid]]
-
-        # split RIDs
-        left_node.rids = self.rids[:mid]
-        right_node.rids = self.rids[mid:]
+        self.entry_values = [deepcopy(self.entry_values[mid])]
 
         # set current node to non-leaf properties
         self.is_leaf = False
         self.next_node = None
-        self.rids = []
+        self.entry_values[0].set_as_non_leaf()
         self.child_nodes = [left_node, right_node]
 
     def split_nonleaf_node(self):
         assert self.next_node == None, ValueError
         assert self.prev_node == None, ValueError
-        assert self.rids == [], ValueError
+        assert self.get_rids() == [], ValueError
 
         mid = self.order // 2
         left_node = Column_Index_Node(self.order)
@@ -125,7 +162,7 @@ class Column_Index_Node:
         # split entry values
         left_node.entry_values = self.entry_values[:mid]
         right_node.entry_values = self.entry_values[mid+1:]
-        self.entry_values = [self.entry_values[mid]]
+        self.entry_values = [deepcopy(self.entry_values[mid])]
 
         #split child nodes
         left_node.child_nodes = self.child_nodes[:mid+1]
@@ -137,11 +174,20 @@ class Column_Index_Node:
 
         self.child_nodes = [left_node, right_node]
 
+    def get_keys(self)->list:
+        return [_.key for _ in self.entry_values]
+
+    def get_rids(self)->list[set[int]]:
+        rlist = list()
+        for _ in self.entry_values:
+            if _.rids: rlist.append(_.rids)
+        return rlist
+
+    def get_entry_by_key(self, entry_value)->Entry_Value:
+        return self.entry_values[self.get_keys().index(entry_value)]
+
     def is_full(self):
         return len(self.entry_values) == self.order
-
-    def __str__(self):
-        return (f"entry values: {str(self.entry_values)} (has {len(self.child_nodes)} children)")
 
 class Column_Index_Tree:
 
@@ -153,15 +199,15 @@ class Column_Index_Tree:
     def __len__(self)->int:
         return self.size
 
-    def find_node(self, prev_node:Column_Index_Node, entry_value)->Column_Index_Node:
-        for i, cur_val in enumerate(prev_node.entry_values):
-            if cur_val > entry_value:
+    def find_child_node(self, prev_node:Column_Index_Node, entry_value)->Column_Index_Node:
+        for i, item in enumerate(prev_node.entry_values):
+            if item.key > entry_value:
                 return prev_node.child_nodes[i]
         return prev_node.child_nodes[i+1]
 
-    def get_node_index(self, prev_node:Column_Index_Node, entry_value)->int:
-        for i, cur_val in enumerate(prev_node.entry_values):
-            if cur_val > entry_value:
+    def get_index_for_split_node(self, prev_node:Column_Index_Node, entry_value)->int:
+        for i, item in enumerate(prev_node.entry_values):
+            if item.key > entry_value:
                 return i
         return i + 1
 
@@ -177,7 +223,7 @@ class Column_Index_Tree:
         parent_tree.child_nodes.pop(index)
 
         for i, item in enumerate(parent_tree.entry_values):
-            if item > pivot:
+            if item.key > pivot.key:
                 # add child tree to parent tree
                 parent_tree.entry_values = parent_tree.entry_values[:i] + [pivot] + parent_tree.entry_values[i:]
                 parent_tree.child_nodes = parent_tree.child_nodes[:i] + child_tree.child_nodes + parent_tree.child_nodes[i:]
@@ -198,9 +244,8 @@ class Column_Index_Tree:
         assert rid == self.size + 1, IndexError
 
         cur_node = self.root
-        index = None
         while not cur_node.is_leaf:
-            cur_node = self.find_node(cur_node, entry_value)
+            cur_node = self.find_child_node(cur_node, entry_value)
         cur_node.insert_value_in_node(entry_value, rid)
 
         value_to_find = entry_value
@@ -208,14 +253,13 @@ class Column_Index_Tree:
             cur_node.split_node()
             split_node_root_value = cur_node.entry_values[0]
             if cur_node.parent:
-                index = self.get_node_index(cur_node.parent, value_to_find)
-                self.merge(cur_node.parent, cur_node, index)
+                self.merge(cur_node.parent, cur_node, self.get_index_for_split_node(cur_node.parent, value_to_find))
             cur_node = cur_node.parent
-            value_to_find = split_node_root_value
+            value_to_find = split_node_root_value.key
 
         self.size += 1
 
-    def get_rids_equality_search(self, entry_value)->list[int]:
+    def get_rids_equality_search(self, entry_value)->set[int]:
         """
         Returns a list of RIDs associated to a provided entry value.
 
@@ -225,19 +269,13 @@ class Column_Index_Tree:
 
         cur_node = self.root
         while not cur_node.is_leaf:
-            for i, val in enumerate(cur_node.entry_values):
-                if val > entry_value:
-                    cur_node = cur_node.child_nodes[i]
-                    break
-                elif val == entry_value or i + 1 == len(cur_node.entry_values):
-                    cur_node = cur_node.child_nodes[i+1]
-                    break
+            cur_node = self.find_child_node(cur_node, entry_value)
         try:
-            return cur_node.rids[cur_node.entry_values.index(entry_value)]
+            return cur_node.entry_values[cur_node.get_keys().index(entry_value)].rids
         except ValueError:
-            return []
+            return {}
 
-    def get_rids_range_search(self, lower_bound, upper_bound)->list[int]:
+    def get_rids_range_search(self, lower_bound, upper_bound)->set[int]:
         """
         Returns all RIDs associated with entry values in between
         the specified upper and lower bound values (inclusive).
@@ -249,32 +287,41 @@ class Column_Index_Tree:
 
         cur_node = self.root
         while not cur_node.is_leaf:
-            for i, val in enumerate(cur_node.entry_values):
-                if val > lower_bound:
-                    cur_node = cur_node.child_nodes[i]
-                    break
-                elif val == lower_bound or i + 1 == len(cur_node.entry_values):
-                    cur_node = cur_node.child_nodes[i+1]
-                    break
+            cur_node = self.find_child_node(cur_node, lower_bound)
 
-        return_list = []
-        while cur_node != None:
-            will_break = False
-            for i, val in enumerate(cur_node.entry_values):
-                if val > upper_bound:
-                    will_break = True
+        rset = set()
+        break_while_loop = False
+        while cur_node != None and not break_while_loop:
+            for item in cur_node.entry_values:
+                if item.key > upper_bound:
+                    break_while_loop = True
                     break
-                elif lower_bound <= val and val <= upper_bound:
-                    return_list += cur_node.rids[i]
-            if will_break: break
+                elif lower_bound <= item.key and item.key <= upper_bound:
+                    rset = rset.union(item.rids)
+                else:
+                    raise ValueError
             cur_node = cur_node.next_node
-        return return_list
+        return rset
 
-    def return_entry_values_lists(self, node:Column_Index_Node, return_list:list)->list:
-        return_list += node.entry_values
-        for child_node in node.child_nodes:
-            return_list += self.return_entry_values_lists(child_node)
-        return return_list
+    def delete_entry(self, entry_value, rid:int)->None:
+        # find entry value in tree
+        cur_node = self.root
+        while not cur_node.is_leaf:
+            cur_node = self.find_child_node(cur_node, entry_value)
+        try:
+            entry_value_object = cur_node.entry_values[cur_node.get_keys().index(entry_value)]
+        except ValueError:
+            print(f"Error: Entry value {entry_value} not found.")
+            return
+
+        # find RID in entry value
+        try:
+            entry_value_object.delete_rid(rid)
+        except ValueError:
+            print(f"Error: RID value {rid} no associated with entry value {entry_value}.")
+            return
+
+
 
 class Index:
 
@@ -289,6 +336,7 @@ class Index:
         Note: all record columns must be initialized. If a record column
         does not have a value, simply pass None as its element value.
         """
+
         for i, record_entry_value in enumerate(record_columns):
             self.indices[i].insert_value(record_entry_value, rid)
 
