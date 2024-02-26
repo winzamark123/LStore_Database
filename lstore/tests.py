@@ -728,7 +728,7 @@ class Test_Column_Index_Tree(TestCase):
     tree.delete_entry(94, 7)
     self.assertEqual(tree.root.child_nodes[2].get_keys(), [91,99])
     self.assertEqual(tree.root.child_nodes[2].child_nodes[2].get_keys(), [99])
-    
+
     self.assertEqual(tree.root.child_nodes[1].get_keys(), [51])
     self.assertEqual(tree.root.child_nodes[1].child_nodes[1].get_keys(), [51,56])
     tree.delete_entry(51, 6)
@@ -740,6 +740,96 @@ class Test_Column_Index_Tree(TestCase):
     tree.delete_entry(59, 2)
     self.assertEqual(tree.root.get_keys(), [45,65])
     self.assertEqual(tree.root.child_nodes[2].child_nodes[0].get_keys(), [65])
+
+  def test_delete_case_3_non_leaf_above_leaf(self):
+    tree = Column_Index_Tree(3)
+    seed(100)
+    vals_set = set()
+    for i in range(1, 11):
+      val = randint(1, 99)
+      if val in vals_set:
+        val = randint(1, 99)
+      tree.insert_value(val, i)
+      vals_set.add(val)
+
+    self.assertEqual(tree.root.child_nodes[2].get_keys(), [91,94])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[0].get_keys(), [59,65])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[1].get_keys(), [91])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[2].get_keys(), [94,99])
+    tree.delete_entry(91, 5)
+    self.assertEqual(tree.root.child_nodes[2].get_keys(), [65,94])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[0].get_keys(), [59])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[1].get_keys(), [65])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[2].get_keys(), [94,99])
+
+  def test_delete_case_3_deep_non_leaf(self):
+    return
+    tree = Column_Index_Tree(3)
+    seed(100)
+    vals_list = list()
+    for i in range(1, 19):
+      val = randint(1, 99)
+      if val in vals_list:
+        val = randint(1, 99)
+      tree.insert_value(val, i)
+      vals_list.append(val)
+
+    # 19 1
+    # 59 2
+    # 99 3
+    # 23 4
+    # 91 5
+    # 51 6
+    # 94 7
+    # 45 8
+    # 56 9
+    # 65 10
+    # 15 11
+    # 69 12
+    # 16 13
+    # 11 14
+    # 95 15
+    # 34 16
+    # 7 17
+    # 85 18
+
+    self.assertEqual(tree.root.child_nodes[0].get_keys(), [16,45])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].get_keys(), [51])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[0].get_keys(), [45])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[1].get_keys(), [51,56])
+    tree.delete_entry(45, 8)
+    self.assertEqual(tree.root.child_nodes[0].get_keys(), [16,51])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].get_keys(), [56])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[0].get_keys(), [51])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[1].get_keys(), [56])
+
+  def test_delete_case_4(self):
+    return
+    tree = Column_Index_Tree(3)
+    seed(100)
+    vals_set = set()
+    for i in range(1, 11):
+      val = randint(1, 99)
+      if val in vals_set:
+        val = randint(1, 99)
+      tree.insert_value(val, i)
+      vals_set.add(val)
+    tree.delete_entry(51, 6)
+
+    self.assertEqual(tree.root.get_keys(), [45,59])
+    self.assertEqual(tree.root.child_nodes[1].get_keys(), [56])
+    self.assertEqual(tree.root.child_nodes[1].child_nodes[1].get_keys(), [56])
+    self.assertEqual(tree.root.child_nodes[2].get_keys(), [91,94])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[0].get_keys(), [59,65])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[1].get_keys(), [91])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[2].get_keys(), [94,99])
+    tree.delete_entry(56, 9)
+    self.assertEqual(tree.root.get_keys(), [45,91])
+    self.assertEqual(tree.root.child_nodes[1].get_keys(), [59])
+    self.assertEqual(tree.root.child_nodes[1].child_nodes[1].get_keys(), [59,65])
+    self.assertEqual(tree.root.child_nodes[2].get_keys(), [94])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[0].get_keys(), [91])
+    self.assertEqual(tree.root.child_nodes[2].child_nodes[1].get_keys(), [94,99])
 
 
 if __name__ == "__main__":

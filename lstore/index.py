@@ -88,11 +88,11 @@ class Column_Index_Node:
         self.prev_node:Column_Index_Node         = None
         self.is_leaf:bool                        = True
 
-    def __len(self)->int:
+    def __len__(self)->int:
         return len(self.entry_values)
 
     def __str__(self)->str:
-        return (f"entry values: {str(self.get_keys())} (has {len(self.child_nodes)} children)")
+        return (f"{str(self.get_keys())} (has {len(self.child_nodes)} children)")
 
     def create_entry_value_object(self, entry_value, rid:int)->Entry_Value:
         return Entry_Value(entry_value, rid)
@@ -215,8 +215,6 @@ class Column_Index_Tree:
             if entry_value in node.get_keys():
                 return node, node.get_keys().index(entry_value)
         raise ValueError
-        
-
 
     def get_index_for_split_node(self, prev_node:Column_Index_Node, entry_value)->int:
         for i, item in enumerate(prev_node.entry_values):
@@ -345,12 +343,31 @@ class Column_Index_Tree:
         # TODO: determine if deleting from root is its own case
 
         reference_node, reference_index = self.find_non_leaf_reference(cur_node, entry_value)
+        child_node_index = reference_index + 1
         # case 2: entry value is at beginning of leaf node but can be replaced by the next entry value
         if len(cur_node.entry_values) > 1:
             del cur_node.entry_values[0]
             reference_node.entry_values[reference_index] = deepcopy(cur_node.entry_values[0])
             reference_node.entry_values[reference_index].set_as_non_leaf()
             return
+
+        # case 3: entry value is at beginning of leaf node and steal from left neighbor if possible
+        if len(reference_node.child_nodes[child_node_index-1]) > 1:
+            left_stolen_neighbor = deepcopy(reference_node.child_nodes[child_node_index-1].entry_values[-1])
+            reference_node.entry_values[reference_index] = deepcopy(left_stolen_neighbor)
+            reference_node.entry_values[reference_index].set_as_non_leaf()
+            cur_node.entry_values[index] = left_stolen_neighbor
+            del reference_node.child_nodes[child_node_index-1].entry_values[-1]
+            if not left_stolen_neighbor.is_leaf:
+                left_stolen_neighbor_associated_child_nodes = deepcopy(reference_node.child_nodes[child_node_index-1].child_nodes[-1])
+                reference_node.child_nodes[child_node_index].child_nodes = left_stolen_neighbor_associated_child_nodes
+                del reference_node.child_nodes[child_node_index-1].child_nodes[-1]
+            reference_node.entry_values[reference_index] = deepcopy(left_stolen_neighbor)
+            reference_node.entry_values[reference_index].set_as_non_leaf()
+            del cur_node
+
+
+
 
 
 class Index:
