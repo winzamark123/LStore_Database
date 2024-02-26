@@ -26,6 +26,14 @@ class Database():
         for table_name, table in self.tables.items():
             disk = self.disks[table_name]
             disk.save_table_metadata(table)
+            for i in range(table.num_columns):
+                base_page_to_write = table.page_directory[0].base_pages[i].physical_pages
+                print("Length of page_to_write", len(base_page_to_write))
+                print("page_to_write", base_page_to_write)
+
+                for j in range(len(base_page_to_write)):
+                    physical_page_to_write = base_page_to_write[j]
+                    disk.save_to_disk_physicalPage(0, False, j, physical_page_to_write)
         self.tables = {}
 
     """
@@ -41,7 +49,7 @@ class Database():
         
         new_table = Table(table_name, num_columns, key_index)
         self.tables[table_name] = new_table
-        self.disks[table_name] = Disk(self.db_name, table_name, num_columns)
+        self.disks[table_name] = Disk(db_name=self.db_name, table_name=table_name, num_columns=num_columns)
         print(f"Table {table_name} created")
 
         return new_table

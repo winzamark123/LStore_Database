@@ -5,25 +5,17 @@ from lstore.physical_page import Physical_Page
 
 class Disk():
     def __init__(self, db_name:str, table_name:str, num_columns:int):
-        self.path_name = os.getcwd() + '/' + db_name + '/' + table_name # /*/ECS165/Grades
+        self.path_Table = os.getcwd() + '/' + db_name + '/' + table_name # /*/ECS165/Grades
+        self.path_pageRange = None
+        self.path_page = None 
 
-        if not os.path.exists(self.path_name):
-            os.makedirs(self.path_name)
-            print("Table directory created at:", self.path_name)
+        if not os.path.exists(self.path_Table):
+            os.makedirs(self.path_Table)
+            print("Table directory created at:", self.path_Table)
         
-        for column_index in range(num_columns):
-            file_name = self.path_name + '/' + str(column_index)
-            if not os.path.exists(file_name):
-                file = open(file_name, 'wb')
-
-                # empty_page = Page(0, [0], 0)
-                # file.write((0).to_bytes(4, byteorder='big'))
-                # file.write((empty_page.num_records).page_to_bytes())
-                # file.write(empty_page.physical_pages.to_bytes())
-    
     def save_table_metadata(self, table:Table) -> bool:
         table_data = table.meta_table_to_disk()
-        table_file = os.path.join(self.path_name, '_metadata.json')
+        table_file = os.path.join(self.path_Table, '_metadata.json')
         try: 
             with open(table_file, 'w') as file:
                 json.dump(table_data, file)
@@ -34,7 +26,7 @@ class Disk():
             return False
     
     def load_table_metadata(self) -> Table:
-        table_metadata_file = os.path.join(self.path_name, '_metadata.json')
+        table_metadata_file = os.path.join(self.path_Table, '_metadata.json')
         try: 
             with open(table_metadata_file, 'r') as file:
                 table_data = json.load(file)
@@ -45,7 +37,7 @@ class Disk():
             return None
 
     def load_page(self, col_num: int) -> Physical_Page:
-        page_num_file = os.path.join(self.path_name, str(col_num))
+        page_num_file = os.path.join(self.path_Table, str(col_num))
         try:
             with open(page_num_file, 'rb') as file:
                 num_records = int.from_bytes(file.read(4), byteorder='big')
@@ -58,7 +50,30 @@ class Disk():
             return None
         pass
         
-    def save_page(self, physical_page: Physical_Page) -> bool:
-        pass   
+    def save_to_disk_physicalPage(self, page_range_id: int, isTail: bool, physical_page_id: int, page_to_write: Physical_Page) -> bool:
+        cur_table_path = self.path_Table
+        cur_page_range_path = cur_table_path + '/page_range' + str(page_range_id)
+        
+        if isTail:
+            cur_page_range_path += '/tail/tail_page' + str(physical_page_id)
+        else:
+            cur_page_range_path += '/base/base_page' + str(physical_page_id)
+
+        cur_file_path = cur_page_range_path + '/physical'
+
+        # Ensure the directory exists before attempting to write the file
+        os.makedirs(os.path.dirname(cur_file_path), exist_ok=True)
+
+        try:
+            with open(cur_file_path, 'wb') as file:
+                # Assuming page_to_write.data is already a bytes object; remove .to_bytes if unnecessary
+                file.write(page_to_write.data)
+                print("Physical Page saved to:", cur_file_path)
+                return True
+        except Exception as e:
+            print("Error saving physical page:", e)
+            return False
+
+
 
         
