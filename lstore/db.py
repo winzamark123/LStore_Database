@@ -1,13 +1,16 @@
 from lstore.table import Table
 from lstore.disk import Disk
+import pickle
 
 import os 
 class Database():
 
     def __init__(self):
-        self.tables = {}
+        self.table_directory = {}
+        self.table_objects = {}
         self.db_name = None
-        self.disks = {}
+        self.disk_directory = {} #disk[table_name] = Disk()
+        self.root_path = None
         pass
 
     def open(self, db_name:str) -> None:
@@ -16,23 +19,28 @@ class Database():
         Takes in a path from the root of the directory and opens the database at that location
         """
         self.db_name = db_name # Store the db_name
-        path_name = os.getcwd() + '/' + db_name # /*/ECS165
+        root_path = os.getcwd() + '/' + db_name # /*/ECS165
 
-        if not os.path.exists(path_name):
-            os.makedirs(path_name)
-            print("Database directory created at:", path_name)
+        self.root_path = root_path
+
+        if not os.path.exists(root_path):
+            os.makedirs(root_path)
+            print("Database directory created at:", root_path)
+
+        #TODO: Load all the info from DB
         
     def close(self):
-        for table_name, table in self.tables.items():
-            disk = self.disks[table_name]
-            disk.save_table_metadata(table)
-            base_page_to_write = table.page_directory[0].base_pages[0].physical_pages
-            print("Length of base_page_to_write", len(base_page_to_write))
-            print("base_page_to_write", base_page_to_write)
-            for i in range(table.num_columns):
-                    physical_page_to_write = base_page_to_write[i]
-                    disk.save_to_disk_physicalPage(0, False, i, physical_page_to_write)
-        self.tables = {}
+        #Saving all the Tables in the Database to disk
+        table_directory_path = os.path.join(self.root_path, 'table_directory.pkl')
+        table_directory_file = open(table_directory_path, 'wb')
+        pickle.dump(self.table_directory, table_directory_file)
+        table_directory_file.close()
+
+        # for table_name, table in self.table_directory.items():
+        #     disk = self.disk_directory[table_name]
+        #     disk.save_table_metadata(table)
+
+        self.table_directory = {}
 
     """
     # Creates a new table
@@ -41,16 +49,43 @@ class Database():
     :param key: int             #Index of table key in columns
     """
     def create_table(self, table_name:str, num_columns:int, key_index:int)->Table:
-        if table_name in self.tables:
+        if table_name in self.table_directory:
             print("Table already exists")
             raise ValueError(f"Table {table_name} already exists.")
         
         new_table = Table(table_name, num_columns, key_index)
-        self.tables[table_name] = new_table
-        self.disks[table_name] = Disk(db_name=self.db_name, table_name=table_name, num_columns=num_columns)
+        self.table_objects[table_name] = new_table
+        self.__create_disk(table_name, new_table)
+        #{table_name: Disk()}
+        #{table_name: Table()}
+
+        #Table() = meta, page_dir, page_range, base_page, tail_page
+        #Disk() = save_table_metadata, load_table_metadata, load_page, save_to_disk_physicalPage
+
+        #Save MetaData of Table 
+        self.table_directory[table_name] = {
+            "table_name": table_name,
+            "table_path": os.path.join(self.root_path, table_name),
+            "num_columns": num_columns,
+            "key_index": key_index
+        }
+
         print(f"Table {table_name} created")
 
         return new_table
+
+    def __create_disk(self, table_name:str, table:Table) -> Disk:
+        new_disk = Disk(db_name=self.db_name, table=table, num_columns=table.num_columns)
+        self.disk_directory[table_name] = new_disk
+
+        table_path = os.path.join(self.root_path, table_name)
+
+        if not os.path.exists(table_path):
+            os.makedirs(table_path)
+            print("Table directory created at:", table_path)
+
+        print(f"Disk for {table_name} created")
+        return new_disk
 
     
     """
@@ -59,7 +94,7 @@ class Database():
     def drop_table(self, table_name:str)->None:
         if table_name in self.tables[table_name]:
             del self.tables[table_name]
-            del self.disks[table_name]
+            del self.disk_directory[table_name]
             
         else:
             print("Table does not exist")

@@ -1,25 +1,20 @@
 import os 
-import json
+import pickle
 from lstore.table import Table
 from lstore.physical_page import Physical_Page
 
 class Disk():
-    def __init__(self, db_name:str, table_name:str, num_columns:int):
-        self.path_Table = os.getcwd() + '/' + db_name + '/' + table_name # /*/ECS165/Grades
-        self.path_pageRange = None
-        self.path_page = None 
-
-        if not os.path.exists(self.path_Table):
-            os.makedirs(self.path_Table)
-            print("Table directory created at:", self.path_Table)
+    def __init__(self, db_name:str, table: Table, num_columns:int):
+        self.table_name = table.name
+        self.table_path = os.getcwd() + '/' + db_name + '/' + table.name
         
-    def save_table_metadata(self, table:Table) -> bool:
-        table_data = table.meta_table_to_disk()
-        table_file = os.path.join(self.path_Table, '_metadata.json')
+    def save_table_metadata(self, table:Table, path_to_disk: str) -> bool:
+        metadata_path = os.path.join(path_to_disk, '_metadata.pkl')
+        table_data = table.convert_table_meta_to_dict()
+
         try: 
-            with open(table_file, 'w') as file:
-                json.dump(table_data, file)
-            print("Table metadata saved to:", table_file)
+            metadata_file = open(metadata_path, 'wb')
+            pickle.dump(table_data, metadata_file)
             return True 
         except Exception as e:
             print("Error saving table metadata:", e)
@@ -29,9 +24,10 @@ class Disk():
         table_metadata_file = os.path.join(self.path_Table, '_metadata.json')
         try: 
             with open(table_metadata_file, 'r') as file:
-                table_data = json.load(file)
-                table = Table.meta_disk_to_table(table_data)
-                return table
+                # table_data = json.load(file)
+                # table = Table.meta_disk_to_table(table_data)
+                # return table
+                pass
         except Exception as e:
             print("Error loading table metadata:", e)
             return None
@@ -49,7 +45,7 @@ class Disk():
             print("Error loading page:", e)
             return None
         pass
-        
+
     def save_to_disk_physicalPage(self, page_range_id: int, isTail: bool, physical_page_id: int, page_to_write: Physical_Page) -> bool:
         cur_table_path = self.path_Table
         cur_page_range_path = cur_table_path + '/page_range' + str(page_range_id)
@@ -74,6 +70,12 @@ class Disk():
             print("Error saving physical page:", e)
             return False
 
-
-
-        
+    #Given the path, write the physical page into disk
+    def write_to_disk(path_to_page: str, physical_page: Physical_Page) -> bool:
+        try:
+            with open(path_to_page, 'wb') as file:
+                file.write(physical_page.data)
+            return True
+        except Exception as e:
+            print("Error writing to disk:", e)
+            return False

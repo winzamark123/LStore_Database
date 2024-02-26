@@ -85,8 +85,7 @@ for i in range(0, number_of_aggregates):
 print("Aggregate finished")
 db.close()
 
-dir_path = os.getcwd() + '/ECS165/Grades/page_range0/base/base_page0'
-
+dir_path = os.getcwd() + "/ECS165/"  
 files = os.listdir(dir_path)
 
 for file in files:

@@ -17,19 +17,15 @@ class Table:
         self.deleted_rids = []
         self.index = Index(num_columns, ORDER_CHOICE)
         self.key_column_index = key_index
-
-        # rid for base records - increase by 1 only when a record is added (for base records)
         self.rid = 0
-
-        # tid (rid) for tail records - decrease by 1 once a record is added or updated (for tails records)
         self.tid = 0
-    
+
         self.entry_size_for_columns = [2,8,8]
         for i in range(num_columns): 
             self.entry_size_for_columns.append(COLUMN_SIZE)
 
-        #CREATE THE PAGE DIRECTORY with SIZE BASED ON THE num_columns 
         self.page_directory = [Page_Range(num_columns, self.entry_size_for_columns, self.key_column)]
+
 
     # Get Page Range and Base Page from RID
     def get_list_of_addresses(self, rids)-> list:
@@ -56,8 +52,7 @@ class Table:
             return True
         return False 
 
-    # convert table to dictionary for disk storage
-    def meta_table_to_disk(self) -> dict:
+    def convert_table_meta_to_dict(self)-> dict:
         table_data = {
             "name": self.name,
             "num_columns": self.num_columns,
