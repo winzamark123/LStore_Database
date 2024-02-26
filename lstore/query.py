@@ -11,7 +11,7 @@ class Query:
     """
     def __init__(self, table:Table):
         self.table = table
-        pass
+        self.inserted_keys = {}
 
     
     """
@@ -42,6 +42,12 @@ class Query:
     # Returns False if insert fails for whatever reason
     """
     def insert(self, *columns:tuple)->bool:
+
+        # checks for duplicate keys
+        if self.inserted_keys.get(columns[0]) is not None:
+            print("returned true")
+            return True 
+        
         latest_page_range = self.table.page_directory[-1]
 
         #Check if the latest page_range has capacity
@@ -61,7 +67,10 @@ class Query:
         #Create a new record and insert it into the latest base_page
         new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
         insertSuccess = latest_base_page.insert_new_record(new_record)
-        
+
+        # keep track of inserted keys
+        self.inserted_keys[columns[0]] = 'k'
+
         self.table.index.insert_record_to_index(columns, new_record.rid)
 
         #Checking 
@@ -88,6 +97,8 @@ class Query:
         #projected_columns_index: what columns you want to show 
                                     #[1,1,1,1,1] (all columns)
 
+        copy_list = projected_columns_index.copy()
+
         #Convert SID to RID with Indexing
         rids = [] #list of rids
         rids = self.table.index.locate(search_key, search_key_index) #list of rids (page_range_num, base_page_num, record_num
@@ -99,22 +110,47 @@ class Query:
         #GET RECORDS
         records = [] # list of records
 
+        for base_pages in self.table.page_directory[0].base_pages:
+            print(print(f'Base Page: {base_pages.page_number}'))
+
         for rid, address in zip(rids, addresses): #zip the rids and addresses together iterating through both
             # print("RID", rid)
             # print("ADDRESS", address)
 
             page_range_num = address[0]  # get the first element of the tuple
+            print(f"Page range: {page_range_num} for RID : {rid}")
             cur_page_range = self.table.page_directory[page_range_num]
+            print(f"Grabbed Page_range: {cur_page_range.page_range_number}")
+            for base_page in cur_page_range.base_pages:
+                print(f'Base Page: {base_page.page_number}')
             
             # print("PAGE_RANGE_NUM", page_range_num)
-            
             record_data = cur_page_range.return_record(rid)
 
             record_data_key = record_data.get_key() #get the key of the record
-            record_data_values = record_data.get_values() #get the values of the record
+
+            # if it wants all the columns 
+            if copy_list == [1,1,1,1,1]:
+                record_data_values = record_data.get_values() #get the values of the record
+                print(record_data_values)
+            else:
+                # get's indices of columns to select
+                indices = [i for i, x in enumerate(projected_columns_index) if x == 1]
+                new_list_for_tuple = []
+
+                # wanted columns
+                for column in indices:
+                    if column == 0:
+                        new_list_for_tuple.append(record_data_key)
+                    else:
+                        new_list_for_tuple.append(record_data.columns[column-1])
+
+                record_data_values = tuple(new_list_for_tuple)
+                print(record_data_values)
 
             record = Record(rid, record_data_key, record_data_values) #create a new record object
             records.append(record)
+        print(f"Length of record columns = {len(records[0].columns)}")
         return records
 
 
@@ -153,6 +189,8 @@ class Query:
             page_range_num = int(address[0])
             cur_page_range = self.table.page_directory[page_range_num]
             cur_page_range.update(rid, columns_as_list)
+
+            #self.__merge_checker(cur_page_range.page_range_number)
 
         return True
 

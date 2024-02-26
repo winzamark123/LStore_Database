@@ -1,55 +1,63 @@
 from lstore.table import Table
+from lstore.disk import Disk
 
 import os 
 class Database():
 
     def __init__(self):
         self.tables = {}
+        self.db_name = None
+        self.disks = {}
         pass
 
-    def open(self, path):
+    def open(self, db_name:str) -> None:
+
         """
         Takes in a path from the root of the directory and opens the database at that location
         """
+        self.db_name = db_name # Store the db_name
+        path_name = os.getcwd() + '/' + db_name # /*/ECS165
 
-        if os.path.isdir(path):
-            self.root_name = path
-
-
-
-
-
-        pass
-    
+        if not os.path.exists(path_name):
+            os.makedirs(path_name)
+            print("Database directory created at:", path_name)
+        
     def close(self):
-        pass
-    
+        for table_name, table in self.tables.items():
+            disk = self.disks[table_name]
+            disk.save_table_metadata(table)
+        self.tables = {}
+
     """
     # Creates a new table
     :param name: string         #Table name
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def create_table(self, name:str, num_columns:int, key_index:int)->Table:
-        if name in self.tables:
+    def create_table(self, table_name:str, num_columns:int, key_index:int)->Table:
+        if table_name in self.tables:
             print("Table already exists")
-            raise ValueError(f"Table {name} already exists.")
+            raise ValueError(f"Table {table_name} already exists.")
         
-        table = Table(name, num_columns, key_index)
+        new_table = Table(table_name, num_columns, key_index)
+        self.tables[table_name] = new_table
+        self.disks[table_name] = Disk(self.db_name, table_name, num_columns)
+        print(f"Table {table_name} created")
 
-        self.tables[name] = table
-        return table
+        return new_table
 
     
     """
     # Deletes the specified table
     """
-    def drop_table(self, name:str)->None:
-        if name in self.tables[name]:
-            del self.tables[name]
+    def drop_table(self, table_name:str)->None:
+        if table_name in self.tables[table_name]:
+            del self.tables[table_name]
+            del self.disks[table_name]
+            
         else:
             print("Table does not exist")
-            raise ValueError(f"Table {name} does not exist.")
+            raise ValueError(f"Table {table_name} does not exist.")
         
 
     
@@ -60,4 +68,5 @@ class Database():
         if name in self.tables:
             return self.tables[name]
         else:
+            print("Table does not exist")
             return None
