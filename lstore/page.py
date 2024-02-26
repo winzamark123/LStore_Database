@@ -20,8 +20,7 @@ class Page:
 
         if is_tail_page:
             # Increment the tail_page_counter each time a Tail_Page object is created
-            Page.tail_page_counter += 1
-            self.page_number = Page.tail_page_counter
+            self.page_number = 0
         else:
             # Increment the base_page_counter each time a Base_Page object is created
             Page.base_page_counter += 1

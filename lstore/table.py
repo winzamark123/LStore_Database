@@ -2,6 +2,7 @@ from lstore.index import Index
 from lstore.config import *
 from time import time
 from lstore.page_range import Page_Range
+from lstore.page import Page
 import threading
 import copy
 
@@ -31,9 +32,22 @@ class Table:
         for _ in range(META_DATA_NUM_COLUMNS - 1 + num_columns):
             self.entry_size_for_columns.append(COLUMN_SIZE)
 
+        # used to give each page_range a unique id for each table
+        self.number_page_ranges = 0
 
         #CREATE THE PAGE DIRECTORY with SIZE BASED ON THE num_columns 
         self.page_directory = [Page_Range(num_columns, self.entry_size_for_columns, self.key_column)]
+
+        self.page_directory[0].page_range_number = 0
+
+        self.reset_base_page_counter()
+
+        self.page_directory[0].base_pages[0].page_number = 1
+
+    @classmethod
+    def reset_base_page_counter(cls):
+        # Reset the base_page_counter to 0
+        Page.base_page_counter = 1
 
     # Get Page Range and Base Page from RID
     def get_list_of_addresses(self, rids)-> list:
@@ -100,7 +114,7 @@ class Table:
             base_rid_page = tail_page.get_base_rid_page()
             tid_page = tail_page.physical_pages[1]
             
-            # jumps straight to the last tail record (TODO: make it jump to very last tail record even if tail page isn't full)
+            # jumps straight to the end of the tail page (TODO: make it jump to very last tail record even if tail page isn't full)
             for i in range(PHYSICAL_PAGE_SIZE - COLUMN_SIZE, -1, -COLUMN_SIZE):
                 # Extract 8 bytes at a time using slicing
                 base_rid_for_tail_record_bytes = base_rid_page.data[i:i+COLUMN_SIZE]
@@ -156,7 +170,7 @@ class Table:
 
                             print(f'schema encoding: {base_page.check_base_record_schema_encoding(key)} : {update_cols_for_rid} -> [{column} : {updated_val}]  -> RID : {key} -> Page_Num {base_page.page_number}')
                 
-                
+                        
                 i += 1
     
     # checks if merging needs to happen

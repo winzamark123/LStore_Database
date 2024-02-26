@@ -4,6 +4,9 @@ from time import process_time
 from random import randint, randrange, choice, shuffle
 from lstore.page_range import * 
 import copy
+import threading
+
+from lstore.bufferpool import Bufferpool
 
 # To make it work, uncomment all the print() statements in page.py to see the physical pages get updated 
 
@@ -21,6 +24,8 @@ for i in range(num_columns):
     entry_size_for_columns.append(COLUMN_SIZE)
 
 page_range = Page_Range(num_columns, entry_size_for_columns, key)
+
+
 print('Base Page: ',page_range.base_pages[0].page_number)
 print('Tail Page: ', page_range.tail_pages[0].page_number)
 
@@ -96,7 +101,7 @@ records_updated = 0
 updated_rids = []
 
 # updates record
-while records_updated < 1024:
+while records_updated < 10:
     update_rid = randint(1, 512 * base_page_amount - 1)
     update_columns = choice(update_cols)
     print(f'\n{update_columns}')
@@ -113,14 +118,15 @@ print(f"Updating {records_updated} records took:  \t\t\t", update_time_1 - updat
 print("\t\t\n\n\nReturn Record !!\n\n\n")
 
 
-# return_record = 0
+# updated_return_record = 0
 
 # for rids in updated_rids:
-#     return_record = page_range.return_record(rids)
-#     print(f'\n\nRID: {return_record.rid}')
-#     print(f'KEY: {return_record.key}')
-#     print(f'GRADES: {return_record.columns}')
+#     updated_return_record = page_range.updated_return_record(rids)
+#     print(f'\n\nRID: {updated_return_record.rid}')
+#     print(f'KEY: {updated_return_record.key}')
+#     print(f'GRADES: {updated_return_record.columns}')
 
+merge_updated_list = []
 
 @staticmethod
 def __merge(page_range:Page_Range):
@@ -135,7 +141,7 @@ def __merge(page_range:Page_Range):
         base_rid_page = tail_page.get_base_rid_page()
         tid_page = tail_page.physical_pages[1]
         
-        # jumps straight to the last tail record (TODO: make it jump to very last tail record even if tail page isn't full)
+        # jumps straight to the end of the tail page (TODO: make it jump to very last tail record even if tail page isn't full)
         for i in range(PHYSICAL_PAGE_SIZE - COLUMN_SIZE, -1, -COLUMN_SIZE):
             # Extract 8 bytes at a time using slicing
             base_rid_for_tail_record_bytes = base_rid_page.data[i:i+COLUMN_SIZE]
@@ -153,7 +159,6 @@ def __merge(page_range:Page_Range):
             # adds rid if rid is not in update_records dictionary - used to know what base pages to use
             if base_rid_for_tail_record_value not in updated_records.values():
                 updated_records[-(tid_for_tail_record_value)] = base_rid_for_tail_record_value 
-
 
     # rids to base_pages
     rid_to_base = {}
@@ -174,8 +179,7 @@ def __merge(page_range:Page_Range):
     i = 0
     # iterate through base pages in page range to find the base pages we are merging
     for base_page in page_range.base_pages:
-        if i < len(base_pages_to_get) and base_page.page_number == base_pages_to_get[i]:
-
+        if i < len(base_pages_to_get) and base_page.page_number == base_pages_to_get[i] and base_page.num_records == RECORDS_PER_PAGE:
             # iterate through rids that are updated and their corresponding base page
             for key, value in rid_to_base.items():
                 if value == base_page.page_number:
@@ -184,6 +188,7 @@ def __merge(page_range:Page_Range):
                     # let's us know what columns have been updated
                     update_cols_for_rid = page_range.analyze_schema_encoding(schema_encoding_for_rid)
 
+                    # grabs updated values
                     for column in update_cols_for_rid:
 
                         # updated values of specific columns
@@ -191,28 +196,66 @@ def __merge(page_range:Page_Range):
 
                         print(f'schema encoding: {base_page.check_base_record_schema_encoding(key)} : {update_cols_for_rid} -> [{column} : {updated_val}]  -> RID : {key} -> Page_Num {base_page.page_number}')
 
-                        # TODO: Merge_Update()
-                    pass
-            
-            
+                        base_page.physical_pages[META_DATA_NUM_COLUMNS + column].write_to_physical_page(value=updated_val, rid=key, update=True)
+
+                        # print(f"Updated grade column ({column}) in base page {base_page.page_number} at RID: {key}\n")
+
+                    merge_updated_list.append(key)
             i += 1
+    
+    page_range.tps_range = next(iter(updated_records))
             
             
+
     # for key, value in updated_records.items():
     #     print(f'\nDict Pair: {key} = {value}')
     #     counter_2 += 1
 
     # print(f"counter : {counter_2}")
 
-s = copy.deepcopy(page_range)
-__merge(s)
+# takes buffer pool that it's going to use, since merge has it's own buffer pool so it won't interfere with the main thread
+@staticmethod
+def __merge_update(physical_page:Physical_Page, rid:int, update_value:int):
+    physical_page.write_to_physical_page(value=update_value, rid=rid, update=True)
 
-# for base_page in page_range.tail_pages:
-#     print(base_page.num_records)
+    pass
 
 
-# for rids in updated_rids:
-#     return_record = page_range.return_record(rids)
-#     print(f'\n\nRID: {return_record.rid}')
-#     print(f'KEY: {return_record.key}')
-#     print(f'GRADES: {return_record.columns}')
+# checks if merging needs to happen
+@staticmethod
+def __merge_checker(page_range:Page_Range):
+    print(f'amount of updates in page range: {page_range.num_updates}')
+    if page_range.num_updates >= MERGE_THRESHOLD: # will use after updates in query // change to % == 0 
+        print("\nMerge is initiating")
+        # creates deep copy of page range
+        page_range_copy = copy.deepcopy(page_range)
+        merging_thread = threading.Thread(target=__merge(page_range))
+        merging_thread.start()
+
+for rids in updated_rids:
+    print(f"\n\nTPS before merge: {page_range.tps_range}")
+    base_return_record = page_range.return_base_record(rids)
+    updated_return_record = page_range.return_record(rids)
+    print(f'Base before merge - RID: {base_return_record.rid}')
+    print(f'Base before merge - KEY: {base_return_record.key}')
+    print(f'Base before merge - GRADES: {base_return_record.columns}')
+
+    print(f'Updated - RID: {updated_return_record.rid}')
+    print(f'Updated - KEY: {updated_return_record.key}')
+    print(f'Updated - GRADES: {updated_return_record.columns}')
+
+__merge(page_range)
+
+for rids in updated_rids:
+    print(f"\n\nTPS after merge: {page_range.tps_range}")
+    base_return_record = page_range.return_base_record(rids)
+    updated_return_record = page_range.return_record(rids)
+    print(f'Base after merge - RID: {base_return_record.rid}')
+    print(f'Base after merge - KEY: {base_return_record.key}')
+    print(f'Base after merge - GRADES: {base_return_record.columns}')
+
+    print(f'Updated - RID: {updated_return_record.rid}')
+    print(f'Updated - KEY: {updated_return_record.key}')
+    print(f'Updated - GRADES: {updated_return_record.columns}')
+
+

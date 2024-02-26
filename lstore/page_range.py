@@ -8,7 +8,6 @@ import math
 class Page_Range:
 
     # starts at -1 to have counter match index for page directory
-    page_range_counter = -1
 
     def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
         self.num_columns = num_columns # number of columns in the table
@@ -28,15 +27,14 @@ class Page_Range:
 
         self.tail_pages[0].page_number = 1
 
-        Page_Range.page_range_counter += 1
-
-        # each page range has a unique id   
-        self.page_range_number = Page_Range.page_range_counter
+        # Initialize the page_range_counter for each instance of Page_Range
+        self.page_range_number = 0
 
         # number of updates to this page range
         self.num_updates = 0
 
-        self.tps_for_range = 0
+        # each page range has TPS so it can know what's the last tail record it merged
+        self.tps_range = 0
         
     # checks if the page range has capacity for more records
     def has_capacity(self)-> bool:
@@ -164,7 +162,8 @@ class Page_Range:
             return True
         return False
 
-    # delete record (Lazy delete)
+    # TODO: Change it so it only changes the rid to 0 doesn't change the columns to 0
+    # delete record (Lazy delete) 
     def delete_record(self, rid:int)->int:
 
         # gets base page number the RID is in
@@ -189,6 +188,43 @@ class Page_Range:
         
         return delete_rid
 
+    # for testing
+    def return_base_record(self,rid:int)->Record:
+        # gets base page number the RID is in
+        base_page_number = self.get_page_number(rid)
+
+        # print(rid)
+        # base page that has RID 
+        base_page_to_work = self.__search_list(self.base_pages, base_page_number, 1)
+
+        # retrieves indirection value for rid
+        indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
+
+        if indirection_base_value == 0:
+            return
+
+        # retrieves schema encoding value for rid
+        schema_encoding_base_value = base_page_to_work.check_base_record_schema_encoding(rid)
+
+        return_list = []
+        for num in range(1, 5):
+            physical_page_of_column = base_page_to_work.get_page(num)
+            value_at_base_record_column = physical_page_of_column.value_exists_at_bytes(rid)
+            return_list.append(value_at_base_record_column)
+
+        values_tuple = tuple(return_list)
+
+
+        key_page = base_page_to_work.get_primary_key_page()
+        
+        # Student ID of record
+        stID = key_page.value_exists_at_bytes(rid)
+        print(f'TPS: {self.tps_range} <= Indirection : {indirection_base_value}')
+        print(f'Base Page {base_page_to_work.page_number}')
+        # returns record wanted
+        return Record(rid, stID, values_tuple)
+
+
     # return record object
     def return_record(self, rid:int)->Record:
         # gets base page number the RID is in
@@ -206,8 +242,8 @@ class Page_Range:
 
         # retrieves schema encoding value for rid
         schema_encoding_base_value = base_page_to_work.check_base_record_schema_encoding(rid)
-
-        if indirection_base_value != rid:
+        if indirection_base_value != rid and self.tps_range > indirection_base_value:
+            print(f'TPS: {self.tps_range} > Indirection : {indirection_base_value}')
             # gets tail page number the TID is in
             tail_page_number = self.get_page_number(indirection_base_value)
 
@@ -237,11 +273,12 @@ class Page_Range:
             # Extracting values and creating a tuple
             values_tuple = tuple(sorted_dict.values())
 
-        elif indirection_base_value == rid:
+        elif indirection_base_value == rid or self.tps_range <= indirection_base_value:
+            print(f'TPS: {self.tps_range} <= Indirection : {indirection_base_value}')
             return_list = []
             for num in range(1, 5):
                 physical_page_of_column = base_page_to_work.get_page(num)
-                value_at_tail_record_column = physical_page_of_column.value_exists_at_bytes(indirection_base_value)
+                value_at_tail_record_column = physical_page_of_column.value_exists_at_bytes(rid)
                 return_list.append(value_at_tail_record_column)
 
             values_tuple = tuple(return_list)
@@ -252,6 +289,7 @@ class Page_Range:
         # Student ID of record
         stID = key_page.value_exists_at_bytes(rid)
         
+        print(f'Base Page {base_page_to_work.page_number}')
         # returns record wanted
         return Record(rid, stID, values_tuple)
 
@@ -275,15 +313,17 @@ class Page_Range:
         # gets indexes of schema encoding that has 1s and 0s
         list_of_columns_updated_0 = self.analyze_schema_encoding(schema_encoding_base_value, return_record=True)
         list_of_columns_updated_1 = self.analyze_schema_encoding(schema_encoding_base_value)
-
-        if column_number in list_of_columns_updated_0:
+        
+        indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
+        
+        # checks TPS is less than indirection, if so then just take from base page
+        if column_number in list_of_columns_updated_0 or self.tps_range <= indirection_base_value:
             #print("In base record")
             return base_page_to_work.get_value_at_column(rid,column_number)
 
         if column_number in list_of_columns_updated_1:
             #print("In tail record")
             # retrieves indirection value for rid
-            indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
             #print(indirection_base_value)
 
             if indirection_base_value == 0:
