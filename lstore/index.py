@@ -2,6 +2,8 @@ import os
 from bplustree import BPlusTree
 from pickle import loads, dumps
 
+# source for bplustree module: https://github.com/NicolasLM/bplustree
+
 class Index_Column:
 
   def __init__(self, table_name:str, column_name:str, order:int):
