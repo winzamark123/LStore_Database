@@ -75,7 +75,6 @@ class Page:
         # grabs rid page
         rid_page = self.get_rid_page()
 
-        #print(f'RID ({rid} getting inserted)')
         # checks if RID exists)
         if(rid_page.check_value_in_page(rid,rid) == False): 
 
@@ -123,8 +122,11 @@ class Page:
                 # gets page which corresponds to each column
                 page_to_write = self.get_page(column_number=column_num) 
                 page_to_write.write_to_physical_page(value=column_data, rid=rid)
-            #print("\nRecord Inserted!")
             self.num_records += 1
+
+            
+            
+            
             return True
         else:
             raise KeyError(f"RID ({rid}) already exists.")

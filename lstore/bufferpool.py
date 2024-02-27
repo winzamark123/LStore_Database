@@ -3,42 +3,55 @@ import lstore.table as Table
 import lstore.frame as Frame
 import lstore.config as Config
 import lstore.physical_page as Physical_Page
+import os 
 
 class Bufferpool():
-    def __init__(self, db:Database, table:Table):
-        self.db = db
-        self.table = table
-        self.cur_size = 0
-        self.max_size = Config.BUFFER_SIZE
-        self.frame_list = []
-        self.page_list = []
+    def __init__(self, table_name: str):
+        self.frame_object = {}
+        self.frame_directory= {}
+        self.frame_count = 0
+        self.table_name = table_name
+        self.path_to_table = os.getcwd() + '/' + table_name
+        self.merge_buffer = False 
+
     
-    def new_frame(self):
-        if self.has_capacity():
-            self.import_frame()
-        else: 
-            self.evict_frame()
-            self.import_frame()
+    def __has_capacity(self) -> bool:
+        return self.frame_count < Config.BUFFERPOOL_FRAME_SIZE
+
+    def is_record_in_buffer(self, record_info: dict) -> bool:
+        page_range_info = record_info["page_range_num"]
+        base_page_info = record_info["base_page_num"]
+
+        if page_range_info in self.frame_object:
+            if base_page_info in self.frame_object[page_range_info]:
+                return True
+        return False
+
+    def __import_frame(self, path_to_record: str, table_name: str):
+        self.frame_count += 1
+        self.frame_object[self.frame_count] = Frame(path_to_record= path_to_record, table_name= table_name)
 
     def has_capacity(self):
         return self.cur_size <= self.max_size
     
-    # def import_frame(self, page:Page):
-    #     frame = Frame(page)
-    #     self.frame_list.append(frame)
-    #     self.page_list.append(page)
-    #     self.cur_size += 1
-    #     return frame
-
-    def import_frame(self, physical_page: Physical_Page):
-        self.cur_size += 1
-        frame = Frame(self.db.disk[self.table].load_page())
-
-        pass
-    
     def evict_frame(self):
-
         pass 
+
+    def load_frame(self, path_to_record: str, table_name: str):
+        if self.has_capacity():
+            self.frame_count += 1
+            self.__import_frame(path_to_record= path_to_record, table_name= table_name)
+        else:
+            self.evict_frame()
+            self.__import_frame(path_to_record= path_to_record, table_name= table_name)
+        
+        frame_index = self.frame_count
+
+        #pin the frame
+        self.frame_object[frame_index].pin_frame()
+
+
+    
 
 
 

@@ -63,6 +63,24 @@ class Query:
         insertSuccess = latest_base_page.insert_new_record(new_record)
         
         self.table.index.insert_record_to_index(columns, new_record.rid)
+        
+        #table
+            #disk
+            #buffer 
+                #frame 
+        
+        #get record info from table
+        record_info = self.table.get_record_info(new_record.rid)
+        #get the bufferpool from the table
+        table_buffer = self.table.bufferpool
+
+        if table_buffer.is_record_in_buffer(record_info) == False:
+            path_to_table = table_buffer.path_to_table
+            path_to_pageRange = path_to_table + '/' + str(record_info["page_range_num"])
+            path_to_basePage = path_to_pageRange + '/' + str(record_info["base_page_num"])
+            path_to_record = path_to_basePage + '/' + str(record_info["record_num"])
+            table_buffer.load_frame(path_to_record, self.table.name)
+
 
         #Checking 
         # print("TOTAL_PAGE_RANGE", len(self.table.page_directory))

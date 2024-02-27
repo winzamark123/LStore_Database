@@ -1,5 +1,4 @@
 from lstore.table import Table
-from lstore.disk import Disk
 import pickle
 
 import os 

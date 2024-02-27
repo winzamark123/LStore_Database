@@ -2,6 +2,8 @@ from lstore.index import Index
 from lstore.config import *
 from time import time
 from lstore.page_range import Page_Range
+from lstore.bufferpool import Bufferpool
+from lstore.disk import Disk
 
 class Table:
     """
@@ -26,6 +28,9 @@ class Table:
 
         self.page_directory = [Page_Range(num_columns, self.entry_size_for_columns, self.key_column)]
 
+        self.bufferpool = Bufferpool(self.name)
+        self.disk = Disk(self.name, self.num_columns)
+
 
     # Get Page Range and Base Page from RID
     def get_list_of_addresses(self, rids)-> list:
@@ -38,6 +43,19 @@ class Table:
             addreses.append((page_range_num, base_page_num))
         #return page_range_num, base_page_num
         return addreses
+
+    def get_record_info(self, rid)-> dict:
+        page_range_num = rid // (RECORDS_PER_PAGE * NUM_BASE_PAGES)
+        base_page_num = (rid // RECORDS_PER_PAGE) % NUM_BASE_PAGES
+        record_num = rid % RECORDS_PER_PAGE
+
+        record_info = {
+            "page_range_num": page_range_num,
+            "base_page_num": base_page_num,
+            "record_num": record_num
+        }
+
+        return record_info
 
     # Increment RID for base records
     def inc_rid(self)-> int:

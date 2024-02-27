@@ -11,5 +11,5 @@ INDIRECTION_PAGE_SIZE = 1024
 INDIRECTION_COLUMN = 0
 RID_COLUMN = 1
 SCHEMA_ENCODING = 2
-
-BUFFER_SIZE = 100
+# 1 frame = 1 physical page  
+BUFFERPOOL_FRAME_SIZE = 100 # number of frames in bufferpool
