@@ -84,8 +84,16 @@ class Bufferpool:
         #frame_object{
         #   1: Frame()
         #}
+        frame_physical_pages = self.frame_object[frame_index].physical_pages
+
+        if not frame_physical_pages[0].has_capacity():
+            #make a new base page
+            
+            pass 
+        
 
         return frame_index
+    
 
 
 

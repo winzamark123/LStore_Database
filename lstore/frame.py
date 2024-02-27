@@ -34,6 +34,8 @@ class Frame:
     def unpin_frame(self):
         self.is_pin = False
 
+    def has_capacity(self) -> bool:
+        return self.physical_pages[0].has_capacity()
     
 
 

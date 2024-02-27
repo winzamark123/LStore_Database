@@ -1,6 +1,7 @@
 from lstore.table import Table 
 from lstore.record import Record
 from lstore.index import Index
+import copy 
 
 class Query:
     """
@@ -45,34 +46,6 @@ class Query:
         #Create a new record and insert it into the latest base_page
         new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
 
-        #get record info from table
-        record_info = self.table.get_record_info(new_record.rid)
-        #get the bufferpool from the table
-        table_buffer = self.table.bufferpool
-
-        path_to_table = table_buffer.path_to_table
-        path_to_pageRange = path_to_table + '/page_range' + str(record_info["page_range_num"])
-
-        if record_info["isTail"]:
-            path_to_type = path_to_pageRange + '/tail'
-        else:
-            path_to_type = path_to_pageRange + '/base'
-
-        path_to_basePage = path_to_type + '/base_page' + str(record_info["base_page_num"])
-
-        frame_index = table_buffer.is_record_in_buffer(record_info)
-
-        if frame_index < 0:
-            table_buffer.load_frame_to_buffer(path_to_page=path_to_basePage, table_name=self.table.table_name, num_columns=self.table.num_columns, record_info=record_info)
-        
-        #now we can access the frame's physical pages 
-        table_buffer.frame_object[frame_index].physical_pages
-
-        pass
-
-        #==================================
-
-
         latest_page_range = self.table.page_directory[-1]
 
         #Check if the latest page_range has capacity
@@ -86,11 +59,32 @@ class Query:
         #Check if the latest base_page has capacity
         if latest_page_range.base_pages[-1].has_capacity() == False:
             #print("INSERT: BASE_PAGE IS FULL")
-            self.table.page_directory[-1].insert_base_page()
+            latest_page_range.insert_base_page()
             latest_base_page = latest_page_range.base_pages[-1]
 
-
+        #latest_base_page 
         insertSuccess = latest_base_page.insert_new_record(new_record)
+
+        #get record info from table
+        record_info = self.table.get_record_info(new_record.rid)
+        #get the bufferpool from the table
+        table_buffer = self.table.bufferpool
+
+        path_to_table = table_buffer.path_to_table #ECS165/Grades
+        path_to_pageRange = path_to_table + '/page_range' + str(record_info["page_range_num"]) #ECS165/Grades/page_range0
+
+        path_to_base = path_to_pageRange + '/base'
+
+        path_to_basePage = path_to_base + '/base_page' + str(record_info["base_page_num"])
+
+        frame_index = table_buffer.is_record_in_buffer(record_info)
+
+        #if it doesn't exist 
+        if frame_index < 0:
+            table_buffer.load_frame_to_buffer(path_to_page=path_to_basePage, table_name=self.table.table_name, num_columns=self.table.num_columns, record_info=record_info)
+        
+        #now we can access the frame's physical pages 
+        table_buffer.frame_object[frame_index].physical_pages
 
         # keep track of inserted keys
         self.inserted_keys[columns[0]] = 'k'
@@ -98,6 +92,10 @@ class Query:
         self.table.index.insert_record_to_index(columns, new_record.rid)
         
         
+        #latest_base_page has all the physical pages inserted 
+        #copy the physical pages to the frame 
+        # updates frame physical pages
+        table_buffer.frame_object[frame_index].physical_pages = copy.deepcopy(latest_base_page.physical_pages)
 
 
         return True if insertSuccess else False

@@ -87,7 +87,7 @@ class Table:
     def insert_page_range(self)-> bool:
         if len(self.page_directory) == 0 or self.page_directory[-1].has_capacity() == False:
             #print("Function: insert_page_range(), Total page ranges: ", len(self.page_directory))
-            path_to_page_range = self.path_to_table + '/page_range' + str(len(self.page_directory) - 1)
+            path_to_page_range = self.path_to_table + '/page_range' + str(len(self.page_directory))
             self.page_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column, path_to_page_range))
 
             #reset the base_page_counter to 0 for a new table (the first page_range)
