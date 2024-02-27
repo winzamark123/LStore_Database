@@ -16,15 +16,16 @@ class Bufferpool:
     def __has_capacity(self) -> bool:
         return self.frame_count < Config.BUFFERPOOL_FRAME_SIZE
 
-    def is_record_in_buffer(self, record_info: dict) -> bool:
+    def is_record_in_buffer(self, record_info: dict) -> int:
         page_range_info = record_info["page_range_num"]
         base_page_info = record_info["base_page_num"]
+        record_key = (page_range_info, base_page_info)
 
-        if page_range_info in self.frame_object:
-            if base_page_info in self.frame_object[page_range_info]:
-                print("Record is in bufferpool")
-                return True
-        return False
+        if record_key in self.frame_directory:
+            print("Record is in bufferpool")
+            frame_index = self.frame_directory[record_key]
+            return frame_index
+        return -1
 
 
     def has_capacity(self):
@@ -55,12 +56,12 @@ class Bufferpool:
         self.frame_count += 1
         self.frame_object[self.frame_count] = Frame(path_to_page= path_to_page, table_name= table_name)
 
-    def load_frame(self, path_to_page: str, table_name: str, num_columns: int):
-        if self.__has_capacity():
-            self.__import_frame(path_to_page= path_to_page, table_name= table_name)
-        else:
+    def load_frame_to_buffer(self, path_to_page: str, table_name: str, num_columns: int, record_info: dict):
+
+        if not self.__has_capacity():
             self.evict_frame()
-            self.__import_frame(path_to_page= path_to_page, table_name= table_name)
+
+        self.__import_frame(path_to_page= path_to_page, table_name= table_name)
         
         frame_index = self.frame_count
 
@@ -73,6 +74,12 @@ class Bufferpool:
             self.frame_object[frame_index].physical_pages.append(Physical_Page(entry_size=data_entry_size, column_number=i))
             path_to_physical_page = path_to_page + '/' + str(i) + '.bin'
             self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page=path_to_physical_page, column_index=i)
+
+        page_range_info = record_info["page_range_num"]
+        base_page_info = record_info["base_page_num"]
+        record_key = (page_range_info, base_page_info)
+
+        self.frame_directory[record_key] = frame_index
 
         #frame_object{
         #   1: Frame()

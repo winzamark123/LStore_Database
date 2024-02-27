@@ -49,6 +49,7 @@ class Query:
         record_info = self.table.get_record_info(new_record.rid)
         #get the bufferpool from the table
         table_buffer = self.table.bufferpool
+
         path_to_table = table_buffer.path_to_table
         path_to_pageRange = path_to_table + '/page_range' + str(record_info["page_range_num"])
 
@@ -59,13 +60,15 @@ class Query:
 
         path_to_basePage = path_to_type + '/base_page' + str(record_info["base_page_num"])
 
-        if table_buffer.is_record_in_buffer(record_info) == True:
-            table_buffer.load_frame(path_to_page=path_to_basePage, table_name=self.table.table_name, num_columns=self.table.num_columns)
-        
-        else:
-            # print("INSERT: RECORD NOT IN BUFFER")
+        frame_index = table_buffer.is_record_in_buffer(record_info)
 
-            pass
+        if frame_index < 0:
+            table_buffer.load_frame_to_buffer(path_to_page=path_to_basePage, table_name=self.table.table_name, num_columns=self.table.num_columns, record_info=record_info)
+        
+        #now we can access the frame's physical pages 
+        table_buffer.frame_object[frame_index].physical_pages
+
+        pass
 
         #==================================
 
