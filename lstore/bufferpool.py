@@ -27,9 +27,9 @@ class Bufferpool():
                 return True
         return False
 
-    def __import_frame(self, path_to_record: str, table_name: str):
+    def __import_frame(self, path_to_page: str, table_name: str):
         self.frame_count += 1
-        self.frame_object[self.frame_count] = Frame(path_to_record= path_to_record, table_name= table_name)
+        self.frame_object[self.frame_count] = Frame(path_to_record= path_to_page, table_name= table_name)
 
     def has_capacity(self):
         return self.cur_size <= self.max_size
@@ -37,12 +37,12 @@ class Bufferpool():
     def evict_frame(self):
         pass 
 
-    def load_frame(self, path_to_record: str, table_name: str, num_columns: int):
+    def load_frame(self, path_to_page: str, table_name: str, num_columns: int):
         if self.__has_capacity():
-            self.__import_frame(path_to_record= path_to_record, table_name= table_name)
+            self.__import_frame(path_to_page= path_to_page, table_name= table_name)
         else:
             self.evict_frame()
-            self.__import_frame(path_to_record= path_to_record, table_name= table_name)
+            self.__import_frame(path_to_page= path_to_page, table_name= table_name)
         
         frame_index = self.frame_count
 
@@ -52,8 +52,11 @@ class Bufferpool():
         data_entry_size = 8
         self.frame_object[frame_index].physical_pages = [Physical_Page(entry_size=data_entry_size) for i in range(num_columns)]
 
+        #frame_object{
+        #   1: Frame()
+        #}
         for i in range(num_columns):
-            path_to_physical_page = path_to_record + '/' + str(i) + '.bin'
+            path_to_physical_page = path_to_page + '/' + str(i) + '.bin'
             self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page=path_to_physical_page, column_index=i) 
 
         return frame_index

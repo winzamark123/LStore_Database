@@ -52,9 +52,8 @@ class Database():
             print("Table already exists")
             raise ValueError(f"Table {table_name} already exists.")
         
-        new_table = Table(table_name, num_columns, key_index)
+        new_table = Table(self.db_name, table_name, num_columns, key_index)
         self.table_objects[table_name] = new_table
-        self.__create_disk(table_name, new_table)
         #{table_name: Disk()}
         #{table_name: Table()}
 

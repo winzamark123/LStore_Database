@@ -1,6 +1,5 @@
 from lstore.index import Index
 from lstore.config import *
-from time import time
 from lstore.page_range import Page_Range
 from lstore.bufferpool import Bufferpool
 from lstore.disk import Disk
@@ -48,11 +47,16 @@ class Table:
     def get_record_info(self, rid)-> dict:
         page_range_num = rid // (RECORDS_PER_PAGE * NUM_BASE_PAGES)
         base_page_num = (rid // RECORDS_PER_PAGE) % NUM_BASE_PAGES
+        
+        if rid < 0:
+            isTail = True
+
         record_num = rid % RECORDS_PER_PAGE
 
         record_info = {
             "page_range_num": page_range_num,
             "base_page_num": base_page_num,
+            "isTail": isTail, 
             "record_num": record_num
         }
 

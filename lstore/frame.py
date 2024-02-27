@@ -2,13 +2,13 @@ import lstore.page_range as Page_Range
 import lstore.physical_page as Physical_Page
 
 class Frame:
-    def __init__(self, path_to_record: str, table_name: str):
+    def __init__(self, path_to_page: str, table_name: str):
         self.is_dirty = 0 # Boolean to check if the physical_page has been modified
         self.pin_count = 0
         self.is_pin = False
         self.physical_pages = []
         
-        self.path_to_record = path_to_record 
+        self.path_to_page = path_to_page 
 
 
     def get_pin_count(self) -> int:
