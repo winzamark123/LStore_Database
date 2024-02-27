@@ -16,7 +16,6 @@ class Table:
         self.table_name = table_name
         self.num_columns = num_columns
         self.key_column = META_DATA_NUM_COLUMNS + key_index
-        self.deleted_rids = []
         self.index = Index(num_columns, ORDER_CHOICE)
         self.key_column_index = key_index
         self.rid = 0
@@ -50,6 +49,7 @@ class Table:
         
         if rid < 0:
             isTail = True
+        isTail = False
 
         record_num = rid % RECORDS_PER_PAGE
 

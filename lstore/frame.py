@@ -7,6 +7,7 @@ class Frame:
         self.pin_count = 0
         self.is_pin = False
         self.physical_pages = []
+        self.table_name = table_name
         
         self.path_to_page = path_to_page 
 

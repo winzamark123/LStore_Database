@@ -2,7 +2,7 @@ import os
 import pickle
 from lstore.physical_page import Physical_Page
 
-class Disk():
+class Disk:
     def __init__(self, db_name:str, table_name:str, num_columns:int):
         self.table_name = table_name
         self.table_path = os.getcwd() + '/' + db_name + '/' + table_name 

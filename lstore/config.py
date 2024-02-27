@@ -13,3 +13,4 @@ RID_COLUMN = 1
 SCHEMA_ENCODING = 2
 # 1 frame = 1 physical page  
 BUFFERPOOL_FRAME_SIZE = 100 # number of frames in bufferpool
+DATA_ENTRY_SIZE = 8 # size of data entry in bytes

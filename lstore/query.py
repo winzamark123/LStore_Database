@@ -86,7 +86,7 @@ class Query:
                 path_to_type = path_to_pageRange + '/base'
 
             path_to_basePage = path_to_type + '/' + str(record_info["base_page_num"])
-            table_buffer.load_frame(path_to_page=path_to_basePage, table_name=self.table.name)
+            table_buffer.load_frame(path_to_page=path_to_basePage, table_name=self.table.table_name, num_columns=self.table.num_columns)
 
             
 

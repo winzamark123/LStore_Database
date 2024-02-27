@@ -2,7 +2,7 @@ from lstore.table import Table
 import pickle
 
 import os 
-class Database():
+class Database:
 
     def __init__(self):
         self.table_directory = {}
@@ -10,7 +10,6 @@ class Database():
         self.db_name = None
         self.disk_directory = {} #disk[table_name] = Disk()
         self.root_path = None
-        pass
 
     def open(self, db_name:str) -> None:
 

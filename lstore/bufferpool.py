@@ -1,11 +1,12 @@
 import lstore.db as Database
+import lstore.config as Config
 import lstore.table as Table
 import lstore.frame as Frame
 import lstore.config as Config
 import lstore.physical_page as Physical_Page
 import os 
 
-class Bufferpool():
+class Bufferpool:
     def __init__(self, table_name: str):
         self.frame_object = {}
         self.frame_directory= {}
@@ -29,7 +30,7 @@ class Bufferpool():
 
     def __import_frame(self, path_to_page: str, table_name: str):
         self.frame_count += 1
-        self.frame_object[self.frame_count] = Frame(path_to_record= path_to_page, table_name= table_name)
+        self.frame_object[self.frame_count] = Frame(path_to_page= path_to_page, table_name= table_name)
 
     def has_capacity(self):
         return self.cur_size <= self.max_size
@@ -49,12 +50,13 @@ class Bufferpool():
         #pin the frame
         self.frame_object[frame_index].pin_frame()
 
-        data_entry_size = 8
+        data_entry_size = Config.DATA_ENTRY_SIZE
         self.frame_object[frame_index].physical_pages = [Physical_Page(entry_size=data_entry_size) for i in range(num_columns)]
 
         #frame_object{
         #   1: Frame()
         #}
+
         for i in range(num_columns):
             path_to_physical_page = path_to_page + '/' + str(i) + '.bin'
             self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page=path_to_physical_page, column_index=i) 
