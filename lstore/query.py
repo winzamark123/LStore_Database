@@ -42,12 +42,13 @@ class Query:
     # Returns False if insert fails for whatever reason
     """
     def insert(self, *columns:tuple)->bool:
-        #db
-            #table
-                #page_range
-                    #base
-                        #base_page
+        #Create a new record and insert it into the latest base_page
+        new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
 
+        #get record info from table
+        record_info = self.table.get_record_info(new_record.rid)
+        #get the bufferpool from the table
+        table_buffer = self.table.bufferpool
         path_to_table = table_buffer.path_to_table
         path_to_pageRange = path_to_table + '/page_range' + str(record_info["page_range_num"])
 
@@ -62,7 +63,7 @@ class Query:
             table_buffer.load_frame(path_to_page=path_to_basePage, table_name=self.table.table_name, num_columns=self.table.num_columns)
         
         else:
-            print("INSERT: RECORD NOT IN BUFFER")
+            # print("INSERT: RECORD NOT IN BUFFER")
 
             pass
 
@@ -84,23 +85,12 @@ class Query:
             self.table.page_directory[-1].insert_base_page()
             latest_base_page = latest_page_range.base_pages[-1]
 
-        #Create a new record and insert it into the latest base_page
-        new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
+
         insertSuccess = latest_base_page.insert_new_record(new_record)
         
         self.table.index.insert_record_to_index(columns, new_record.rid)
         
         
-        #get record info from table
-        record_info = self.table.get_record_info(new_record.rid)
-        #get the bufferpool from the table
-        table_buffer = self.table.bufferpool
-
-
-
-            
-
-
 
 
         return True if insertSuccess else False
@@ -221,40 +211,6 @@ class Query:
 
         
     
-    def sum_old(self, start_range, end_range, aggregate_column_index):
-        # TO DO: change this and try to use locate_range, double check on array pointers 
-        
-        sum = 0
-        array = []
-        checker = False
-
-        for i in range(start_range,end_range+1):
-            rid = self.table.index.locate(i, self.table.key_column_index)
-            address = self.table.get_list_of_addresses(rid)
-            
-            #checks if rid exists
-            if rid:
-                checker = True
-                rid = rid[0]
-            else:
-                continue
-            
-            #if autograder indexes with 0 they want SIDs, address to .key
-            if aggregate_column_index == 0:
-                sum += self.table.page_directory[address[0][0]].return_record(rid).key
-                continue
-
-            #sum is index -1 because can't index 0 column correctly
-            sum += self.table.page_directory[address[0][0]].return_record(rid).columns[aggregate_column_index-1]
-
-        #checks if rids exist within the range, if not returns false
-        if checker:
-            return sum
-        else:
-            return checker
-        
-
-
     
     """
     :param start_range: int         # Start of the key range to aggregate 

@@ -3,6 +3,7 @@ from lstore.config import *
 from lstore.page_range import Page_Range
 from lstore.bufferpool import Bufferpool
 from lstore.disk import Disk
+import os
 
 class Table:
     """
@@ -25,11 +26,10 @@ class Table:
         for i in range(num_columns): 
             self.entry_size_for_columns.append(COLUMN_SIZE)
 
-        self.page_directory = [Page_Range(num_columns, self.entry_size_for_columns, self.key_column)]
+        self.page_directory = []
 
         self.bufferpool = Bufferpool(self.table_name)
         self.disk = Disk(self.db_name, self.table_name, self.num_columns)
-
 
     # Get Page Range and Base Page from RID
     def get_list_of_addresses(self, rids)-> list:
@@ -61,7 +61,7 @@ class Table:
         }
 
         return record_info
-
+    
     # Increment RID for base records
     def inc_rid(self)-> int:
         self.rid += 1
@@ -72,6 +72,8 @@ class Table:
         if not self.page_directory[-1].has_capacity():
             self.page_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column))
             #print("Function: insert_page_range(), Total page ranges: ", len(self.page_directory))
+            path_to_page_range = os.path.join(self.disk.table_path, 'page_range', str(len(self.page_directory)))
+            os.mkdir(path_to_page_range)
             return True
         return False 
 

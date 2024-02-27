@@ -51,6 +51,12 @@ class Database:
             print("Table already exists")
             raise ValueError(f"Table {table_name} already exists.")
         
+        table_path_name = os.path.join(self.root_path, table_name)
+        if os.path.isdir(table_path_name):
+            print("Table already exists in disk")
+        else:
+            os.mkdir(table_path_name)
+        
         new_table = Table(self.db_name, table_name, num_columns, key_index)
         self.table_objects[table_name] = new_table
         #{table_name: Disk()}
