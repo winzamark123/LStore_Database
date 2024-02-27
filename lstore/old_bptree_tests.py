@@ -1,6 +1,6 @@
 from unittest import TestCase, main
 from random import choice, randint, sample, seed
-from index import Index, Column_Index_Tree, Column_Index_Node
+from old_bptree_index import Index, Column_Index_Tree, Column_Index_Node
 import sys
 import io
 
@@ -741,7 +741,7 @@ class Test_Column_Index_Tree(TestCase):
     self.assertEqual(tree.root.get_keys(), [45,65])
     self.assertEqual(tree.root.child_nodes[2].child_nodes[0].get_keys(), [65])
 
-  def test_delete_case_3_non_leaf_above_leaf(self):
+  def test_delete_case_3_left_non_leaf_above_leaf(self):
     tree = Column_Index_Tree(3)
     seed(100)
     vals_set = set()
@@ -762,8 +762,7 @@ class Test_Column_Index_Tree(TestCase):
     self.assertEqual(tree.root.child_nodes[2].child_nodes[1].get_keys(), [65])
     self.assertEqual(tree.root.child_nodes[2].child_nodes[2].get_keys(), [94,99])
 
-  def test_delete_case_3_deep_non_leaf(self):
-    return
+  def test_delete_case_3_left_deep_non_leaf(self):
     tree = Column_Index_Tree(3)
     seed(100)
     vals_list = list()
@@ -794,10 +793,42 @@ class Test_Column_Index_Tree(TestCase):
     # 85 18
 
     self.assertEqual(tree.root.child_nodes[0].get_keys(), [16,45])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[1].get_keys(), [23])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[1].child_nodes[1].get_keys(), [23,34])
     self.assertEqual(tree.root.child_nodes[0].child_nodes[2].get_keys(), [51])
     self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[0].get_keys(), [45])
     self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[1].get_keys(), [51,56])
     tree.delete_entry(45, 8)
+    self.assertEqual(tree.root.child_nodes[0].get_keys(), [16,34])
+    self.assertEqual(tree.root.child_nodes[0].entry_values[1].is_leaf, False)
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[1].get_keys(), [23])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[1].child_nodes[1].get_keys(), [23])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].get_keys(), [51])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[0].get_keys(), [34])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[0].entry_values[0].is_leaf, True)
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[1].get_keys(), [51,56])
+
+  def test_delete_case_3_right_non_leaf_above_leaf(self):
+    return
+    tree = Column_Index_Tree(3)
+    seed(100)
+    vals_list = list()
+    for i in range(1, 19):
+      val = randint(1, 99)
+      if val in vals_list:
+        val = randint(1, 99)
+      tree.insert_value(val, i)
+      vals_list.append(val)
+    tree.delete_entry(45, 8)
+
+    self.assertEqual(tree.root.child_nodes[0].get_keys(), [16,34])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[1].get_keys(), [23])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[1].child_nodes[1].get_keys(), [23])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].get_keys(), [51])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[0].get_keys(), [34])
+    self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[1].get_keys(), [51,56])
+    print("testing here")
+    tree.delete_entry(34, 16)
     self.assertEqual(tree.root.child_nodes[0].get_keys(), [16,51])
     self.assertEqual(tree.root.child_nodes[0].child_nodes[2].get_keys(), [56])
     self.assertEqual(tree.root.child_nodes[0].child_nodes[2].child_nodes[0].get_keys(), [51])
