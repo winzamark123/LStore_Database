@@ -3,10 +3,10 @@ from lstore.page import Base_Page, Tail_Page, Page
 from time import time
 from lstore.record import Record
 from random import randint
-import math
+import os 
 
 class Page_Range:
-    def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
+    def __init__(self, num_columns:int, entry_sizes:list, key_column:int, path_to_page_range:str)->None:
         self.num_columns = num_columns # number of columns in the table
         self.entry_size_for_columns = entry_sizes # list of the size of each physical page in base pages in Bytes [2,8,8] - These first 3 sizes are for the meta columns
         self.key_column = key_column # primary key column (StudentID for m1_test)
@@ -21,8 +21,8 @@ class Page_Range:
         self.tid = 0 # tid (rid) for tail records - decrease by 1 once a record is added or updated (for tails records)
 
         self.amount_tail_pages = 1
-
         self.tail_pages[0].page_number = 1
+        self.path_to_page_range = path_to_page_range
         
     # checks if the page range has capacity for more records
     def has_capacity(self)-> bool:
@@ -41,8 +41,15 @@ class Page_Range:
     # insert a new base page to the page range
     def insert_base_page(self)-> bool:
         # checks the last base page in the base page list to see if it's full
-        if not self.base_pages[-1].has_capacity():   
+        if not self.base_pages[-1].has_capacity() or len(self.base_pages) == 0:   
             self.base_pages.append(Base_Page(self.num_columns, self.entry_size_for_columns, self.key_column))
+
+            path_to_base = self.path_to_page_range + '/base'
+            print("Path to base: ", path_to_base)
+            os.makedirs(path_to_base)
+            
+            path_to_base_page = self.path_to_page_range + '/base/base_page' + str(len(self.base_pages) - 1)
+            os.makedirs(path_to_base_page)
             return True
         
         # failed to insert a new base page

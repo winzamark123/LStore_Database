@@ -15,6 +15,7 @@ class Table:
     def __init__(self, db_name: str, table_name:str, num_columns:int, key_index:int)->None:
         self.db_name = db_name
         self.table_name = table_name
+        self.path_to_table = os.getcwd() + '/' + db_name + '/' + table_name
         self.num_columns = num_columns
         self.key_column = META_DATA_NUM_COLUMNS + key_index
         self.index = Index(num_columns, ORDER_CHOICE)
@@ -30,6 +31,8 @@ class Table:
 
         self.bufferpool = Bufferpool(self.table_name)
         self.disk = Disk(self.db_name, self.table_name, self.num_columns)
+
+        self.insert_page_range()
 
     # Get Page Range and Base Page from RID
     def get_list_of_addresses(self, rids)-> list:
@@ -69,10 +72,10 @@ class Table:
 
     # insert new page_range into page_directory
     def insert_page_range(self)-> bool:
-        if not self.page_directory[-1].has_capacity():
-            self.page_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column))
+        if len(self.page_directory) == 0 or self.page_directory[-1].has_capacity() == False:
             #print("Function: insert_page_range(), Total page ranges: ", len(self.page_directory))
-            path_to_page_range = os.path.join(self.disk.table_path, 'page_range', str(len(self.page_directory)))
+            path_to_page_range = self.path_to_table + '/page_range' + str(len(self.page_directory) - 1)
+            self.page_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column, path_to_page_range))
             os.mkdir(path_to_page_range)
             return True
         return False 
