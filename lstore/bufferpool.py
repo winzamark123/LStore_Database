@@ -22,6 +22,7 @@ class Bufferpool:
 
         if page_range_info in self.frame_object:
             if base_page_info in self.frame_object[page_range_info]:
+                print("Record is in bufferpool")
                 return True
         return False
 

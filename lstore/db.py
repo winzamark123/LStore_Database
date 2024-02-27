@@ -11,13 +11,13 @@ class Database:
         self.disk_directory = {} #disk[table_name] = Disk()
         self.root_path = None
 
-    def open(self, db_name:str) -> None:
+    def open(self, path_to_db: str) -> None:
 
         """
         Takes in a path from the root of the directory and opens the database at that location
         """
-        self.db_name = db_name # Store the db_name
-        root_path = os.getcwd() + '/' + db_name # /*/ECS165
+        self.db_name = path_to_db # Store the db_name
+        root_path = path_to_db#
 
         self.root_path = root_path
 
