@@ -1,6 +1,6 @@
 import lstore.page_range as Page_Range
 import lstore.physical_page as Physical_Page
-import datetime
+from datetime import datetime 
 
 class Frame:
     def __init__(self, path_to_page: str, table_name: str):
@@ -12,7 +12,6 @@ class Frame:
         self.time_in_buffer = datetime.now()
         
         self.path_to_page = path_to_page 
-
 
     def get_pin_count(self) -> int:
         return self.pin_count

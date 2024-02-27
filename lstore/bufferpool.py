@@ -1,9 +1,6 @@
-import lstore.db as Database
 import lstore.config as Config
-import lstore.table as Table
-import lstore.config as Config
-import lstore.physical_page as Physical_Page
-import lstore.frame as Frame
+from lstore.physical_page import Physical_Page
+from lstore.frame import Frame
 import os 
 
 class Bufferpool:
@@ -28,9 +25,6 @@ class Bufferpool:
                 return True
         return False
 
-    def __import_frame(self, path_to_page: str, table_name: str):
-        self.frame_count += 1
-        self.frame_object[self.frame_count] = Frame(path_to_page= path_to_page, table_name= table_name)
 
     def has_capacity(self):
         return self.cur_size <= self.max_size
@@ -38,7 +32,7 @@ class Bufferpool:
     def evict_frame(self):
     # Find the least recently used frame that is not pinned
     # Function that finds the frame that has the longest time in the bufferpool that is not pinned
-        lru_frame = min((frame for frame in self.frames if not frame.is_pin), 
+        lru_frame = min((frame for frame in self.frame_object if not frame.is_pin), 
                         key=lambda f: f.time_in_bufferpool, default=None)
     
     # IF THE FRAME IS DIRTY, IT WRITES IT TO THE DISK
@@ -52,9 +46,13 @@ class Bufferpool:
         
         # Remove the frame from the buffer pool and directory
         if lru_frame:
-            frame_index = self.frames.index(lru_frame)
-            del self.frames[frame_index]
+            frame_index = self.frame_object.index(lru_frame)
+            del self.frame_object[frame_index]
             del self.frame_directory[lru_frame.tuple_key]
+
+    def __import_frame(self, path_to_page: str, table_name: str):
+        self.frame_count += 1
+        self.frame_object[self.frame_count] = Frame(path_to_page= path_to_page, table_name= table_name)
 
     def load_frame(self, path_to_page: str, table_name: str, num_columns: int):
         if self.__has_capacity():
@@ -69,7 +67,11 @@ class Bufferpool:
         self.frame_object[frame_index].pin_frame()
 
         data_entry_size = Config.DATA_ENTRY_SIZE
-        self.frame_object[frame_index].physical_pages = [Physical_Page(entry_size=data_entry_size) for i in range(num_columns)]
+
+        for i in range(num_columns):
+            self.frame_object[frame_index].physical_pages.append(Physical_Page(entry_size=data_entry_size, column_number=i))
+            path_to_physical_page = path_to_page + '/' + str(i) + '.bin'
+            self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page=path_to_physical_page, column_index=i)
 
         #frame_object{
         #   1: Frame()

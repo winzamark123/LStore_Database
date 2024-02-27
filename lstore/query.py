@@ -78,15 +78,16 @@ class Query:
 
         if table_buffer.is_record_in_buffer(record_info) == False:
             path_to_table = table_buffer.path_to_table
-            path_to_pageRange = path_to_table + '/' + str(record_info["page_range_num"])
+            path_to_pageRange = path_to_table + '/page_range' + str(record_info["page_range_num"])
 
             if record_info["isTail"]:
                 path_to_type = path_to_pageRange + '/tail'
             else:
                 path_to_type = path_to_pageRange + '/base'
 
-            path_to_basePage = path_to_type + '/' + str(record_info["base_page_num"])
+            path_to_basePage = path_to_type + '/base_page' + str(record_info["base_page_num"])
             table_buffer.load_frame(path_to_page=path_to_basePage, table_name=self.table.table_name, num_columns=self.table.num_columns)
+        
 
             
 
