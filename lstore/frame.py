@@ -6,6 +6,7 @@ class Frame:
         self.is_dirty = 0 # Boolean to check if the physical_page has been modified
         self.pin_count = 0
         self.is_pin = False
+        self.physical_pages = []
         
         self.path_to_record = path_to_record 
 
