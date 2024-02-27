@@ -77,10 +77,6 @@ class Bufferpool:
         #   1: Frame()
         #}
 
-        for i in range(num_columns):
-            path_to_physical_page = path_to_page + '/' + str(i) + '.bin'
-            self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page=path_to_physical_page, column_index=i) 
-
         return frame_index
 
 

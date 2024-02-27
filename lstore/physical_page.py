@@ -90,5 +90,12 @@ class Physical_Page:
         self.data = physical_page_file.read(PHYSICAL_PAGE_SIZE)
         physical_page_file.close()
 
+    #write physical page to disk
+    def write_to_disk(self, path_to_physical_page: str, column_index: int):
+        physical_page_file = open(path_to_physical_page, "wb")
+        physical_page_file.seek(column_index * PHYSICAL_PAGE_SIZE)
+        physical_page_file.write(self.data)
+        physical_page_file.close()
+
         
     

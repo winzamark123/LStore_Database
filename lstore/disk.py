@@ -46,14 +46,3 @@ class Disk:
         except Exception as e:
             print("Error loading page:", e)
             return None
-        pass
-
-    #Given the path, write the physical page into disk
-    def write_to_disk(path_to_page: str, physical_page: Physical_Page) -> bool:
-        try:
-            with open(path_to_page, 'wb') as file:
-                file.write(physical_page.data)
-            return True
-        except Exception as e:
-            print("Error writing to disk:", e)
-            return False
