@@ -189,9 +189,10 @@ class Query:
             page_range_num = address[0]
             cur_page_range = self.table.page_directory[page_range_num]
             cur_page_range.update(rid, columns_as_list)
-
-            #self.__merge_checker(cur_page_range.page_range_number)
-
+            
+            # checks if merge needs to happen
+            self.table._merge_checker(page_range_num)
+            
         return True
 
      

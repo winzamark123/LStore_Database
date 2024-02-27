@@ -220,7 +220,7 @@ class Page_Range:
         # Student ID of record
         stID = key_page.value_exists_at_bytes(rid)
         print(f'TPS: {self.tps_range} <= Indirection : {indirection_base_value}')
-        print(f'Base Page {base_page_to_work.page_number}')
+        print(f'In Base Page {base_page_to_work.page_number}')
         # returns record wanted
         return Record(rid, stID, values_tuple)
 
@@ -244,11 +244,14 @@ class Page_Range:
         schema_encoding_base_value = base_page_to_work.check_base_record_schema_encoding(rid)
         if indirection_base_value != rid and self.tps_range > indirection_base_value:
             print(f'TPS: {self.tps_range} > Indirection : {indirection_base_value}')
+
             # gets tail page number the TID is in
             tail_page_number = self.get_page_number(indirection_base_value)
 
             # tail page TID is in
             tail_page_to_work = self.__search_list(self.tail_pages, tail_page_number, 0)
+
+            print(f'In Tail Page {tail_page_to_work.page_number}')
 
             # gets indexes of schema encoding that has 1s and 0s
             list_of_columns_updated_0 = self.analyze_schema_encoding(schema_encoding_base_value, return_record=True)
@@ -317,12 +320,14 @@ class Page_Range:
         indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
         
         # checks TPS is less than indirection, if so then just take from base page
-        if column_number in list_of_columns_updated_0 or self.tps_range <= indirection_base_value:
-            #print("In base record")
+        if column_number in list_of_columns_updated_0:
+            print("In base record")
+            print(column_number in list_of_columns_updated_0 or self.tps_range <= indirection_base_value)
+            print(list_of_columns_updated_0)
             return base_page_to_work.get_value_at_column(rid,column_number)
 
         if column_number in list_of_columns_updated_1:
-            #print("In tail record")
+            print("In tail record")
             # retrieves indirection value for rid
             #print(indirection_base_value)
 

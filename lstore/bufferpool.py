@@ -5,9 +5,8 @@ import lstore.config as Config
 import lstore.physical_page as Physical_Page
 
 class Bufferpool():
-    def __init__(self, db:Database, table:Table):
-        self.db = db
-        self.table = table
+    def __init__(self, db:str, table:Table = None):
+        self.db_root_path = db
         self.cur_size = 0
         self.max_size = Config.BUFFER_SIZE
         self.frame_list = []
