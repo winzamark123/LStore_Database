@@ -39,7 +39,7 @@ class Physical_Page:
         # Convert integer to (entry_size) bytes
         value_bytes = int.to_bytes(value, self.entry_size, byteorder='big', signed=True)
         self.data[start:end] = value_bytes
-        #print(f'Inserted value ({value}) in page ({self.column_number}) into Bytes ({start} - {end})')
+        print(f'Inserted value ({value}) in page ({self.column_number}) into Bytes ({start} - {end})')
 
         # Increment num_records only if update is False
         if not update:

@@ -20,8 +20,7 @@ class Page:
 
         if is_tail_page:
             # Increment the tail_page_counter each time a Tail_Page object is created
-            Page.tail_page_counter += 1
-            self.page_number = Page.tail_page_counter
+            self.page_number = 0
         else:
             # Increment the base_page_counter each time a Base_Page object is created
             Page.base_page_counter += 1
@@ -39,6 +38,8 @@ class Page:
             self.physical_pages.append(column_page)
 
         self.num_records = 0
+
+        self.last_record = 0
 
     # updates indirection column with new LID
     def update_indirection_base_column(self, new_value_LID:int, rid:int,)->bool:
@@ -63,7 +64,7 @@ class Page:
             return True
 
     # inserts new record to Base Page or Tail Page
-    def insert_new_record(self, new_record: Record, indirection_value:int = 0, schema_encoding:int = 0, update: bool=False)->bool:
+    def insert_new_record(self, new_record: Record,indirection_value:int = 0, Base_RID:int = 0 ,schema_encoding:int = 0, update: bool=False)->bool:
 
         if not self.has_capacity():
         # checks if page is full of records
@@ -84,6 +85,9 @@ class Page:
             # grabs Indirection page
             indirection_page = self._get_indirection_page()
 
+            # grabs Base Rid page
+            base_rid_page = self.get_base_rid_page()
+
             # if not update record then we pass the key, if not then we don't need key in tail records 
             if not update:
                 # new base record indirection is set to equal it's self
@@ -101,6 +105,8 @@ class Page:
                 # writes updated schema encoding 
                 schema_encoding_page.write_to_physical_page(0,rid)
 
+                base_rid_page.write_to_physical_page(value=rid, rid=rid )
+
             # if an (update = True) record then we write to the indirection physical_page which is in the tail page else base record stays as NULL since it's not pointing to any new updates (pages (byte array) are set to null automatically),
             # so no else statement is needed
             if update:
@@ -111,6 +117,8 @@ class Page:
                 # write to Indirection page - if passed in that this record is an update record, then it means that it's going to the tail page, 
                 # so we need the indirection value to be passed in as well
                 indirection_page.write_to_physical_page(indirection_value, rid)
+
+                base_rid_page.write_to_physical_page(value=Base_RID, rid=rid )
 
             # write to RID page
             rid_page.write_to_physical_page(rid,rid)
@@ -141,6 +149,12 @@ class Page:
     def get_rid_page(self)->Physical_Page:
         for physical_Page in self.physical_pages:
             if(physical_Page.column_number == RID_COLUMN):
+                return physical_Page
+
+    # returns physical_page(column) that has the BASE_RIDs
+    def get_base_rid_page(self)->Physical_Page:
+        for physical_Page in self.physical_pages:
+            if(physical_Page.column_number == BASE_RID_COLUMN):
                 return physical_Page
 
     # returns physical_page(column) that has the Indirections
