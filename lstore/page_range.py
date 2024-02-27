@@ -15,7 +15,7 @@ class Page_Range:
         self.key_column = key_column # primary key column (StudentID for m1_test)
 
         # initialize the base pages list with the first base page
-        self.base_pages = [Base_Page(self.num_columns, self.entry_size_for_columns, self.key_column)] 
+        self.base_pages = [] 
 
         # initialize the tail pages list with the first tail page
         self.tail_pages = [Tail_Page(self.num_columns, self.entry_size_for_columns, self.key_column)]
@@ -35,6 +35,8 @@ class Page_Range:
 
         # each page range has TPS so it can know what's the last tail record it merged
         self.tps_range = 0
+
+        self.insert_base_page()
         
     # checks if the page range has capacity for more records
     def has_capacity(self)-> bool:
