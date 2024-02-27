@@ -36,16 +36,15 @@ class Index_Column:
     if rid not in old_entry_set:
       raise ValueError
     old_entry_set.remove(rid)
-    if not len(old_entry_set):
-      del self.tree[old_entry_value]
-    else:
-      self.tree[old_entry_value] = dumps(old_entry_set)
+    self.tree[old_entry_value] = dumps(old_entry_set)
 
     # add RID back w/ new entry
-    if not self.tree[new_entry_value]:
+    if not new_entry_value in self.tree:
       self.tree[new_entry_value] = dumps({rid})
     else:
-      self.tree[new_entry_value] = dumps(set(loads(self.tree[new_entry_value])).add(rid))
+      new_entry_value_set = set(loads(self.tree[new_entry_value]))
+      new_entry_value_set.add(rid)
+      self.tree[new_entry_value] = dumps(new_entry_value_set)
 
   def get_single_entry(self, entry_value)->set[int]:
     # print("here for", entry_value)

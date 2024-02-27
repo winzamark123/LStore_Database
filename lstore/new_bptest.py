@@ -41,7 +41,7 @@ class TestBPTree(TestCase):
       tot_vals.add(i)
       if 50 <= val and val <= 68:
         spec_vals.add(i)
-      index.insert_record_to_index([val, 101], i)
+      index.insert_record_to_index([val, i], i)
     self.assertEqual(index.locate_range(0, 100, 0), tot_vals)
     self.assertEqual(index.locate_range(50, 68, 0), spec_vals)
     rm_index(index)
@@ -63,8 +63,19 @@ class TestBPTree(TestCase):
         self.assertIn(i+1, index.locate(value, j+1))
     rm_index(index)
   
+  def test_update_entry(self):
+    index = Index("test_table_6", ["SID", "Bio", "Chem", "CS"], 0, 20)
+    index.insert_record_to_index([10, 90, 20, 30], 1)
+    index.insert_record_to_index([11, 20, 30, 21], 2)
+    index.update_entry(90, 0, 1, 1)
+    index.update_entry(30, 20, 2, 2)
+    self.assertEqual(index.locate(0, 1), {1})
+    self.assertEqual(index.locate(20, 2), {1,2})
+    rm_index(index)
+
   def test_create_index(self):
-    index = Index("test_table_6", ["SID"], 0, 20)
+    index = Index("test_table_7", ["SID"], 0, 20)
+    rm_index(index)
 
 
 if __name__ == "__main__":
