@@ -325,6 +325,7 @@ class Page_Range:
     
     # help determine what columns have been updated
     def __analyze_schema_encoding(self,schema_encoding: int, return_record:bool = False) -> list:
+
         """
         Analyzes a schema encoding represented as a 5-bit integer and returns a list
         containing the positions of bits with value 1, excluding the first bit.
@@ -359,4 +360,12 @@ class Page_Range:
                     positions.append(i)
 
         return positions
-        
+    
+    def convert_page_range_meta_to_dict(self)-> dict:
+        page_range_data = {
+            "num_columns": self.num_columns,
+            "entry_size_for_columns": self.entry_size_for_columns,
+            "key_column": self.key_column,
+            "tid": self.tid,
+        }
+        return page_range_data

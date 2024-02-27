@@ -10,6 +10,7 @@ class Frame:
         self.physical_pages = []
         self.table_name = table_name
         self.time_in_buffer = datetime.now()
+        self.is_tail = False 
         
         self.path_to_page = path_to_page 
 
