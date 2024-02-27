@@ -1,9 +1,9 @@
 import lstore.db as Database
 import lstore.config as Config
 import lstore.table as Table
-import lstore.frame as Frame
 import lstore.config as Config
 import lstore.physical_page as Physical_Page
+import lstore.frame as Frame
 import os 
 
 class Bufferpool:
@@ -36,7 +36,25 @@ class Bufferpool:
         return self.cur_size <= self.max_size
     
     def evict_frame(self):
-        pass 
+    # Find the least recently used frame that is not pinned
+    # Function that finds the frame that has the longest time in the bufferpool that is not pinned
+        lru_frame = min((frame for frame in self.frames if not frame.is_pin), 
+                        key=lambda f: f.time_in_bufferpool, default=None)
+    
+    # IF THE FRAME IS DIRTY, IT WRITES IT TO THE DISK
+        if lru_frame and lru_frame.dirty_bit:
+            # Save the frame's data back to disk before eviction
+            # Pseudocode for saving to disk
+            # write_path = last_used_page.path_to_page_on_disk
+            # all_cols = last_used_page.all_columns
+            # save_to_disk_physicalPage(write_path, all_cols)
+            lru_frame.set_clean()
+        
+        # Remove the frame from the buffer pool and directory
+        if lru_frame:
+            frame_index = self.frames.index(lru_frame)
+            del self.frames[frame_index]
+            del self.frame_directory[lru_frame.tuple_key]
 
     def load_frame(self, path_to_page: str, table_name: str, num_columns: int):
         if self.__has_capacity():

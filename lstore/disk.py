@@ -48,30 +48,6 @@ class Disk:
             return None
         pass
 
-    def save_to_disk_physicalPage(self, page_range_id: int, isTail: bool, physical_page_id: int, page_to_write: Physical_Page) -> bool:
-        cur_table_path = self.path_Table
-        cur_page_range_path = cur_table_path + '/page_range' + str(page_range_id)
-        
-        if isTail:
-            cur_page_range_path += '/tail/tail_page' + str(physical_page_id)
-        else:
-            cur_page_range_path += '/base/base_page' + str(physical_page_id)
-
-        cur_file_path = cur_page_range_path + '/physical'
-
-        # Ensure the directory exists before attempting to write the file
-        os.makedirs(os.path.dirname(cur_file_path), exist_ok=True)
-
-        try:
-            with open(cur_file_path, 'wb') as file:
-                # Assuming page_to_write.data is already a bytes object; remove .to_bytes if unnecessary
-                file.write(page_to_write.data)
-                print("Physical Page saved to:", cur_file_path)
-                return True
-        except Exception as e:
-            print("Error saving physical page:", e)
-            return False
-
     #Given the path, write the physical page into disk
     def write_to_disk(path_to_page: str, physical_page: Physical_Page) -> bool:
         try:
