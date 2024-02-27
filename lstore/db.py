@@ -73,20 +73,6 @@ class Database():
 
         return new_table
 
-    def __create_disk(self, table_name:str, table:Table) -> Disk:
-        new_disk = Disk(db_name=self.db_name, table=table, num_columns=table.num_columns)
-        self.disk_directory[table_name] = new_disk
-
-        table_path = os.path.join(self.root_path, table_name)
-
-        if not os.path.exists(table_path):
-            os.makedirs(table_path)
-            print("Table directory created at:", table_path)
-
-        print(f"Disk for {table_name} created")
-        return new_disk
-
-    
     """
     # Deletes the specified table
     """
@@ -96,8 +82,7 @@ class Database():
             del self.disk_directory[table_name]
             
         else:
-            print("Table does not exist")
-            raise ValueError(f"Table {table_name} does not exist.")
+           raise ValueError(f"Table {table_name} does not exist.")
         
 
     

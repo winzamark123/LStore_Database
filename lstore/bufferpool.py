@@ -37,8 +37,6 @@ class Bufferpool():
     def evict_frame(self):
         pass 
 
-    def __add_frame_to_directory(self, frame_index: int, page_range_num: int, base_page_num: int):
-
     def load_frame(self, path_to_record: str, table_name: str, num_columns: int):
         if self.__has_capacity():
             self.__import_frame(path_to_record= path_to_record, table_name= table_name)
@@ -55,9 +53,10 @@ class Bufferpool():
         self.frame_object[frame_index].physical_pages = [Physical_Page(entry_size=data_entry_size) for i in range(num_columns)]
 
         for i in range(num_columns):
-            path_to_physical_page = path_to_record + '/' + str(i) + '.txt'
-            self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page)
+            path_to_physical_page = path_to_record + '/' + str(i) + '.bin'
+            self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page=path_to_physical_page, column_index=i) 
 
+        return frame_index
 
 
 

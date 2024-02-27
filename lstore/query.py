@@ -64,10 +64,6 @@ class Query:
         
         self.table.index.insert_record_to_index(columns, new_record.rid)
         
-        #table
-            #disk
-            #buffer 
-                #frame 
         
         #get record info from table
         record_info = self.table.get_record_info(new_record.rid)
@@ -81,13 +77,10 @@ class Query:
             path_to_record = path_to_basePage + '/' + str(record_info["record_num"])
             table_buffer.load_frame(path_to_record, self.table.name)
 
+            
 
-        #Checking 
-        # print("TOTAL_PAGE_RANGE", len(self.table.page_directory))
-        # for i in range(len(self.table.page_directory)):
-        #     for j in range(len(self.table.page_directory[i].base_pages)):
-        #         print("PAGE_RANGE", i, "BASE_PAGES", j, "TOTAL_RECORDS", self.table.page_directory[i].base_pages[j].num_records) 
-        #         print("Size of Page Range", len(self.table.page_directory[i].base_pages))
+
+
 
         return True if insertSuccess else False
     

@@ -12,8 +12,9 @@ class Table:
     :param key: int             #Index of table key in columns
     """
     
-    def __init__(self, name:str, num_columns:int, key_index:int)->None:
-        self.name = name
+    def __init__(self, db_name: str, table_name:str, num_columns:int, key_index:int)->None:
+        self.db_name = db_name
+        self.table_name = table_name
         self.num_columns = num_columns
         self.key_column = META_DATA_NUM_COLUMNS + key_index
         self.deleted_rids = []
@@ -28,8 +29,8 @@ class Table:
 
         self.page_directory = [Page_Range(num_columns, self.entry_size_for_columns, self.key_column)]
 
-        self.bufferpool = Bufferpool(self.name)
-        self.disk = Disk(self.name, self.num_columns)
+        self.bufferpool = Bufferpool(self.table_name)
+        self.disk = Disk(self.db_name, self.table_name, self.num_columns)
 
 
     # Get Page Range and Base Page from RID
@@ -82,6 +83,10 @@ class Table:
         }
 
         return table_data
+    
+    #Save the table metadata to disk
+    def save_table_metadata(self, table_meta_data: dict)-> bool:
+        return self.disk.write_metadata_to_disk(self.name, self.disk.table_path, table_meta_data)
 
     @staticmethod
     def meta_disk_to_table(data) -> 'Table':

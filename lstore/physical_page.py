@@ -84,8 +84,8 @@ class Physical_Page:
         return (rid-1) * self.entry_size % PHYSICAL_PAGE_SIZE        
     
     #read physical page from disk
-    def read_from_disk(self, path_to_page: str, column_index: int):
-        physical_page_file = open(path_to_page, "rb")
+    def read_from_disk(self, path_to_physical_page: str, column_index: int):
+        physical_page_file = open(path_to_physical_page, "rb")
         physical_page_file.seek(column_index * PHYSICAL_PAGE_SIZE)
         self.data = physical_page_file.read(PHYSICAL_PAGE_SIZE)
         physical_page_file.close()
