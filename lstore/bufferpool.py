@@ -57,39 +57,42 @@ class Bufferpool:
         self.frame_object[self.frame_count] = Frame(path_to_page= path_to_page, table_name= table_name)
 
     def load_frame_to_buffer(self, path_to_page: str, table_name: str, num_columns: int, record_info: dict):
-
         if not self.__has_capacity():
             self.evict_frame()
 
-        self.__import_frame(path_to_page= path_to_page, table_name= table_name)
+        self.__import_frame(path_to_page=path_to_page, table_name=table_name)
         
         frame_index = self.frame_count
 
-        #pin the frame
+        # Pin the frame
         self.frame_object[frame_index].pin_frame()
 
         data_entry_size = Config.DATA_ENTRY_SIZE
 
+        for i in range(num_columns + Config.META_DATA_NUM_COLUMNS):
+            # Ensure each physical page is appended correctly within the loop
+            self.frame_object[frame_index].physical_pages.append(Physical_Page(entry_size=data_entry_size, column_number=i))
+            
+            # Construct the path for each physical page within the loop
+            path_to_physical_page = f"{path_to_page}/{i}.bin"  # Use formatted string for clarity
 
-        for i in range(num_columns):
-             self.frame_object[frame_index].physical_pages.append(Physical_Page(entry_size=data_entry_size, column_number=i))
-        path_to_physical_page = self.path_to_table + '/' + path_to_page + '/' + str(i) + '.bin'
+            # Ensure directory exists before attempting to read or write
+            os.makedirs(os.path.dirname(path_to_physical_page), exist_ok=True)
 
-        # Ensure directory exists before attempting to read or write
-        os.makedirs(os.path.dirname(path_to_physical_page), exist_ok=True)
+            # Check if the file exists to decide whether to read from it or initialize a new one
+            if os.path.exists(path_to_physical_page):
+                self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page=path_to_physical_page, column_index=i)
+            else:
+                # If the file does not exist, you may need to create and initialize it
+                # Example: initializing an empty file
+                with open(path_to_physical_page, 'wb') as f:
+                    # Initialize the file if needed; for example, writing empty bytes:
+                    f.write(b'\x00' * data_entry_size)  # Adjust this according to your data structure needs
 
-        # Check if the file exists to decide whether to read from it or initialize a new one
-        if os.path.exists(path_to_physical_page):
-            self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page=path_to_physical_page, column_index=i)
-        else:
-            # If the file does not exist, initialize it as needed. For example:
-            with open(path_to_physical_page, 'wb') as f:  # This creates the file, ensuring it exists
-                pass  # You might want to write initial data to the file here
-
+        # Record frame information
         page_range_info = record_info["page_range_num"]
         base_page_info = record_info["base_page_num"]
         record_key = (page_range_info, base_page_info)
-
         self.frame_directory[record_key] = frame_index
 
         return frame_index
