@@ -1,6 +1,7 @@
 import lstore.config as Config
 from lstore.physical_page import Physical_Page
 from lstore.frame import Frame
+from lstore.disk import DISK
 import os 
 
 class Bufferpool:
@@ -27,23 +28,27 @@ class Bufferpool:
     def evict_frame(self):
     # Find the least recently used frame that is not pinned
     # Function that finds the frame that has the longest time in the bufferpool that is not pinned
-        lru_frame = min((frame for frame in self.frame_object if not frame.is_pin), 
-                        key=lambda f: f.time_in_bufferpool, default=None)
+        lru_frame_key, lru_frame = min(
+            ((key, frame) for key, frame in self.frames.items() if not frame.is_pin), 
+            key=lambda item: item[1].time_in_bufferpool, default=(None, None)
+        )
     
     # IF THE FRAME IS DIRTY, IT WRITES IT TO THE DISK
-        if lru_frame and lru_frame.dirty_bit:
+        if lru_frame and lru_frame.is_dirty:
             # Save the frame's data back to disk before eviction
-            # Pseudocode for saving to disk
-            # write_path = last_used_page.path_to_page_on_disk
-            # all_cols = last_used_page.all_columns
-            # save_to_disk_physicalPage(write_path, all_cols)
+            i = 0
+            for physical_page in lru_frame.physical_pages:
+                path_to_physical_page = f"{lru_frame.path_to_page}{i}"
+                # Pseudocode for saving to disk
+                DISK.write_physical_page_to_disk(path_to_physical_page, physical_page)
+                i += 1
+
             lru_frame.set_clean()
         
         # Remove the frame from the buffer pool and directory
-        if lru_frame:
-            frame_index = self.frame_object.index(lru_frame)
-            del self.frame_object[frame_index]
-            del self.frame_directory[lru_frame.tuple_key]
+        if lru_frame_key:
+            del self.frames[lru_frame_key]
+            del self.frame_info[lru_frame_key]
 
     def insert_frame(self, path_to_page: str, num_columns: int, record_info: dict):
         if not self.__has_capacity():

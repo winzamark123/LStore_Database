@@ -36,12 +36,15 @@ class Frame:
     def has_capacity(self) -> bool:
         return self.physical_pages[0].has_capacity()
     
-    def load_data(self):
+    def load_data(self, num_columns: int, path_to_page: str):
         self.pin_frame() #pin itself
         self.pin_count += 1 
 
-        pass 
+        for i in range(num_columns):
+            pass 
 
+    def write_data(self):
+        pass 
 
 
 
