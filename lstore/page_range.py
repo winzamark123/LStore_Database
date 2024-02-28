@@ -18,14 +18,16 @@ class Page_Range:
         self.base_pages = [] 
 
         # initialize the tail pages list with the first tail page
-        self.tail_pages = [Tail_Page(self.num_columns, self.entry_size_for_columns, self.key_column)]
-        # self.tail_pages = []
+        self.tail_pages = []
 
         self.tid = 0 # tid (rid) for tail records - decrease by 1 once a record is added or updated (for tails records)
 
-        self.amount_tail_pages = 1
-        self.tail_pages[0].page_number = 1
+        # self.amount_tail_pages = 1
+        # self.tail_pages[0].page_number = 1
+
         self.path_to_page_range = path_to_page_range
+        self.path_to_base = path_to_page_range + '/base'
+        self.path_to_tail = path_to_page_range + '/tail'
 
         # Initialize the page_range_counter for each instance of Page_Range
         self.page_range_index = 0
@@ -37,7 +39,7 @@ class Page_Range:
         self.tps_range = 0
 
         self.insert_base_page()
-        
+
     # checks if the page range has capacity for more records
     def has_capacity(self)-> bool:
         if len(self.base_pages) >= NUM_BASE_PAGES:
@@ -55,14 +57,10 @@ class Page_Range:
     # insert a new base page to the page range
     def insert_base_page(self)-> bool:
         # checks the last base page in the base page list to see if it's full
-        if not self.base_pages[-1].has_capacity() or len(self.base_pages) == 0:   
+        if len(self.base_pages) == 0 or self.base_pages[-1].has_capacity():   
             self.base_pages.append(Base_Page(self.num_columns, self.entry_size_for_columns, self.key_column))
 
-            path_to_base = self.path_to_page_range + '/base'
-            print("Path to base: ", path_to_base)
-            os.makedirs(path_to_base)
-            
-            path_to_base_page = self.path_to_page_range + '/base/base_page' + str(len(self.base_pages) - 1)
+            path_to_base_page = self.path_to_base + '/base_page' + str(len(self.base_pages) - 1)
             os.makedirs(path_to_base_page)
             return True
         

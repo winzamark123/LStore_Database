@@ -102,7 +102,14 @@ class Table:
                 self.page_directory[-1].page_range_index = self.num_page_range - 1
 
             
-            os.mkdir(path_to_page_range)
+            os.makedirs(path_to_page_range, exist_ok=True)
+
+            path_to_base = path_to_page_range + '/base'
+            path_to_tail = path_to_page_range + '/tail'
+
+            os.makedirs(path_to_base, exist_ok=True)
+            os.makedirs(path_to_tail, exist_ok=True)
+
             return True
         return False 
 
