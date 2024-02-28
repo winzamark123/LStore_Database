@@ -1,5 +1,8 @@
 import lstore.page_range as Page_Range
-import lstore.physical_page as Physical_Page
+from lstore.disk import DISK
+import lstore.config as Config
+import os 
+from lstore.physical_page import Physical_Page
 from datetime import datetime 
 
 class Frame:
@@ -41,10 +44,28 @@ class Frame:
         self.pin_count += 1 
 
         for i in range(num_columns):
-            pass 
+            self.physical_pages.append(Physical_Page(path_to_page, i))
 
-    def write_data(self):
-        pass 
+            path_to_physical_page = f"{path_to_page}{i}.bin"
+            os.makedirs(path_to_physical_page, exist_ok=True)
+
+            # Check if the file exists to decide whether to read from it or initialize a new one
+            if os.path.exists(path_to_physical_page):
+                
+                if i == 0:
+                    DISK.read_physical_page_from_disk(path_to_physical_page, is_indirection=True)
+                else:
+                    DISK.read_physical_page_from_disk(path_to_physical_page, is_indirection=False)
+
+            else:
+                # If the file does not exist, you may need to create and initialize it
+                # Example: initializing an empty file
+                with open(path_to_physical_page, 'wb') as f:
+                    # Initialize the file if needed; for example, writing empty bytes:
+                    f.write(b'\x00' * Config.DATA_ENTRY_SIZE)  # Adjust this according to your data structure needs
+
+        
+
 
 
 

@@ -57,44 +57,16 @@ class Bufferpool:
         self.frame_count += 1
         frame_index = self.frame_count
         self.frames[frame_index] = Frame(path_to_page= path_to_page)
-        self.frames[frame_index].load_data() 
+        self.frames[frame_index].load_data(num_columns=num_columns, path_to_page=path_to_page) 
+
+        page_range_info = record_info["page_range_num"]
+        page_type_info = record_info["page_type"]
+        page_num_info = record_info["page_num"]
+        record_key = (page_range_info, page_type_info, page_num_info)
+
+        self.frame_info[record_key] = frame_index
         
         return frame_index
-
-        # Pin the frame
-        self.frame_object[frame_index].pin_frame()
-
-        data_entry_size = Config.DATA_ENTRY_SIZE
-
-        for i in range(num_columns + Config.META_DATA_NUM_COLUMNS):
-            # Ensure each physical page is appended correctly within the loop
-            self.frame_object[frame_index].physical_pages.append(Physical_Page(entry_size=data_entry_size, column_number=i))
-            
-            # Construct the path for each physical page within the loop
-            path_to_physical_page = f"{path_to_page}/{i}.bin"  # Use formatted string for clarity
-
-            # Ensure directory exists before attempting to read or write
-            os.makedirs(os.path.dirname(path_to_physical_page), exist_ok=True)
-            print("PATH_TO_PHYUSICALSDALK", path_to_physical_page)
-
-            # Check if the file exists to decide whether to read from it or initialize a new one
-            if os.path.exists(path_to_physical_page):
-                self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page=path_to_physical_page, column_index=i)
-            else:
-                # If the file does not exist, you may need to create and initialize it
-                # Example: initializing an empty file
-                with open(path_to_physical_page, 'wb') as f:
-                    # Initialize the file if needed; for example, writing empty bytes:
-                    f.write(b'\x00' * data_entry_size)  # Adjust this according to your data structure needs
-
-        # Record frame information
-        page_range_info = record_info["page_range_num"]
-        base_page_info = record_info["base_page_num"]
-        record_key = (page_range_info, base_page_info)
-        self.frame_directory[record_key] = frame_index
-
-        return frame_index
-
 
 
 

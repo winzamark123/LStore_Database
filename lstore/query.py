@@ -45,7 +45,8 @@ class Query:
     def insert(self, *columns:tuple)->bool:
         #Create a new record and insert it into the latest base_page
         new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
-        # table_info = self.table.get_table_info()
+
+        self.table.insert_record()
 
         page_range_name = self.table.table_name + '/page_range' + str(self.table.page_range_counter)
         if self.table.page_range_directory.get(page_range_name) == None:
@@ -56,8 +57,6 @@ class Query:
         if cur_page_range.get(base_page_name) == None:
             #create a base page
             cur_page_range.create_base_page(base_page_name=base_page_name, num_columns=self.table.num_columns, key_column_index=self.table.key_column_index)
-
-
 
         latest_page_range = self.table.page_directory[-1]
 
