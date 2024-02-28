@@ -41,7 +41,7 @@ class Database:
         """
         Saves all tables in database to disk.
 
-        If no database found, raise a ValueError
+        If no database found, raise a ValueError.
         """
 
         if self.db_dir_path == None:
