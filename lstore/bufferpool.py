@@ -2,7 +2,6 @@ import lstore.config as Config
 from lstore.physical_page import Physical_Page
 from lstore.frame import Frame
 from lstore.disk import DISK
-import os 
 
 class Bufferpool:
     def __init__(self):
@@ -69,11 +68,3 @@ class Bufferpool:
         return frame_index
     
 BUFFERPOOL = Bufferpool()
-
-
-
-    
-
-
-
-     

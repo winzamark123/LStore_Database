@@ -1,5 +1,5 @@
-import lstore.config as Config
 import os
+from lstore.config import *
 
 class Physical_Page:
     """

@@ -44,14 +44,14 @@ class Frame:
         self.pin_count += 1 
 
         for i in range(num_columns):
-            self.physical_pages.append(Physical_Page(path_to_page, i))
+            self.physical_pages.append(Physical_Page(i))
 
             path_to_physical_page = f"{path_to_page}{i}.bin"
             os.makedirs(path_to_physical_page, exist_ok=True)
 
             # Check if the file exists to decide whether to read from it or initialize a new one
             if os.path.exists(path_to_physical_page):
-                DISK.read_physical_page_from_disk(path_to_physical_page, is_indirection=False)
+                DISK.read_physical_page_from_disk(path_to_physical_page)
 
             else:
                 # If the file does not exist, you may need to create and initialize it
@@ -60,11 +60,3 @@ class Frame:
                     # Initialize the file if needed; for example, writing empty bytes:
                     f.write(b'\x00' * Config.DATA_ENTRY_SIZE)  # Adjust this according to your data structure needs
 
-        
-
-
-
-
-    
-
-    

@@ -1,9 +1,7 @@
 from lstore.config import *
 from lstore.disk import DISK
 from lstore.page import Base_Page, Tail_Page, Page 
-from time import time
 from lstore.record import Record
-from random import randint
 import os 
 
 class Page_Range:
@@ -31,7 +29,6 @@ class Page_Range:
         if self.num_base_pages: 
             self.base_pages = self.load_base_pages()
 
-
     def load_base_pages(self) -> dict[int, Base_Page]:
         base_page_dirs = [name for name in os.listdir(self.page_range_dir_path) if 'BP' in name]
         for base_page_dir in base_page_dirs:
@@ -43,7 +40,6 @@ class Page_Range:
                     key_index=metadata["key_index"],
                     is_tail_page=False
                 )
-
 
     def create_base_page(self, base_page_name:str, num_columns:int, key_column_index:int) -> Base_Page:
         if base_page_name in self.base_page_object:

@@ -14,7 +14,6 @@ class Query:
         self.table = table
         self.inserted_keys = {}
 
-    
     """
     # internal Method
     # Read a record with specified RID
@@ -35,8 +34,6 @@ class Query:
 
         return True
         
-    
-    
     """
     # Insert a record with specified columns
     # Return True upon succesful insertion
