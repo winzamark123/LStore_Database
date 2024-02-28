@@ -6,11 +6,12 @@ from pickle import loads, dumps
 
 class Index_Column:
 
-  def __init__(self, table_name:str, column_name:str, order:int):
-    self.name = column_name
-    self.tree = BPlusTree(filename=f"index/{table_name}_{column_name}.db",
-                          order=order)
+  def __init__(self, column_index_file:str, order:int)->None:
+    self.tree = BPlusTree(filename=column_index_file, order=order)
     self.is_key = False
+
+  def __del__(self):
+    self.tree.close()
 
   def set_as_primary_key(self):
     self.is_key = True
@@ -65,18 +66,30 @@ class Index_Column:
 
 class Index:
 
-  def __init__(self, table_name:str, columns:list[str], primary_key_index:int, order:int)->None:
-    if not os.path.exists("index"):
-        os.mkdir("index")
-    self.table_name = table_name
-    self.columns = columns
+  def __init__(self, table_dir_path:str, primary_key_index:int, order:int)->None:
+    self.index_dir_path = os.path.exists(os.path.join(table_dir_path), "index")
+    if not os.path.exists(self.index_dir_path):
+      os.makedirs(self.index_dir_path, exist_ok=False)
+    self.indices:dict[int,Index_Column] = dict() # {column_index: Index_Column}
     self.order = order
-    self.indices = [Index_Column(table_name, column, order) for column in columns]
-    self.indices[primary_key_index].set_as_primary_key()
+    self.primary_key_index = primary_key_index
 
-  def __del__(self):
-    for index in self.indices:
-      index.tree.close()
+  def create_index(self, column_index:int)->None:
+    """
+    Creates an index for a specified column.
+
+    Raises a ValueError if a column's index has already been created.
+    """
+
+    if column_index in self.indices:
+      raise ValueError
+
+    column_index_file = os.path.join(self.index_dir_path, f"{column_index}.db")
+    self.indices[column_index] = Index_Column(column_index_file, self.order)
+
+  def drop_index(self, column_index:int)->None:
+    if len(self.indices) - 1 >= column_index:
+      del self.indices[column_index]
 
   def insert_record_to_index(self, record_columns, rid:int)->None:
     """
@@ -120,13 +133,3 @@ class Index:
     except ValueError:
       print("Error: Unable to perform update properly.")
 
-  def create_index(self, column_name:str, index_to_insert_column:int=None)->None:
-    new_index = Index_Column(self.table_name, column_name, self.order)
-    if index_to_insert_column == None:
-      self.indices.append(new_index)
-    else:
-      self.indices.insert(index_to_insert_column, new_index)
-
-  def drop_index(self, column_index:int)->None:
-    if len(self.indices) - 1 >= column_index:
-      del self.indices[column_index]
