@@ -1,6 +1,7 @@
 from lstore.table import Table
-from lstore.disk import Disk
+from lstore.disk import DISK
 import os
+import pickle
 from shutil import rmtree
 
 class Database:
@@ -8,7 +9,6 @@ class Database:
     def __init__(self)->None:
         self.db_dir_path:str        = None
         self.tables:dict[str,Table] = None
-        self.disk = None
 
     def open(self, db_dir_path:str)->None:
         """
@@ -21,10 +21,21 @@ class Database:
             raise ValueError
 
         self.db_dir_path = db_dir_path
-        self.disk = Disk(db_dir_path)
-
-        # TODO: load table metadata + data
+        DISK.set_database(db_dir_path)
         self.tables = dict()
+
+        # load stuff from database if it had been created before
+        if os.path.exists(db_dir_path):
+            table_dirs = [_ for _ in os.listdir(db_dir_path) if os.path.isdir(_)]
+            for table_dir in table_dirs:
+                metadata = dict(pickle.loads(os.path.join(table_dir, "metadata.pkl")))
+                self.tables[metadata["table_dir_path"]] = \
+                    Table(
+                        metadata["table_dir_path"],
+                        metadata["num_columns"],
+                        metadata["key_index"],
+                        metadata["num_records"]
+                    )
 
     def close(self)->None:
         """
@@ -60,9 +71,9 @@ class Database:
             "table_dir_path": table_dir_path,
             "num_columns": num_columns,
             "key_index": key_index,
-            "num_page_ranges": 1
+            "num_records": 0
         }
-        self.disk.write_metadata_to_disk(table_dir_path, metadata)
+        DISK.write_metadata_to_disk(table_dir_path, metadata)
 
         # create table
         self.tables[table_name] = Table(table_dir_path, num_columns, key_index, 1)

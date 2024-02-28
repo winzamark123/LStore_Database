@@ -16,7 +16,7 @@ class Page:
     base_page_counter = 0
     tail_page_counter = 0
 
-    def __init__(self, num_columns:int, entry_sizes:list, key_column:int, is_tail_page: bool = False)->None:
+    def __init__(self, num_columns:int, entry_sizes:list, key_column:int, is_tail_page: bool=False, num_records:int=0)->None:
 
         if is_tail_page:
             # Increment the tail_page_counter each time a Tail_Page object is created
@@ -37,7 +37,7 @@ class Page:
             column_page = Physical_Page(entry_size=entry_size, column_number=column_number)
             self.physical_pages.append(column_page)
 
-        self.num_records = 0
+        self.num_records = num_records
 
         self.last_record = 0
 

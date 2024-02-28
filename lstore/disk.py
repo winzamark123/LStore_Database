@@ -4,7 +4,10 @@ from lstore.physical_page import Physical_Page
 import lstore.config as Config
 
 class Disk:
-    def __init__(self, db_dir_path:str):
+    def __init__(self):
+        self.root = None
+
+    def set_database(self, db_dir_path:str):
         self.root_path = db_dir_path
         if not os.path.exists(self.root_path):
             os.makedirs(self.root_path, exist_ok=True)
@@ -31,29 +34,35 @@ class Disk:
         with open(path_to_physical_page, 'rb') as ppf:
             return ppf.read(Config.INDIRECTION_PAGE_SIZE if is_indirection else Config.PHYSICAL_PAGE_SIZE)
 
+DISK = Disk()
+
 """
+note: 4 metadata columns per base/tail page
+
 Database Directory
-    Table Directory
+    Table 1 Directory (w/ 5 columns)
         metadata.pkl -> {table_dir_path, num_columns, key_index, num_page_ranges}
-        PR1
-            metadata.pkl -> {page_range_path, num_base_pages, num_tail_pages}
-            BP1 (512 records in base page -> 1 physical page per column)
-                metadata.pkl -> {base_page_path, num_records, page_index}
+        PR0
+            metadata.pkl -> {page_range_path, num_base_pages}
+            BP0 (512 records in base page -> 1 physical page per column)
+                metadata.pkl -> {base_page_path, num_records, page_index. num_tail_pages}
                 0.pp
                 1.pp
                 ...
                 8.pp
-            TP1 (potentially infinite # records)
+            TP0_1
+                0.pp
                 1.pp
-                2.pp
                 ...
-                9.pp
-            BP2
-            TP2
-    Table Directory
-        PR
+                8.pp
+            TP0_2
             BP1
-                1.pp
+            TP1
+        PR1
+    Table 2 Directory (w/ 7 columns)
+        PR0
+            BP0
+                0.pp
                 ...
                 10.pp
 """
