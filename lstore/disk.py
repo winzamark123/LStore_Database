@@ -25,7 +25,7 @@ class Disk:
             return dict(pickle.loads(mdf))
 
     def write_physical_page_to_disk(self, path_to_column_dir:str, physical_page:Physical_Page)->None:
-        with open(os.path.join(path_to_column_dir, f"{physical_page.column_index}.pp"), 'w') as ppf:
+        with open(os.path.join(path_to_column_dir, f"{physical_page.column_index}.pp"), 'wb') as ppf:
             ppf.write(physical_page.data)
 
     def read_physical_page_from_disk(self, path_to_physical_page:str, is_indirection:bool)->Physical_Page:
