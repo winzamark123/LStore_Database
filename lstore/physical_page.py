@@ -14,8 +14,8 @@ class Physical_Page:
         self.entry_size = entry_size
         self.column_index = column_index
         self.updates = 0
-        self.page_size = Config.INDIRECTION_PAGE_SIZE if column_index == 0 else Config.PHYSICAL_PAGE_SIZE
-        self.data = bytearray(self.page_size)
+        self.page_size = Config.PHYSICAL_PAGE_SIZE
+        self.data = bytearray(Config.PHYSICAL_PAGE_SIZE)
     
     def __has_capacity(self)->bool:
         """

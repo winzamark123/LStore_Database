@@ -4,9 +4,8 @@ import lstore.config as Config
 from lstore.page_range import Page_Range
 from lstore.bufferpool import Bufferpool
 from lstore.page import Page
-from lstore.disk import Disk
+from lstore.disk import DISK
 import os
-import pickle
 import threading
 import copy
 
@@ -27,7 +26,7 @@ class Table:
         self.index = Index(table_dir_path, key_index, Config.ORDER_CHOICE)
         self.bufferpool = Bufferpool(table_dir_path)
 
-        self.num_page_ranges = len([_ for _ in os.walk(table_dir_path)])
+        self.num_page_ranges = len([_ for _ in os.listdir(table_dir_path) if os.path.isdir(_)])
         self.page_ranges:dict[int,Page_Range] = None
         if self.num_page_ranges:
             self.page_ranges = self.load_page_ranges()
@@ -36,21 +35,17 @@ class Table:
         page_range_dirs = [_ for _ in os.listdir(self.table_dir_path) if os.path.isdir(_)]
         for page_range_dir in page_range_dirs:
             page_range_index = int(page_range_dir.removeprefix("PR"))
-            metadata = Disk.read_metadata_from_disk()
+            metadata = DISK.read_metadata_from_disk()
             self.page_ranges[page_range_index] = \
                 Page_Range(
                     metadata["page_range_dir_path"],
-                    metadata["num_base_pages"]
+                    metadata["num_base_pages"],
                 )
 
     def insert_record(self)->None:
         if self.num_page_ranges == 0:
             self.create_page_range(self.num_page_ranges)
-
-
-    # TODO potentially
-    # def __increment_table_page_range_metadata()
-
+        # TODO: insert somewhere
 
     def create_page_range(self, page_range_index:int)->None:
         """
@@ -67,27 +62,10 @@ class Table:
             "page_range_dir_path": page_range_dir_path,
             "num_base_pages": 0,
         }
+        DISK.write_metadata_to_disk(page_range_dir_path, metadata)
 
-        # new_page_range = Page_Range(num_columns, self.entry_size_for_columns, key_index, page_range_path)
-        # print("PATH_TO_PAGE_RANGE", new_page_range.path_to_page_range)
-        # self.page_range_object[page_range_name] = new_page_range
-
-        # self.page_range_directory[page_range_name] = {
-        #     "page_range_name": page_range_name,
-        #     "page_range_path": page_range_path,
-        #     "num_columns": num_columns,
-        #     "key_index": key_index
-        # }
-
-        # TODO: update table metadata
-        ## load
-        ## increments num_page_ranges
-        ## dump
-
-        print(f"Page Range {page_range_name} created")
-
-        return new_page_range
-
+        # create page range
+        self.page_ranges[page_range_index] = Page_Range(page_range_dir_path, 0)
 
     @classmethod
     def reset_base_page_counter(cls):
@@ -105,77 +83,6 @@ class Table:
             addreses.append((page_range_num, base_page_num))
         #return page_range_num, base_page_num
         return addreses
-
-    def get_record_info(self, rid)-> dict:
-        page_range_num = rid // (Config.RECORDS_PER_PAGE * Config.NUM_BASE_PAGES)
-        base_page_num = (rid // Config.RECORDS_PER_PAGE) % Config.NUM_BASE_PAGES
-
-        if rid < 0:
-            isTail = True
-        isTail = False
-
-        record_num = rid % Config.RECORDS_PER_PAGE
-
-        record_info = {
-            "page_range_num": page_range_num,
-            "base_page_num": base_page_num,
-            "isTail": isTail,
-            "record_num": record_num
-        }
-
-        return record_info
-
-    # Increment RID for base records
-    def inc_rid(self)-> int:
-        self.rid += 1
-        return self.rid # returns unique new RID for base records
-
-    # insert new page_range into page_range_directory
-    def insert_page_range(self)-> bool:
-        if len(self.page_range_directory) == 0 or self.page_directory[-1].has_capacity() == False:
-            #print("Function: insert_page_range(), Total page ranges: ", len(self.page_range_directory))
-            path_to_page_range = self.table_dir_path + '/page_range' + str(len(self.page_range_directory))
-            self.page_range_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column, path_to_page_range))
-
-            #reset the base_page_counter to 0 for a new table (the first page_range)
-            if len(self.page_range_directory) == 1:
-                self.page_range_directory[0].page_range_index = 0
-                self.num_page_range += 1
-                self.reset_base_page_counter()
-                self.page_range_directory[0].base_pages[0].page_number = 1
-
-            elif len(self.page_range_directory) > 1:
-                self.num_page_range += 1
-                self.page_range_directory[-1].page_range_index = self.num_page_range - 1
-
-
-            os.makedirs(path_to_page_range, exist_ok=True)
-
-            path_to_base = path_to_page_range + '/base'
-            path_to_tail = path_to_page_range + '/tail'
-
-            os.makedirs(path_to_base, exist_ok=True)
-            os.makedirs(path_to_tail, exist_ok=True)
-
-            return True
-        return False
-
-    def convert_table_meta_to_dict(self)-> dict:
-        table_data = {
-            "name": self.name,
-            "num_columns": self.num_columns,
-            "key_column": self.key_column,
-            "key_index": self.key_index,
-            "rid": self.rid,
-            "tid": self.tid,
-            "entry_size_for_columns": self.entry_size_for_columns,
-        }
-
-        return table_data
-
-    #Save the table metadata to disk
-    def save_table_metadata(self, table_meta_data: dict)-> bool:
-        return self.disk.write_metadata_to_disk(self.name, self.disk.table_path, table_meta_data)
 
     # TODO: complete merge (in the works: Testing in merge_test.py)
     # Implementing without bufferpool right now, will when bufferpool is finished

@@ -76,7 +76,7 @@ class Database:
         DISK.write_metadata_to_disk(table_dir_path, metadata)
 
         # create table
-        self.tables[table_name] = Table(table_dir_path, num_columns, key_index, 1)
+        self.tables[table_name] = Table(table_dir_path, num_columns, key_index, 0)
         print(f"Table {table_name} created.")
 
     def drop_table(self, table_name:str)->None:

@@ -6,7 +6,6 @@ ORDER_CHOICE = 4 # order of the B+ tree
 META_DATA_NUM_COLUMNS = 4 # columns that are meta data
 
 RECORDS_PER_PAGE = PHYSICAL_PAGE_SIZE // COLUMN_SIZE 
-INDIRECTION_PAGE_SIZE = 1024
 
 MERGE_THRESHOLD = 1024 # amounts of updates in page range to trigger merge
 INDIRECTION_COLUMN = 0

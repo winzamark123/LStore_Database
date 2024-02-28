@@ -28,11 +28,11 @@ class Disk:
         with open(os.path.join(path_to_column_dir, f"{physical_page.column_index}.bin"), 'wb') as ppf:
             ppf.write(physical_page.data)
 
-    def read_physical_page_from_disk(self, path_to_physical_page:str, is_indirection:bool)->Physical_Page:
+    def read_physical_page_from_disk(self, path_to_physical_page:str)->Physical_Page:
         if not os.path.exists(path_to_physical_page):
             raise ValueError
         with open(path_to_physical_page, 'rb') as ppf:
-            return ppf.read(Config.INDIRECTION_PAGE_SIZE if is_indirection else Config.PHYSICAL_PAGE_SIZE)
+            return ppf.read(Config.PHYSICAL_PAGE_SIZE)
 
 DISK = Disk()
 

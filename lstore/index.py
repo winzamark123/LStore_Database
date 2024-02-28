@@ -101,6 +101,7 @@ class Index:
     Note: all record columns must be initialized. If a record column
     does not have a value, simply pass None as its element value.
     """
+
     if len(record_columns) != len(self.columns):
       raise ValueError
 
