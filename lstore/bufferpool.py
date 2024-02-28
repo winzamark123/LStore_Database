@@ -4,33 +4,26 @@ from lstore.frame import Frame
 import os 
 
 class Bufferpool:
-    def __init__(self, db_name: str, table_name: str):
-        self.frame_object = {}
-        self.frame_directory= {}
+    def __init__(self):
+        self.frames = {}
+        self.frame_info = {}
         self.frame_count = 0
-        self.table_name = table_name
-        self.path_to_table = os.getcwd() + '/' + db_name + '/' + table_name
-        self.merge_buffer = False 
-
     
     def __has_capacity(self) -> bool:
         return self.frame_count < Config.BUFFERPOOL_FRAME_SIZE
 
     def is_record_in_buffer(self, record_info: dict) -> int:
         page_range_info = record_info["page_range_num"]
-        base_page_info = record_info["base_page_num"]
-        record_key = (page_range_info, base_page_info)
+        page_type_info = record_info["page_type"]
+        page_num_info = record_info["page_num"]
+        record_key = (page_range_info, page_type_info, page_num_info)
 
-        if record_key in self.frame_directory:
+        if record_key in self.frame_info:
             print("Record is in bufferpool")
-            frame_index = self.frame_directory[record_key]
+            frame_index = self.frame_info[record_key]
             return frame_index
         return -1
 
-
-    def has_capacity(self):
-        return self.cur_size <= self.max_size
-    
     def evict_frame(self):
     # Find the least recently used frame that is not pinned
     # Function that finds the frame that has the longest time in the bufferpool that is not pinned
@@ -52,17 +45,16 @@ class Bufferpool:
             del self.frame_object[frame_index]
             del self.frame_directory[lru_frame.tuple_key]
 
-    def __import_frame(self, path_to_page: str, table_name: str):
-        self.frame_count += 1
-        self.frame_object[self.frame_count] = Frame(path_to_page= path_to_page, table_name= table_name)
-
-    def load_frame_to_buffer(self, path_to_page: str, table_name: str, num_columns: int, record_info: dict):
+    def insert_frame(self, path_to_page: str, num_columns: int, record_info: dict):
         if not self.__has_capacity():
             self.evict_frame()
 
-        self.__import_frame(path_to_page=path_to_page, table_name=table_name)
-        
+        self.frame_count += 1
         frame_index = self.frame_count
+        self.frames[frame_index] = Frame(path_to_page= path_to_page)
+        self.frames[frame_index].load_data() 
+        
+        return frame_index
 
         # Pin the frame
         self.frame_object[frame_index].pin_frame()

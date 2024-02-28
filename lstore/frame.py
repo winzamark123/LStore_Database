@@ -3,12 +3,11 @@ import lstore.physical_page as Physical_Page
 from datetime import datetime 
 
 class Frame:
-    def __init__(self, path_to_page: str, table_name: str):
+    def __init__(self, path_to_page: str):
         self.is_dirty = 0 # Boolean to check if the physical_page has been modified
         self.pin_count = 0
         self.is_pin = False
         self.physical_pages = []
-        self.table_name = table_name
         self.time_in_buffer = datetime.now()
         self.is_tail = False 
         
@@ -37,6 +36,13 @@ class Frame:
     def has_capacity(self) -> bool:
         return self.physical_pages[0].has_capacity()
     
+    def load_data(self):
+        self.pin_frame() #pin itself
+        self.pin_count += 1 
+
+        pass 
+
+
 
 
     
