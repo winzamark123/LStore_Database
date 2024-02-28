@@ -16,31 +16,53 @@ class Table:
     :param key: int             #Index of table key in columns
     """
     
-    def __init__(self, db_name: str, table_name:str, num_columns:int, key_index:int)->None:
-        self.db_name = db_name
-        self.table_name = table_name
-        self.path_to_table = os.getcwd() + '/' + db_name + '/' + table_name
+    def __init__(self, path_to_table: str, num_columns:int, key_column_index:int)->None:
         self.num_columns = num_columns
-        self.key_column = META_DATA_NUM_COLUMNS + key_index
+        self.key_column_index = key_column_index
+
+        self.key_column = META_DATA_NUM_COLUMNS + key_column_index
         self.index = Index(num_columns, ORDER_CHOICE)
-        self.key_column_index = key_index
+
         self.rid = 0
-        self.tid = 0
-        self.page_directory = []
+
+        self.page_range_directory = {} 
+        self.page_range_object = {}
+
+        self.path_to_table = path_to_table
 
         self.bufferpool = Bufferpool(self.db_name, self.table_name)
         self.disk = Disk(self.db_name, self.table_name, self.num_columns)
 
-    
         self.entry_size_for_columns = [2]
-
         for _ in range(META_DATA_NUM_COLUMNS - 1 + num_columns):
             self.entry_size_for_columns.append(COLUMN_SIZE)
 
         # used to give each page_range a unique id for each table
         self.num_page_range = 0
 
-        self.insert_page_range()
+    def create_page_range(self, page_range_name: str, num_columns: int, key_column_index: int) -> Page_Range:
+        if page_range_name in self.page_range_directory:
+            print("Page Range already exists")
+            raise ValueError(f"Page Range {page_range_name} already exists.")
+        
+        page_range_path = os.path.join(self.path_to_table, page_range_name)
+        os.makedirs(page_range_path, exist_ok=True)
+
+        new_page_range = Page_Range(num_columns, self.entry_size_for_columns, key_column_index, page_range_path)
+        print("PATH_TO_PAGE_RANGE", new_page_range.path_to_page_range)
+        self.page_range_object[page_range_name] = new_page_range
+
+        self.page_range_directory[page_range_name] = {
+            "page_range_name": page_range_name,
+            "page_range_path": page_range_path,
+            "num_columns": num_columns,
+            "key_column_index": key_column_index
+        }
+
+        print(f"Page Range {page_range_name} created")
+
+        return new_page_range
+    
 
     @classmethod
     def reset_base_page_counter(cls):
@@ -83,23 +105,23 @@ class Table:
         self.rid += 1
         return self.rid # returns unique new RID for base records
 
-    # insert new page_range into page_directory
+    # insert new page_range into page_range_directory
     def insert_page_range(self)-> bool:
-        if len(self.page_directory) == 0 or self.page_directory[-1].has_capacity() == False:
-            #print("Function: insert_page_range(), Total page ranges: ", len(self.page_directory))
-            path_to_page_range = self.path_to_table + '/page_range' + str(len(self.page_directory))
-            self.page_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column, path_to_page_range))
+        if len(self.page_range_directory) == 0 or self.page_directory[-1].has_capacity() == False:
+            #print("Function: insert_page_range(), Total page ranges: ", len(self.page_range_directory))
+            path_to_page_range = self.path_to_table + '/page_range' + str(len(self.page_range_directory))
+            self.page_range_directory.append(Page_Range(self.num_columns, self.entry_size_for_columns, self.key_column, path_to_page_range))
 
             #reset the base_page_counter to 0 for a new table (the first page_range)
-            if len(self.page_directory) == 1:
-                self.page_directory[0].page_range_index = 0
+            if len(self.page_range_directory) == 1:
+                self.page_range_directory[0].page_range_index = 0
                 self.num_page_range += 1
                 self.reset_base_page_counter()
-                self.page_directory[0].base_pages[0].page_number = 1
+                self.page_range_directory[0].base_pages[0].page_number = 1
             
-            elif len(self.page_directory) > 1:
+            elif len(self.page_range_directory) > 1:
                 self.num_page_range += 1
-                self.page_directory[-1].page_range_index = self.num_page_range - 1
+                self.page_range_directory[-1].page_range_index = self.num_page_range - 1
 
             
             os.makedirs(path_to_page_range, exist_ok=True)
@@ -129,17 +151,6 @@ class Table:
     #Save the table metadata to disk
     def save_table_metadata(self, table_meta_data: dict)-> bool:
         return self.disk.write_metadata_to_disk(self.name, self.disk.table_path, table_meta_data)
-
-    @staticmethod
-    def meta_disk_to_table(data) -> 'Table':
-        # Reconstruct the Table object from a dictionary
-        table = Table(data['name'], data['num_columns'], data['key_column'])
-        table.key_column_index = data['key_column_index'],
-        table.rid = data['rid'] 
-        table.tid = data['tid'], 
-        table.tid = data['entry_size_for_columns'], 
-        table.tid = data['page_directory']
-        return table
 
     # TODO: complete merge (in the works: Testing in merge_test.py)
     # Implementing without bufferpool right now, will when bufferpool is finished
@@ -267,8 +278,8 @@ class Table:
     
     # checks if merging needs to happen
     def _merge_checker(self, page_range_num):
-        if self.page_directory[page_range_num].num_updates % MERGE_THRESHOLD == 0:
+        if self.page_range_directory[page_range_num].num_updates % MERGE_THRESHOLD == 0:
             # creates deep copy of page range
-            page_range_copy = copy.deepcopy(self.page_directory[page_range_num])
+            page_range_copy = copy.deepcopy(self.page_range_directory[page_range_num])
             merging_thread = threading.Thread(target=self.__merge())
             merging_thread.start()

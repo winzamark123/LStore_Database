@@ -52,14 +52,13 @@ class Database:
             raise ValueError(f"Table {table_name} already exists.")
         
         table_path_name = os.path.join(self.root_path, table_name)
-        if os.path.isdir(table_path_name):
-            print("Table already exists in disk")
-        else:
-            os.mkdir(table_path_name)
+
+        os.makedirs(table_path_name, exist_ok=True)
         
-        new_table = Table(self.db_name, table_name, num_columns, key_index)
+        new_table = Table(path_to_table=table_path_name, num_columns=num_columns, key_column_index=key_index)
         print("PATH_TO_TABLE", new_table.path_to_table)
         self.table_objects[table_name] = new_table
+
         #{table_name: Disk()}
         #{table_name: Table()}
 

@@ -45,6 +45,19 @@ class Query:
     def insert(self, *columns:tuple)->bool:
         #Create a new record and insert it into the latest base_page
         new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
+        # table_info = self.table.get_table_info()
+
+        page_range_name = self.table.table_name + '/page_range' + str(self.table.page_range_counter)
+        if self.table.page_range_directory.get(page_range_name) == None:
+            #create a page range 
+            cur_page_range = self.table.create_page_range(page_range_name=page_range_name, num_columns=self.table.num_columns, key_column_index=self.table.key_column_index)
+
+        base_page_name = page_range_name + '/base/base_page' + str(cur_page_range.base_page_counter)
+        if cur_page_range.get(base_page_name) == None:
+            #create a base page
+            cur_page_range.create_base_page(base_page_name=base_page_name, num_columns=self.table.num_columns, key_column_index=self.table.key_column_index)
+
+
 
         latest_page_range = self.table.page_directory[-1]
 
@@ -86,7 +99,7 @@ class Query:
 
         #if it doesn't exist 
         if frame_index < 0:
-            table_buffer.load_frame_to_buffer(path_to_page=path_to_basePage, table_name=self.table.table_name, num_columns=self.table.num_columns, record_info=record_info)
+            frame_index = table_buffer.load_frame_to_buffer(path_to_page=path_to_basePage, table_name=self.table.table_name, num_columns=self.table.num_columns, record_info=record_info)
         
         #now we can access the frame's physical pages 
         table_buffer.frame_object[frame_index].physical_pages
@@ -101,7 +114,6 @@ class Query:
         #copy the physical pages to the frame 
         # updates frame physical pages
         table_buffer.frame_object[frame_index].physical_pages = copy.deepcopy(latest_base_page.physical_pages)
-
 
         return True if insertSuccess else False
     
@@ -143,7 +155,6 @@ class Query:
             page_range_num = address[0]  # get the first element of the tuple
             print(f"Page range: {page_range_num} for RID : {rid}")
             cur_page_range = self.table.page_directory[page_range_num]
-            print(f"Grabbed Page_range: {cur_page_range.page_range_number}")
             for base_page in cur_page_range.base_pages:
                 print(f'Base Page: {base_page.page_number}')
             

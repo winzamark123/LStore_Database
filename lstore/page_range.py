@@ -6,24 +6,14 @@ from random import randint
 import os 
 
 class Page_Range:
-    def __init__(self, num_columns:int, entry_sizes:list, key_column:int, path_to_page_range:str)->None:
-
+    def __init__(self, path_to_page_range: str, num_columns:int, key_column:int, entry_sizes:list)->None:
     # starts at -1 to have counter match index for page directory
-
         self.num_columns = num_columns # number of columns in the table
         self.entry_size_for_columns = entry_sizes # list of the size of each physical page in base pages in Bytes [2,8,8] - These first 3 sizes are for the meta columns
         self.key_column = key_column # primary key column (StudentID for m1_test)
 
-        # initialize the base pages list with the first base page
-        self.base_pages = [] 
-
         # initialize the tail pages list with the first tail page
-        self.tail_pages = []
-
         self.tid = 0 # tid (rid) for tail records - decrease by 1 once a record is added or updated (for tails records)
-
-        # self.amount_tail_pages = 1
-        # self.tail_pages[0].page_number = 1
 
         self.path_to_page_range = path_to_page_range
         self.path_to_base = path_to_page_range + '/base'
@@ -38,40 +28,71 @@ class Page_Range:
         # each page range has TPS so it can know what's the last tail record it merged
         self.tps_range = 0
 
-        self.insert_base_page()
+        self.base_page_object= {}
+        self.base_page_directory = {}
+        self.tail_page_directory = {}
+        self.tail_page_object = {}
 
-    # checks if the page range has capacity for more records
-    def has_capacity(self)-> bool:
-        if len(self.base_pages) >= NUM_BASE_PAGES:
-            # checks if the last base page in the base page list is full
-            if not self.base_pages[-1].has_capacity():
-                # print("FUNCTION PAGE_RANGE: has_capacity()")
-                # print(len(self.base_pages))
-                return False 
-        return True
+    def create_base_page(self, base_page_name:str, num_columns:int, key_column_index:int) -> Base_Page:
+        if base_page_name in self.base_page_object:
+            print("Base Page already exists")
+            raise ValueError(f"Base Page {base_page_name} already exists.")
 
-    # increment the TID (RID for tails records)
-    def inc_tid(self):
-        self.tid -= 1
+        path_to_base_page = self.path_to_base + '/base_page' + str(len(self.base_page_object) - 1)
+        os.makedirs(path_to_base_page, exist_ok=True)
+
+        new_base_page = Base_Page(num_columns, key_column_index)
+        self.base_page_object[base_page_name] = new_base_page
+
+        self.base_page_directory[base_page_name] = {
+            "base_page_name": base_page_name,
+            "base_page_path": path_to_base_page,
+            "num_columns": num_columns,
+            "key_column_index": key_column_index
+        }
+         
+        print(f"Base Page {base_page_name} created")
+        return new_base_page
+
+    def create_tail_page(self, tail_page_name:str, num_columns:int, key_index:int) -> Base_Page:
+        if tail_page_name in self.tail_page_object:
+            print("Base Page already exists")
+            raise ValueError(f"Base Page {tail_page_name} already exists.")
+
+        path_to_tail_page = self.path_to_base + '/tail_page' + str(len(self.base_page_object) - 1)
+        os.makedirs(path_to_tail_page, exist_ok=True)
+
+        new_tail_page = Tail_Page(num_columns, key_index)
+        self.tail_page_object[tail_page_name] = new_tail_page 
+
+        self.tail_page_directory[tail_page_name] = {
+            "tail_page_name": tail_page_name,
+            "tail_page_path": path_to_tail_page,
+            "num_columns": num_columns,
+            "key_index": key_index
+        }
+         
+        print(f"Base Page {tail_page_name} created")
+        return new_tail_page
 
     # insert a new base page to the page range
-    def insert_base_page(self)-> bool:
-        # checks the last base page in the base page list to see if it's full
-        if len(self.base_pages) == 0 or self.base_pages[-1].has_capacity():   
-            self.base_pages.append(Base_Page(self.num_columns, self.entry_size_for_columns, self.key_column))
+    # def insert_base_page(self)-> bool:
+    #     # checks the last base page in the base page list to see if it's full
+    #     if len(self.base_page_object) == 0 or self.base_pages[-1].has_capacity():   
+    #         self.base_page_object.append(Base_Page(self.num_columns, self.entry_size_for_columns, self.key_column))
 
-            path_to_base_page = self.path_to_base + '/base_page' + str(len(self.base_pages) - 1)
-            os.makedirs(path_to_base_page)
-            return True
+    #         path_to_base_page = self.path_to_base + '/base_page' + str(len(self.base_page_object) - 1)
+    #         os.makedirs(path_to_base_page)
+    #         return True
         
-        # failed to insert a new base page
-        return False
+    #     # failed to insert a new base page
+    #     return False
     
     # insert a new tail page to the page range
     def insert_tail_pages(self)->None:
         self.amount_tail_pages += 1
-        self.tail_pages.append(Tail_Page(self.num_columns, self.entry_size_for_columns, self.key_column))
-        self.tail_pages[self.amount_tail_pages - 1].page_number = self.amount_tail_pages
+        self.tail_page_object.append(Tail_Page(self.num_columns, self.entry_size_for_columns, self.key_column))
+        self.tail_page_object[self.amount_tail_pages - 1].page_number = self.amount_tail_pages
 
     # updates record
     def update(self, rid:int, columns_of_update:list)->bool:
@@ -93,7 +114,7 @@ class Page_Range:
         base_page_number = self.get_page_number(rid)
 
         # base page that has RID 
-        base_page_to_work = self.__search_list(self.base_pages, base_page_number, 1)
+        base_page_to_work = self.__search_list(self.base_page_object, base_page_number, 1)
 
         # retrieves indirection value for rid
         indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
@@ -111,7 +132,7 @@ class Page_Range:
         self.inc_tid()
 
         # checks if tail page has enough capacity
-        if not self.tail_pages[-1].has_capacity(): 
+        if not self.tail_page_object[-1].has_capacity(): 
                 #print("Inserted a Tail Page")
                 self.insert_tail_pages() 
 
@@ -126,7 +147,7 @@ class Page_Range:
 
             # make copy of base record for first update to record to keep hold of original base record after merging
             print('\ncreating copy of base page record first')
-            self.tail_pages[-1].insert_new_record(base_page_record,indirection_value=rid, Base_RID=rid, schema_encoding=schema_encoding_base_value, update=True)
+            self.tail_page_object[-1].insert_new_record(base_page_record,indirection_value=rid, Base_RID=rid, schema_encoding=schema_encoding_base_value, update=True)
 
             self.inc_tid()
             print('\nappending the update now to copy of base page in tail page')
@@ -138,7 +159,7 @@ class Page_Range:
             tail_page_number = self.get_page_number(indirection_base_value)
 
             # tail page TID is in
-            tail_page_to_work = self.__search_list(self.tail_pages, tail_page_number, 0)
+            tail_page_to_work = self.__search_list(self.tail_page_object, tail_page_number, 0)
 
             # retrieves schema encoding value for tid
             schema_encoding_tail_value = tail_page_to_work.check_tail_record_schema_encoding(indirection_base_value)
@@ -177,7 +198,7 @@ class Page_Range:
         base_page_number = self.get_page_number(rid)
 
         # base page that has RID 
-        base_page_to_work = self.__search_list(self.base_pages, base_page_number, 1)
+        base_page_to_work = self.__search_list(self.base_page_object, base_page_number, 1)
 
         # rid physical page
         rid_page = base_page_to_work.get_rid_page()
@@ -202,7 +223,7 @@ class Page_Range:
 
         # print(rid)
         # base page that has RID 
-        base_page_to_work = self.__search_list(self.base_pages, base_page_number, 1)
+        base_page_to_work = self.__search_list(self.base_page_object, base_page_number, 1)
 
         # retrieves indirection value for rid
         indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
@@ -239,7 +260,7 @@ class Page_Range:
 
         # print(rid)
         # base page that has RID 
-        base_page_to_work = self.__search_list(self.base_pages, base_page_number, 1)
+        base_page_to_work = self.__search_list(self.base_page_object, base_page_number, 1)
 
         # retrieves indirection value for rid
         indirection_base_value = base_page_to_work.check_base_record_indirection(rid)
@@ -256,7 +277,7 @@ class Page_Range:
             tail_page_number = self.get_page_number(indirection_base_value)
 
             # tail page TID is in
-            tail_page_to_work = self.__search_list(self.tail_pages, tail_page_number, 0)
+            tail_page_to_work = self.__search_list(self.tail_page_object, tail_page_number, 0)
 
             print(f'In Tail Page {tail_page_to_work.page_number}')
 
@@ -310,7 +331,7 @@ class Page_Range:
         base_page_number = self.get_page_number(rid)
 
         # base page that has RID 
-        base_page_to_work = self.__search_list(self.base_pages, base_page_number, 1)
+        base_page_to_work = self.__search_list(self.base_page_object, base_page_number, 1)
 
         # if column wanted is 0, then we return key
         if column_number == 0:
@@ -345,7 +366,7 @@ class Page_Range:
             tail_page_number = self.get_page_number(indirection_base_value)
 
             # tail page TID is in
-            tail_page_to_work = self.__search_list(self.tail_pages, tail_page_number, 0)
+            tail_page_to_work = self.__search_list(self.tail_page_object, tail_page_number, 0)
 
             #print(tail_page_to_work.get_page(column_number).value_exists_at_bytes(indirection_base_value))
 
@@ -378,7 +399,7 @@ class Page_Range:
 
         new_tuple = tuple(columns)
         new_tail_record = Record(tid, 0, new_tuple)
-        self.tail_pages[-1].insert_new_record(new_tail_record, indirection, Base_rid, schema_encoding, update=True)
+        self.tail_page_object[-1].insert_new_record(new_tail_record, indirection, Base_rid, schema_encoding, update=True)
 
     # returns base page number that the rid is on (each base page and tail page have a page number)
     def get_page_number(self, rid: int) -> int:
@@ -443,3 +464,17 @@ class Page_Range:
             "tid": self.tid,
         }
         return page_range_data
+
+    # increment the TID (RID for tails records)
+    def inc_tid(self):
+        self.tid -= 1
+
+    # checks if the page range has capacity for more records
+    def has_capacity(self)-> bool:
+        if len(self.base_page_object) >= NUM_BASE_PAGES:
+            # checks if the last base page in the base page list is full
+            if not self.base_page_object[-1].has_capacity():
+                # print("FUNCTION PAGE_RANGE: has_capacity()")
+                # print(len(self.base_page_object))
+                return False 
+        return True
