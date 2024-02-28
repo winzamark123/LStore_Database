@@ -1,4 +1,5 @@
 from lstore.config import *
+from lstore.disk import DISK
 from lstore.page import Base_Page, Tail_Page, Page 
 from time import time
 from lstore.record import Record
@@ -6,18 +7,14 @@ from random import randint
 import os 
 
 class Page_Range:
-    def __init__(self, path_to_page_range: str, num_columns:int, key_column:int, entry_sizes:list)->None:
-    # starts at -1 to have counter match index for page directory
+    def __init__(self, page_range_dir_path: str, num_columns:int, key_index:int)->None:
+        # starts at -1 to have counter match index for page directory
+        self.page_range_dir_path = page_range_dir_path
         self.num_columns = num_columns # number of columns in the table
-        self.entry_size_for_columns = entry_sizes # list of the size of each physical page in base pages in Bytes [2,8,8] - These first 3 sizes are for the meta columns
-        self.key_column = key_column # primary key column (StudentID for m1_test)
+        self.key_index = key_index# primary key column (StudentID for m1_test)
 
         # initialize the tail pages list with the first tail page
         self.tid = 0 # tid (rid) for tail records - decrease by 1 once a record is added or updated (for tails records)
-
-        self.path_to_page_range = path_to_page_range
-        self.path_to_base = path_to_page_range + '/base'
-        self.path_to_tail = path_to_page_range + '/tail'
 
         # Initialize the page_range_counter for each instance of Page_Range
         self.page_range_index = 0
@@ -28,10 +25,25 @@ class Page_Range:
         # each page range has TPS so it can know what's the last tail record it merged
         self.tps_range = 0
 
-        self.base_page_object= [] 
-        self.base_page_directory = {}
-        self.tail_page_directory = {}
-        self.tail_page_object = []
+        self.num_base_pages = len([name for name in os.listdir(page_range_dir_path) if 'BP' in name])
+        self.num_tail_pages = len([name for name in os.listdir(page_range_dir_path) if 'TP' in name])
+
+        if self.num_base_pages: 
+            self.base_pages = self.load_base_pages()
+
+
+    def load_base_pages(self) -> dict[int, Base_Page]:
+        base_page_dirs = [name for name in os.listdir(self.page_range_dir_path) if 'BP' in name]
+        for base_page_dir in base_page_dirs:
+            base_page_index = int(base_page_dir.removeprefix("BP"))
+            metadata = DISK.read_metadata_from_disk(path_for_metadata=self.page_range_dir_path)
+            self.base_pages[base_page_index] = \
+                Base_Page(
+                    num_columns=metadata["num_columns"],
+                    key_index=metadata["key_index"],
+                    is_tail_page=False
+                )
+
 
     def create_base_page(self, base_page_name:str, num_columns:int, key_column_index:int) -> Base_Page:
         if base_page_name in self.base_page_object:

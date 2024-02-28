@@ -51,11 +51,7 @@ class Frame:
 
             # Check if the file exists to decide whether to read from it or initialize a new one
             if os.path.exists(path_to_physical_page):
-                
-                if i == 0:
-                    DISK.read_physical_page_from_disk(path_to_physical_page, is_indirection=True)
-                else:
-                    DISK.read_physical_page_from_disk(path_to_physical_page, is_indirection=False)
+                DISK.read_physical_page_from_disk(path_to_physical_page, is_indirection=False)
 
             else:
                 # If the file does not exist, you may need to create and initialize it

@@ -67,6 +67,8 @@ class Bufferpool:
         self.frame_info[record_key] = frame_index
         
         return frame_index
+    
+BUFFERPOOL = Bufferpool()
 
 
 

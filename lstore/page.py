@@ -16,7 +16,7 @@ class Page:
     base_page_counter = 0
     tail_page_counter = 0
 
-    def __init__(self, num_columns:int, entry_sizes:list, key_column:int, is_tail_page: bool = False)->None:
+    def __init__(self, num_columns:int, key_index:int, is_tail_page: bool = False)->None:
 
         if is_tail_page:
             # Increment the tail_page_counter each time a Tail_Page object is created
@@ -26,19 +26,14 @@ class Page:
             Page.base_page_counter += 1
             self.page_number = Page.base_page_counter
         
-        # list of physical_pages in base page
         self.physical_pages = [] 
-    
-        # column (physical page) the key value is going to be at 
-        self.primary_key_column = key_column
+        self.key_index = key_index 
+        self.num_columns = num_columns
 
-        # adds to list of physical_pages depending the amount of columns
-        for column_number ,entry_size in enumerate(entry_sizes, start=0): 
-            column_page = Physical_Page(entry_size=entry_size, column_number=column_number)
-            self.physical_pages.append(column_page)
-
+        for i in range(self.num_columns):
+            self.physical_pages.append(Physical_Page(column_number=i))
+        
         self.num_records = 0
-
         self.last_record = 0
 
     # updates indirection column with new LID
@@ -132,9 +127,6 @@ class Page:
                 page_to_write.write_to_physical_page(value=column_data, rid=rid)
             self.num_records += 1
 
-            
-            
-            
             return True
         else:
             raise KeyError(f"RID ({rid}) already exists.")
@@ -142,7 +134,7 @@ class Page:
     # returns physical_page(column) that has the primary keys 
     def get_primary_key_page(self)->Physical_Page:
         for physical_Page in self.physical_pages:
-            if(physical_Page.column_number == self.primary_key_column ):
+            if(physical_Page.column_number == self.key_index ):
                 return physical_Page
 
     # returns physical_page(column) that has the RIDs

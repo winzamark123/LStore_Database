@@ -7,23 +7,17 @@ class Physical_Page:
     :param page_number: int         # page_number of this physical page corresponds to the base page it's on
     
     """
-    def __init__(self, entry_size:int, column_number:int):
+    def __init__(self, column_number:int):
         self.num_records = 0
         # entry size of physical page entry differs between columns (RID colum: 2 bytes, StudentID column: 8 bytes, etc..)
-        self.entry_size = entry_size 
+        self.entry_size = DATA_ENTRY_SIZE 
         self.column_number = column_number 
         self.updates = 0
-        if(column_number == 0):
-            self.data = bytearray(INDIRECTION_PAGE_SIZE) # Indirection column is smaller
-        else:
-            self.data = bytearray(PHYSICAL_PAGE_SIZE)
+        self.data = bytearray(PHYSICAL_PAGE_SIZE)
 
     # checks capacity of page
     def has_capacity(self)->bool:
-        if(self.column_number == 0):
-            return ((self.num_records + 1) * self.entry_size <= INDIRECTION_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
-        else:
-            return ((self.num_records + 1) * self.entry_size <= PHYSICAL_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
+        return ((self.num_records + 1) * self.entry_size <= PHYSICAL_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
 
     # write to physical page
     def write_to_physical_page(self, value:int, rid:int, update: bool=False)->None:
@@ -80,33 +74,7 @@ class Physical_Page:
     def __get_offset(self, rid:int)->int:
         if(rid < 0):
             rid = abs(rid)
-        if self.column_number == 0:
-            return (rid-1) * self.entry_size % INDIRECTION_PAGE_SIZE 
         return (rid-1) * self.entry_size % PHYSICAL_PAGE_SIZE        
     
-    #read physical page from disk
-    def read_from_disk(self, path_to_physical_page: str, column_index: int):
-        # Create directory if it doesn't exist
-        directory = os.path.dirname(path_to_physical_page)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        physical_page_file = open(path_to_physical_page, "rb")
-        physical_page_file.seek(column_index * PHYSICAL_PAGE_SIZE)
-        self.data = physical_page_file.read(PHYSICAL_PAGE_SIZE)
-        physical_page_file.close()
-
-    #write physical page to disk
-    def write_to_disk(self, path_to_physical_page: str, column_index: int):
-        # Create directory if it doesn't exist
-        directory = os.path.dirname(path_to_physical_page)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        physical_page_file = open(path_to_physical_page, "wb")
-        physical_page_file.seek(column_index * PHYSICAL_PAGE_SIZE)
-        physical_page_file.write(self.data)
-        physical_page_file.close()
-
         
     
