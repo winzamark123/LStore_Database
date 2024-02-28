@@ -70,10 +70,21 @@ class Bufferpool:
 
         data_entry_size = Config.DATA_ENTRY_SIZE
 
+
         for i in range(num_columns):
-            self.frame_object[frame_index].physical_pages.append(Physical_Page(entry_size=data_entry_size, column_number=i))
-            path_to_physical_page = path_to_page + '/' + str(i) + '.bin'
+             self.frame_object[frame_index].physical_pages.append(Physical_Page(entry_size=data_entry_size, column_number=i))
+        path_to_physical_page = self.path_to_table + '/' + path_to_page + '/' + str(i) + '.bin'
+
+        # Ensure directory exists before attempting to read or write
+        os.makedirs(os.path.dirname(path_to_physical_page), exist_ok=True)
+
+        # Check if the file exists to decide whether to read from it or initialize a new one
+        if os.path.exists(path_to_physical_page):
             self.frame_object[frame_index].physical_pages[i].read_from_disk(path_to_physical_page=path_to_physical_page, column_index=i)
+        else:
+            # If the file does not exist, initialize it as needed. For example:
+            with open(path_to_physical_page, 'wb') as f:  # This creates the file, ensuring it exists
+                pass  # You might want to write initial data to the file here
 
         page_range_info = record_info["page_range_num"]
         base_page_info = record_info["base_page_num"]
@@ -81,19 +92,7 @@ class Bufferpool:
 
         self.frame_directory[record_key] = frame_index
 
-        #frame_object{
-        #   1: Frame()
-        #}
-        frame_physical_pages = self.frame_object[frame_index].physical_pages
-
-        if not frame_physical_pages[0].has_capacity():
-            #make a new base page
-            
-            pass 
-        
-
         return frame_index
-    
 
 
 

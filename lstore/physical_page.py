@@ -1,4 +1,5 @@
 from lstore.config import *
+import os
 class Physical_Page:
     """
     :param entry_size: int          # size of entry in bytes for this page (column)
@@ -85,6 +86,11 @@ class Physical_Page:
     
     #read physical page from disk
     def read_from_disk(self, path_to_physical_page: str, column_index: int):
+        # Create directory if it doesn't exist
+        directory = os.path.dirname(path_to_physical_page)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
         physical_page_file = open(path_to_physical_page, "rb")
         physical_page_file.seek(column_index * PHYSICAL_PAGE_SIZE)
         self.data = physical_page_file.read(PHYSICAL_PAGE_SIZE)
@@ -92,6 +98,11 @@ class Physical_Page:
 
     #write physical page to disk
     def write_to_disk(self, path_to_physical_page: str, column_index: int):
+        # Create directory if it doesn't exist
+        directory = os.path.dirname(path_to_physical_page)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
         physical_page_file = open(path_to_physical_page, "wb")
         physical_page_file.seek(column_index * PHYSICAL_PAGE_SIZE)
         physical_page_file.write(self.data)
