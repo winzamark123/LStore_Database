@@ -46,6 +46,7 @@ class Table:
         if self.num_page_ranges == 0:
             self.create_page_range(self.num_page_ranges)
         # TODO: insert somewhere
+        #Page_range.insert_record()
 
     def create_page_range(self, page_range_index:int)->None:
         """

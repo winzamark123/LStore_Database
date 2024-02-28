@@ -44,12 +44,15 @@ class Query:
         new_record = Record(self.table.inc_rid(), columns[0], columns[1:])
 
         self.table.insert_record()
+        #BUFFERPOOL Frame to Insert
 
+        #TABLE
         page_range_name = self.table.table_name + '/page_range' + str(self.table.page_range_counter)
         if self.table.page_range_directory.get(page_range_name) == None:
             #create a page range 
             cur_page_range = self.table.create_page_range(page_range_name=page_range_name, num_columns=self.table.num_columns, key_column_index=self.table.key_column_index)
 
+        #PAGE RANGE
         base_page_name = page_range_name + '/base/base_page' + str(cur_page_range.base_page_counter)
         if cur_page_range.get(base_page_name) == None:
             #create a base page
@@ -65,6 +68,7 @@ class Query:
 
         latest_base_page = latest_page_range.base_pages[-1]
 
+        #PAGE
         #Check if the latest base_page has capacity
         if latest_page_range.base_pages[-1].has_capacity() == False:
             #print("INSERT: BASE_PAGE IS FULL")
@@ -182,11 +186,6 @@ class Query:
             records.append(record)
         print(f"Length of record columns = {len(records[0].columns)}")
         return records
-
-
-
-    
-
 
     
     """

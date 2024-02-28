@@ -25,9 +25,13 @@ class Page_Range:
 
         self.num_base_pages = len([name for name in os.listdir(page_range_dir_path) if 'BP' in name])
         self.num_tail_pages = len([name for name in os.listdir(page_range_dir_path) if 'TP' in name])
+        # PR0/BP0, TP0 
 
         if self.num_base_pages: 
             self.base_pages = self.load_base_pages()
+    
+    def insert_record():
+        pass
 
     def load_base_pages(self) -> dict[int, Base_Page]:
         base_page_dirs = [name for name in os.listdir(self.page_range_dir_path) if 'BP' in name]
