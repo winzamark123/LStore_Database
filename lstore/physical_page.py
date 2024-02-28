@@ -1,11 +1,12 @@
-from lstore.config import *
+import lstore.config as Config
 import os
+
 class Physical_Page:
     """
     :param entry_size: int          # size of entry in bytes for this page (column)
     :param column_number: int       # number of this page (column) in the base page or tail page
     :param page_number: int         # page_number of this physical page corresponds to the base page it's on
-    
+
     """
     def __init__(self, column_number:int):
         self.num_records = 0
@@ -22,11 +23,11 @@ class Physical_Page:
     # write to physical page
     def write_to_physical_page(self, value:int, rid:int, update: bool=False)->None:
         # Perform capacity check only if update is False
-        if not update and not self.has_capacity():
+        if not update and not self.__has_capacity():
             raise OverflowError("Not enough space in physical page or Reached record limit")
 
         # Gets offset with RID
-        offset = self.__get_offset(rid) 
+        offset = self.__get_offset(rid)
         start = offset
         # Stop writing at (32 bytes + 8 bytes) = 40 bytes
         end = start + self.entry_size
@@ -34,7 +35,7 @@ class Physical_Page:
         # Convert integer to (entry_size) bytes
         value_bytes = int.to_bytes(value, self.entry_size, byteorder='big', signed=True)
         self.data[start:end] = value_bytes
-        print(f'Inserted value ({value}) in page ({self.column_number}) into Bytes ({start} - {end})')
+        print(f'Inserted value ({value}) in page ({self.column_index}) into Bytes ({start} - {end})')
 
         # Increment num_records only if update is False
         if not update:
@@ -67,7 +68,6 @@ class Physical_Page:
         end = start + self.entry_size
         entry_bytes = self.data[start:end]
         value_in_page = int.from_bytes(entry_bytes, byteorder='big', signed=True)
-        # print(f"Value {value_in_page} was found at Bytes ({start} - {end}) in column {self.column_number}")
         return value_in_page
 
     # calculates our offset to know where the RID entry is at in the physical page

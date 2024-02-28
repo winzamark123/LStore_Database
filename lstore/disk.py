@@ -25,7 +25,7 @@ class Disk:
             return dict(pickle.loads(mdf))
 
     def write_physical_page_to_disk(self, path_to_column_dir:str, physical_page:Physical_Page)->None:
-        with open(os.path.join(path_to_column_dir, f"{physical_page.column_index}.pp"), 'wb') as ppf:
+        with open(os.path.join(path_to_column_dir, f"{physical_page.column_index}.bin"), 'wb') as ppf:
             ppf.write(physical_page.data)
 
     def read_physical_page_from_disk(self, path_to_physical_page:str)->Physical_Page:
@@ -42,27 +42,25 @@ note: 4 metadata columns per base/tail page
 Database Directory
     Table 1 Directory (w/ 5 columns)
         metadata.pkl -> {table_dir_path, num_columns, key_index, num_page_ranges}
-        PR0
-            metadata.pkl -> {page_range_path, num_base_pages}
-            BP0 (512 records in base page -> 1 physical page per column)
-                metadata.pkl -> {base_page_path, num_records, page_index. num_tail_pages}
-                0.pp
-                1.pp
-                ...
-                8.pp
-            TP0_1
-                0.pp
-                1.pp
-                ...
-                8.pp
-            TP0_2
-            BP1
-            TP1
         PR1
-    Table 2 Directory (w/ 7 columns)
-        PR0
-            BP0
+            metadata.pkl -> {page_range_path, num_base_pages, num_tail_pages}
+            BP1 (512 records in base page -> 1 physical page per column)
+                metadata.pkl -> {base_page_path, num_records, page_index}
                 0.pp
+                1.pp
                 ...
-                10.pp
+                8.pp
+            TP1 (potentially infinite # records)
+                1.pp
+                2.pp
+                ...
+                9.pp
+            BP2
+            TP2
+    Table Directory
+        PR
+            BP1
+                1.pp
+                ...
+                10.bin
 """
