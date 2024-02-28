@@ -4,12 +4,12 @@ from lstore.frame import Frame
 import os 
 
 class Bufferpool:
-    def __init__(self, table_name: str):
+    def __init__(self, db_name: str, table_name: str):
         self.frame_object = {}
         self.frame_directory= {}
         self.frame_count = 0
         self.table_name = table_name
-        self.path_to_table = os.getcwd() + '/' + table_name
+        self.path_to_table = os.getcwd() + '/' + db_name + '/' + table_name
         self.merge_buffer = False 
 
     
@@ -78,6 +78,7 @@ class Bufferpool:
 
             # Ensure directory exists before attempting to read or write
             os.makedirs(os.path.dirname(path_to_physical_page), exist_ok=True)
+            print("PATH_TO_PHYUSICALSDALK", path_to_physical_page)
 
             # Check if the file exists to decide whether to read from it or initialize a new one
             if os.path.exists(path_to_physical_page):

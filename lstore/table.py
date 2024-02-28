@@ -28,7 +28,7 @@ class Table:
         self.tid = 0
         self.page_directory = []
 
-        self.bufferpool = Bufferpool(self.table_name)
+        self.bufferpool = Bufferpool(self.db_name, self.table_name)
         self.disk = Disk(self.db_name, self.table_name, self.num_columns)
 
     

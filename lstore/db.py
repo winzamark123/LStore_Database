@@ -58,6 +58,7 @@ class Database:
             os.mkdir(table_path_name)
         
         new_table = Table(self.db_name, table_name, num_columns, key_index)
+        print("PATH_TO_TABLE", new_table.path_to_table)
         self.table_objects[table_name] = new_table
         #{table_name: Disk()}
         #{table_name: Table()}

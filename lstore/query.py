@@ -71,11 +71,16 @@ class Query:
         table_buffer = self.table.bufferpool
 
         path_to_table = table_buffer.path_to_table #ECS165/Grades
+        print("PATH TO TABLE", path_to_table)
+
         path_to_pageRange = path_to_table + '/page_range' + str(record_info["page_range_num"]) #ECS165/Grades/page_range0
+        print("PATH TO page_range", path_to_pageRange)
 
         path_to_base = path_to_pageRange + '/base'
+        print("PATH TO base", path_to_base)
 
         path_to_basePage = path_to_base + '/base_page' + str(record_info["base_page_num"])
+        print("PATH TO base_page", path_to_basePage)
 
         frame_index = table_buffer.is_record_in_buffer(record_info)
 
