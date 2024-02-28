@@ -28,10 +28,10 @@ class Page_Range:
         # each page range has TPS so it can know what's the last tail record it merged
         self.tps_range = 0
 
-        self.base_page_object= {}
+        self.base_page_object= [] 
         self.base_page_directory = {}
         self.tail_page_directory = {}
-        self.tail_page_object = {}
+        self.tail_page_object = []
 
     def create_base_page(self, base_page_name:str, num_columns:int, key_column_index:int) -> Base_Page:
         if base_page_name in self.base_page_object:
