@@ -1,321 +1,132 @@
-"""
-A data structure holding indices for various columns of a table.
-Key column should be indexed by default, other columns can be indexed
-through this object. Indices are usually B-Trees, but other data
-structures can be used as well.
+import os
+from bplustree import BPlusTree
+from pickle import loads, dumps
 
-According to Google's AI:
-    A database index is a data structure that maps column values to their
-    physical location in a database.
+# source for bplustree module: https://github.com/NicolasLM/bplustree
 
-We should try implementing a B+ Tree: https://www.geeksforgeeks.org/insertion-in-a-b-tree/?ref=lbp
-    - another link: https://www.programiz.com/dsa/b-plus-tree
-Time Complexities (found from wiki: https://en.wikipedia.org/wiki/B%2B_tree#Characteristics)
-    - search time: O(log_b(n))
-    - insert time: O(log_b(n))
-    - removing a located record time: O(log_b(n))
-    - range query w/ k elements time: O(log_b(n) + k) -> O(n)
+class Index_Column:
 
-Each node's key contains:
-    - key: column value
-    - value: base RID of specific column value (index of record in physical space)
-Thus nodes will be created with record_info w/ indices:
-    - 0: primary key
-    - 1: base RID
-(maybe make it a dictionary/hash-table instead w/ list of RIDs?)
+  def __init__(self, table_name:str, column_name:str, order:int):
+    self.name = column_name
+    self.tree = BPlusTree(filename=f"index/{table_name}_{column_name}.db",
+                          order=order)
+    self.is_key = False
 
-Q: Each key will store a base RID, but what happens when we update the column?
-A: When we update the column, the record 'key' associated to the RID will be
-   removed and re-inserted with the new value as 'key' and the same RID as
-   'value' (assuming 'key' and 'value' are utilized in dictionary implementation)
-    - "when a new version of a record is created (i.e., a new tail record),
-       first, all indexes defined on unaffected columns do not have to
-       be modified and, second, only the affected indexes are modified
-       with the updated values, but they continue to point to base records
-       and not the newly created tail records." pg. 543
-"""
+  def set_as_primary_key(self):
+    self.is_key = True
 
-class Column_Index_Node:
+  def add_value(self, entry_value, rid:int)->None:
+    def add_value_not_in_tree():
+      self.tree[entry_value] = dumps({rid})
 
-    def __init__(self, order:int)->None:
-        self.order:int                           = order
-        self.entry_values:list                   = []
-        self.rids:list[list[int]]                = [] # only used for leaf nodes (i:i w/ entry_values)
-        self.child_nodes:list[Column_Index_Node] = [] # only used for non-leaf nodes (i:i+1 w/ entry_values)
+    def add_value_in_tree():
+      if self.is_key: raise ValueError
+      entry_value_set = set(loads(self.tree[entry_value]))
+      if rid in entry_value_set: raise ValueError
+      entry_value_set.add(rid)
+      self.tree[entry_value] = dumps(entry_value_set)
 
-        self.parent:Column_Index_Node            = None
-        self.next_node:Column_Index_Node         = None
-        self.prev_node:Column_Index_Node         = None
-        self.is_leaf:bool                        = True
+    add_value_in_tree() if entry_value in self.tree else add_value_not_in_tree()
 
-    def insert_value_in_node(self, entry_value, rid:int):
-        assert self.is_leaf, ValueError
+  def update_value(self, old_entry_value, new_entry_value, rid:int)->None:
+    # remove previous entry tied to RID
+    if not old_entry_value in self.tree:
+      raise ValueError
+    old_entry_set = set(loads(self.tree[old_entry_value]))
+    if rid not in old_entry_set:
+      raise ValueError
+    old_entry_set.remove(rid)
+    self.tree[old_entry_value] = dumps(old_entry_set)
 
-        if not self.entry_values:
-            self.entry_values.append(entry_value)
-            self.rids.append([rid])
-            return
+    # add RID back w/ new entry
+    if not new_entry_value in self.tree:
+      self.tree[new_entry_value] = dumps({rid})
+    else:
+      new_entry_value_set = set(loads(self.tree[new_entry_value]))
+      new_entry_value_set.add(rid)
+      self.tree[new_entry_value] = dumps(new_entry_value_set)
 
-        for i, item in enumerate(self.entry_values):
-            if entry_value == item:
-                self.rids[i].append(rid)
-                break
-            elif item > entry_value:
-                self.entry_values = self.entry_values[:i] + [entry_value] + self.entry_values[i:]
-                self.rids = self.rids[:i] + [[rid]] + self.rids[i:]
-                break
-            elif i + 1 == len(self.entry_values):
-                self.entry_values.append(entry_value)
-                self.rids.append([rid])
-                break
-        return
+  def get_single_entry(self, entry_value)->set[int]:
+    # print("here for", entry_value)
+    if not entry_value in self.tree:
+      return {}
+    return set(loads(self.tree[entry_value]))
 
-    def split_node(self)->None:
-        self.split_leaf_node() if self.is_leaf else self.split_nonleaf_node()
+  def get_ranged_entry(self, lower_bound, upper_bound)->set[int]:
+    rset = set()
+    try:
+      for key, rids in self.tree.items():
+        if lower_bound <= key and key <= upper_bound:
+          rset = rset.union(set(loads(rids)))
+    except RuntimeError: # bypasses issue w/ using iteration on tree
+      pass
+    return rset
 
-    def split_leaf_node(self):
-        mid = self.order // 2
-        left_node = Column_Index_Node(self.order)
-        right_node = Column_Index_Node(self.order)
-
-        # make current node parent of new child nodes
-        left_node.parent = self
-        right_node.parent = self
-
-        # set next node pointers
-        left_node.next_node = right_node
-        right_node.next_node = self.next_node
-        if (self.next_node):
-            self.next_node.prev_node = right_node
-        left_node.prev_node = self.prev_node
-        if (self.prev_node):
-            self.prev_node.next_node = left_node
-        right_node.prev_node = left_node
-
-        # split entry values
-        left_node.entry_values = self.entry_values[:mid]
-        right_node.entry_values = self.entry_values[mid:]
-        self.entry_values = [self.entry_values[mid]]
-
-        # split RIDs
-        left_node.rids = self.rids[:mid]
-        right_node.rids = self.rids[mid:]
-
-        # set current node to non-leaf properties
-        self.is_leaf = False
-        self.next_node = None
-        self.rids = []
-        self.child_nodes = [left_node, right_node]
-
-    def split_nonleaf_node(self):
-        assert self.next_node == None, ValueError
-        assert self.prev_node == None, ValueError
-        assert self.rids == [], ValueError
-
-        mid = self.order // 2
-        left_node = Column_Index_Node(self.order)
-        left_node.is_leaf = False
-        right_node = Column_Index_Node(self.order)
-        right_node.is_leaf = False
-
-        # make current node parent of two children
-        left_node.parent = self
-        right_node.parent = self
-
-        # split entry values
-        left_node.entry_values = self.entry_values[:mid]
-        right_node.entry_values = self.entry_values[mid+1:]
-        self.entry_values = [self.entry_values[mid]]
-
-        #split child nodes
-        left_node.child_nodes = self.child_nodes[:mid+1]
-        for child_node in left_node.child_nodes:
-            child_node.parent = left_node
-        right_node.child_nodes = self.child_nodes[mid+1:]
-        for child_node in right_node.child_nodes:
-            child_node.parent = right_node
-
-        self.child_nodes = [left_node, right_node]
-
-    def is_full(self):
-        return len(self.entry_values) == self.order
-
-    def __str__(self):
-        return (f"entry values: {str(self.entry_values)} (has {len(self.child_nodes)} children)")
-
-class Column_Index_Tree:
-
-    def __init__(self, order:int)->None:
-        self.root:Column_Index_Node = Column_Index_Node(order)
-        self.order:int              = order
-        self.size:int               = 0
-
-    def __len__(self)->int:
-        return self.size
-
-    def find_node(self, prev_node:Column_Index_Node, entry_value)->Column_Index_Node:
-        for i, cur_val in enumerate(prev_node.entry_values):
-            if cur_val > entry_value:
-                return prev_node.child_nodes[i]
-        return prev_node.child_nodes[i+1]
-
-    def get_node_index(self, prev_node:Column_Index_Node, entry_value)->int:
-        for i, cur_val in enumerate(prev_node.entry_values):
-            if cur_val > entry_value:
-                return i
-        return i + 1
-
-    def merge(self, parent_tree:Column_Index_Node, child_tree:Column_Index_Node, index:int)->None:
-        if parent_tree == None: return
-
-        # assign child node's child nodes' parent as parent node
-        for child_node in child_tree.child_nodes:
-            child_node.parent = parent_tree
-
-        # add child node to parent child node array
-        pivot = child_tree.entry_values[0]
-        parent_tree.child_nodes.pop(index)
-
-        for i, item in enumerate(parent_tree.entry_values):
-            if item > pivot:
-                # add child tree to parent tree
-                parent_tree.entry_values = parent_tree.entry_values[:i] + [pivot] + parent_tree.entry_values[i:]
-                parent_tree.child_nodes = parent_tree.child_nodes[:i] + child_tree.child_nodes + parent_tree.child_nodes[i:]
-                break
-            elif i + 1 == len(parent_tree.entry_values):
-                ## add child tree to parent tree
-                parent_tree.entry_values.append(pivot)
-                parent_tree.child_nodes += child_tree.child_nodes
-                break
-
-    def insert_value(self, entry_value, rid:int)->None:
-        """
-        Insert an entry value to the column.
-
-        Note: RIDs start at index value 1.
-        """
-
-        assert rid == self.size + 1, IndexError
-
-        cur_node = self.root
-        index = None
-        while not cur_node.is_leaf:
-            cur_node = self.find_node(cur_node, entry_value)
-        cur_node.insert_value_in_node(entry_value, rid)
-
-        value_to_find = entry_value
-        while cur_node != None and cur_node.is_full():
-            cur_node.split_node()
-            split_node_root_value = cur_node.entry_values[0]
-            if cur_node.parent:
-                index = self.get_node_index(cur_node.parent, value_to_find)
-                self.merge(cur_node.parent, cur_node, index)
-            cur_node = cur_node.parent
-            value_to_find = split_node_root_value
-
-        self.size += 1
-
-    def get_rids_equality_search(self, entry_value)->list[int]:
-        """
-        Returns a list of RIDs associated to a provided entry value.
-
-        If the entry value cannot be found in the tree, an empty list
-        will be returned.
-        """
-
-        cur_node = self.root
-        while not cur_node.is_leaf:
-            for i, val in enumerate(cur_node.entry_values):
-                if val > entry_value:
-                    cur_node = cur_node.child_nodes[i]
-                    break
-                elif val == entry_value or i + 1 == len(cur_node.entry_values):
-                    cur_node = cur_node.child_nodes[i+1]
-                    break
-        try:
-            return cur_node.rids[cur_node.entry_values.index(entry_value)]
-        except ValueError:
-            return []
-
-    def get_rids_range_search(self, lower_bound, upper_bound)->list[int]:
-        """
-        Returns all RIDs associated with entry values in between
-        the specified upper and lower bound values (inclusive).
-
-        If no entry values can be found, an empty list will be returned.
-        """
-
-        assert lower_bound <= upper_bound, ValueError
-
-        cur_node = self.root
-        while not cur_node.is_leaf:
-            for i, val in enumerate(cur_node.entry_values):
-                if val > lower_bound:
-                    cur_node = cur_node.child_nodes[i]
-                    break
-                elif val == lower_bound or i + 1 == len(cur_node.entry_values):
-                    cur_node = cur_node.child_nodes[i+1]
-                    break
-
-        return_list = []
-        while cur_node != None:
-            will_break = False
-            for i, val in enumerate(cur_node.entry_values):
-                if val > upper_bound:
-                    will_break = True
-                    break
-                elif lower_bound <= val and val <= upper_bound:
-                    return_list += cur_node.rids[i]
-            if will_break: break
-            cur_node = cur_node.next_node
-        return return_list
-
-    def return_entry_values_lists(self, node:Column_Index_Node, return_list:list)->list:
-        return_list += node.entry_values
-        for child_node in node.child_nodes:
-            return_list += self.return_entry_values_lists(child_node)
-        return return_list
 
 class Index:
 
-    def __init__(self, num_columns:int, order:int)->None:
-        self.indices = [Column_Index_Tree(order) for _ in range(num_columns)]
+  def __init__(self, table_name:str, columns:list[str], primary_key_index:int, order:int)->None:
+    if not os.path.exists("index"):
+        os.mkdir("index")
+    self.table_name = table_name
+    self.columns = columns
+    self.order = order
+    self.indices = [Index_Column(table_name, column, order) for column in columns]
+    self.indices[primary_key_index].set_as_primary_key()
 
-    def insert_record_to_index(self, record_columns, rid:int)->None:
-        """
-        Inserts all entry values into the index with the record's associated
-        RID.
+  def __del__(self):
+    for index in self.indices:
+      index.tree.close()
 
-        Note: all record columns must be initialized. If a record column
-        does not have a value, simply pass None as its element value.
-        """
-        for i, record_entry_value in enumerate(record_columns):
-            self.indices[i].insert_value(record_entry_value, rid)
+  def insert_record_to_index(self, record_columns, rid:int)->None:
+    """
+    Inserts all entry values into the index with the record's associated
+    RID.
 
-    def locate(self, value, column_index:int)->list[int]:
-        """
-        Returns the location of all records with the given value
-        within a specified column.
-        """
-        return self.indices[column_index].get_rids_equality_search(value)
+    If not all record fields are declared, returns ValueError.
 
+    Note: all record columns must be initialized. If a record column
+    does not have a value, simply pass None as its element value.
+    """
+    if len(record_columns) != len(self.columns):
+      raise ValueError
 
-    def locate_range(self, begin, end, column_index:int)->list[int]:
-        """
-        Returns the RIDs of all records with values in a specified column
-        between "begin" and "end" (bounds-inclusive).
-        """
-        return self.indices[column_index].get_rids_range_search(begin, end)
+    for i, record_entry_value in enumerate(record_columns):
+        self.indices[i].add_value(record_entry_value, rid)
 
-    def update_entry(self, entry_value, rid:int)->None:
-        """
-        Updates an RID-associated entry value.
-        """
-        pass
+  def locate(self, entry_value, column_index:int)->set[int]:
+    """
+    Returns the location of all records with the given value
+    within a specified column.
+    """
 
-    def drop_index(self, column_index:int):
-        """
-        Returns the RIDs of all records with values in a specified column
-        between "begin" and "end" (bounds-inclusive).
-        """
-        pass
+    return self.indices[column_index].get_single_entry(entry_value)
+
+  def locate_range(self, begin, end, column_index:int)->set[int]:
+    """
+    Returns the RIDs of all records with values in a specified column
+    between "begin" and "end" (bounds-inclusive).
+    """
+
+    return self.indices[column_index].get_ranged_entry(begin, end)
+
+  def update_entry(self, old_entry_value, new_entry_value, rid:int, column_index:int)->None:
+    """
+    Updates an RID-associated entry value.
+    """
+
+    try:
+      self.indices[column_index].update_value(old_entry_value, new_entry_value, rid)
+    except ValueError:
+      print("Error: Unable to perform update properly.")
+
+  def create_index(self, column_name:str, index_to_insert_column:int=None)->None:
+    new_index = Index_Column(self.table_name, column_name, self.order)
+    if index_to_insert_column == None:
+      self.indices.append(new_index)
+    else:
+      self.indices.insert(index_to_insert_column, new_index)
+
+  def drop_index(self, column_index:int)->None:
+    if len(self.indices) - 1 >= column_index:
+      del self.indices[column_index]
