@@ -26,7 +26,10 @@ class Database:
 
         # load stuff from database if it had been created before
         if os.path.exists(db_dir_path):
-            table_dirs = [_ for _ in os.listdir(db_dir_path) if os.path.isdir(_)]
+            table_dirs = [
+                os.path.join(db_dir_path, _) for _ in os.listdir(db_dir_path)
+                if os.path.isdir(os.path.join(db_dir_path, _))
+            ]
             for table_dir in table_dirs:
                 metadata = dict(pickle.loads(os.path.join(table_dir, "metadata.pkl")))
                 self.tables[metadata["table_dir_path"]] = \

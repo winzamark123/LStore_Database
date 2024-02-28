@@ -17,14 +17,14 @@ class Frame:
     def get_pin_count(self) -> int:
         return self.pin_count
     
-    def is_dirty(self) -> bool:
+    def check_dirty_status(self) -> bool:
         return self.is_dirty
     
     def set_dirty(self):
-        self.dirty = True
+        self.is_dirty = True
     
     def set_clean(self):
-        self.dirty = False
+        self.is_dirty = False
     
     def pin_frame(self):
         self.pin_count += 1

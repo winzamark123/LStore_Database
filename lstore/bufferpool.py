@@ -4,15 +4,20 @@ from lstore.frame import Frame
 import os 
 
 class Bufferpool:
-    def __init__(self, db_name: str, table_name: str):
+    def __init__(self)->None:
+        self.root = None
+        self.frame_object = None
+        self.frame_directory = None
+        self.frame_count = None
+        self.merge_buffer = None
+
+    def set_database(self, db_dir_path:str)->None:
+        self.root = db_dir_path
         self.frame_object = {}
         self.frame_directory= {}
         self.frame_count = 0
-        self.table_name = table_name
-        self.path_to_table = os.getcwd() + '/' + db_name + '/' + table_name
         self.merge_buffer = False 
 
-    
     def __has_capacity(self) -> bool:
         return self.frame_count < Config.BUFFERPOOL_FRAME_SIZE
 
@@ -26,7 +31,6 @@ class Bufferpool:
             frame_index = self.frame_directory[record_key]
             return frame_index
         return -1
-
 
     def has_capacity(self):
         return self.cur_size <= self.max_size
@@ -98,11 +102,7 @@ class Bufferpool:
 
         return frame_index
 
-
-
-
-    
-
+BUFFERPOOL = Bufferpool()
 
 
      
