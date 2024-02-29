@@ -9,7 +9,7 @@ from lstore.record import Record, RID
 import os
 import threading
 import copy
-
+ 
 class Table:
     """
     :param name: string         #Table name

@@ -62,18 +62,20 @@ class Frame:
                     # Initialize the file if needed; for example, writing empty bytes:
                     f.write(b'\x00' * Config.DATA_ENTRY_SIZE)  # Adjust this according to your data structure needs
 
-    def insert_record(self, record:Record):
+    def insert_record(self, key_index:int, record:Record):
         for i , pp in enumerate(self.physical_pages, start=0):
             if i == RID_COLUMN:
                 pp.write_to_physical_page(value=record.rid, rid=record.rid)
-            if i == INDIRECTION_COLUMN:
+            elif i == INDIRECTION_COLUMN:
                 pp.write_to_physical_page(value=record.rid, rid=record.rid)
-            if i == BASE_RID_COLUMN:
+            elif i == BASE_RID_COLUMN:
                 pp.write_to_physical_page(value=0, rid=record.rid)
-            if i == SCHEMA_ENCODING_COLUMN:
+            elif i == SCHEMA_ENCODING_COLUMN:
                 pp.write_to_physical_page(value=0, rid=record.rid)
-
-            pp.write_to_physical_page(record.columns[i - META_DATA_NUM_COLUMNS], record.rid)
+            elif i == key_index:
+                pp.write_to_physical_page(value=record.key, rid=record.rid)
+            else:
+                pp.write_to_physical_page(record.columns[i - META_DATA_NUM_COLUMNS], record.rid)
     
     def update_record(self, record:Record):
         pass

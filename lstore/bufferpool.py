@@ -8,6 +8,7 @@ class Bufferpool:
         self.frames:dict          = {}
         self.frame_info:dict      = {}
         self.frame_count:int      = 0
+        
     
     def __has_capacity(self) -> bool:
         return self.frame_count < Config.BUFFERPOOL_FRAME_SIZE
@@ -69,8 +70,8 @@ class Bufferpool:
         
         return frame_index
     
-    def insert_record(self, frame_index:int, record:Record) -> None:
-        self.frames[frame_index].insert_record(record=record)
+    def insert_record(self, key_index:int, frame_index:int, record:Record) -> None:
+        self.frames[frame_index].insert_record(key_index=key_index, record=record)
         self.frames[frame_index].set_dirty()
         pass 
     

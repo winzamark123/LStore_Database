@@ -211,7 +211,7 @@ class Base_Page:
         #META = RID, IC, SCHEMA, BASE_RID
 
         frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
-        BUFFERPOOL.insert_record(frame_index=frame_index, record=record)
+        BUFFERPOOL.insert_record(key_index=self.key_index, frame_index=frame_index, record=record)
 
         
 
