@@ -68,7 +68,24 @@ class Frame:
 
         rid = record.get_rid()
             
-        print("LENGTH of PP", len(self.physical_pages))
+        for i in range(len(self.physical_pages)):
+            if i == RID_COLUMN:
+                self.physical_pages[i].edit_byte_array(rid, rid)
+                continue
+            if i == INDIRECTION_COLUMN:
+                self.physical_pages[i].edit_byte_array(rid, rid)
+                continue
+            if i == BASE_RID_COLUMN:
+                self.physical_pages[i].edit_byte_array(0, rid)
+                continue
+            if i == SCHEMA_ENCODING_COLUMN:
+                self.physical_pages[i].edit_byte_array(0, rid)
+                continue
+            if i == key_index:
+                self.physical_pages[i].edit_byte_array(record.key, rid)
+                continue
+            self.physical_pages[i].edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
+
         for i , pp in enumerate(self.physical_pages):
             print("I", i)
             if i == RID_COLUMN:
@@ -84,7 +101,6 @@ class Frame:
             else:
                 print("INDEX", i - META_DATA_NUM_COLUMNS)
                 print(len(record.columns))
-                # print("RECORDS", record.columns[i])
                 pp.edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
 
             for j in range(0, 4096, 8):

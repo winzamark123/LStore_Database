@@ -6,11 +6,15 @@ from pickle import loads, dumps
 
 class Index_Column:
 
-  def __init__(self, column_index_file:str, order:int)->None:
-    self.tree = BPlusTree(filename=column_index_file, order=order)
+  def __init__(self, file_path:str, order:int)->None:
+    self.tree = BPlusTree(filename=file_path, order=order)
     self.is_key = False
 
   def __del__(self):
+    """
+    Delete index column.
+    """
+
     self.tree.close()
 
   def set_as_primary_key(self):
@@ -66,30 +70,57 @@ class Index_Column:
 
 class Index:
 
-  def __init__(self, table_dir_path:str, primary_key_index:int, order:int)->None:
-    self.index_dir_path = os.path.exists(os.path.join(table_dir_path, "index"))
-    if not os.path.exists(self.index_dir_path):
-      os.makedirs(self.index_dir_path, exist_ok=False)
+  def __init__(self, table_dir_path:str, num_columns:int, primary_key_index:int, order:int)->None:
+    if primary_key_index >= num_columns: raise IndexError
+    
+    self.index_dir_path:str             = os.path.join(table_dir_path, "index")
+    self.num_columns:int                = num_columns
+    self.primary_key_index:int          = primary_key_index
+    self.order:int                      = order
     self.indices:dict[int,Index_Column] = dict() # {column_index: Index_Column}
-    self.order = order
-    self.primary_key_index = primary_key_index
+
+    if os.path.exists(self.index_dir_path):
+      self.__load_column_indices()
+    else:
+      os.makedirs(self.index_dir_path, exist_ok=False)
+      # automatically creates an index for the primary key
+      self.create_index(primary_key_index)
+
+  def __load_column_indices(self)->None:
+    for column_db_file in os.listdir(self.index_dir_path):
+      column_index = int(column_db_file.removesuffix(".db"))
+      column_index_path = os.path.join(self.index_dir_path, column_db_file)
+      self.indices[column_index] = Index_Column(column_index_path, self.order)
+
+  def __get_column_index_filename(self, column_index:int)->str:
+    return os.path.join(self.index_dir_path, f"{column_index}.db")
 
   def create_index(self, column_index:int)->None:
     """
     Creates an index for a specified column.
-
-    Raises a ValueError if a column's index has already been created.
     """
 
+    if os.path.exists(self.__get_column_index_filename(column_index)):
+      raise FileExistsError
     if column_index in self.indices:
       raise ValueError
 
-    column_index_file = os.path.join(self.index_dir_path, f"{column_index}.db")
-    self.indices[column_index] = Index_Column(column_index_file, self.order)
+    self.indices[column_index] = Index_Column(self.__get_column_index_filename(column_index), self.order)
 
   def drop_index(self, column_index:int)->None:
-    if len(self.indices) - 1 >= column_index:
-      del self.indices[column_index]
+    """
+    Drops an index of a specified column.
+
+    Warning: deletes the data from the disk.
+    """
+
+    if not os.path.exists(self.__get_column_index_filename(column_index)):
+      raise ValueError
+    if not column_index in self.indices:
+      raise ValueError
+
+    del self.indices[column_index]
+    os.remove(self.__get_column_index_filename(column_index))
 
   def insert_record_to_index(self, record_columns, rid:int)->None:
     """
@@ -102,17 +133,21 @@ class Index:
     does not have a value, simply pass None as its element value.
     """
 
-    if len(record_columns) != len(self.columns):
+    if len(record_columns) != self.num_columns:
       raise ValueError
 
     for i, record_entry_value in enumerate(record_columns):
-        self.indices[i].add_value(record_entry_value, rid)
+        if i in self.indices:
+          self.indices[i].add_value(record_entry_value, rid)
 
   def locate(self, entry_value, column_index:int)->set[int]:
     """
     Returns the location of all records with the given value
     within a specified column.
     """
+
+    if not column_index in self.indices:
+      raise ValueError
 
     return self.indices[column_index].get_single_entry(entry_value)
 
@@ -133,4 +168,3 @@ class Index:
       self.indices[column_index].update_value(old_entry_value, new_entry_value, rid)
     except ValueError:
       print("Error: Unable to perform update properly.")
-
