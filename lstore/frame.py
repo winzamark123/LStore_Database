@@ -48,12 +48,11 @@ class Frame:
         for i in range(num_columns):
             self.physical_pages.append(Physical_Page(i))
 
-            path_to_physical_page = f"{path_to_page}{i}.bin"
-            os.makedirs(path_to_physical_page, exist_ok=True)
+            path_to_physical_page = f"{path_to_page}/{i}.bin"
 
             # Check if the file exists to decide whether to read from it or initialize a new one
             if os.path.exists(path_to_physical_page):
-                DISK.read_physical_page_from_disk(path_to_physical_page)
+                self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_physical_page))
 
             else:
                 # If the file does not exist, you may need to create and initialize it
@@ -61,24 +60,29 @@ class Frame:
                 with open(path_to_physical_page, 'wb') as f:
                     # Initialize the file if needed; for example, writing empty bytes:
                     f.write(b'\x00' * Config.DATA_ENTRY_SIZE)  # Adjust this according to your data structure needs
+                self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_physical_page))
 
     def insert_record(self, key_index:int, record:Record):
+        #self.physical_pages = [Physical_Page(i) for i in range(num_columns)]
+        #disk
+
+        rid = record.get_rid()
         for i , pp in enumerate(self.physical_pages, start=0):
             if i == RID_COLUMN:
-                pp.write_to_physical_page(value=record.rid, rid=record.rid)
+                pp.edit_byte_array(value=rid, rid=rid)
             elif i == INDIRECTION_COLUMN:
-                pp.write_to_physical_page(value=record.rid, rid=record.rid)
+                pp.edit_byte_array(value=rid, rid=rid)
             elif i == BASE_RID_COLUMN:
-                pp.write_to_physical_page(value=0, rid=record.rid)
+                pp.edit_byte_array(value=0, rid=rid)
             elif i == SCHEMA_ENCODING_COLUMN:
-                pp.write_to_physical_page(value=0, rid=record.rid)
+                pp.edit_byte_array(value=0, rid=rid)
             elif i == key_index:
-                pp.write_to_physical_page(value=record.key, rid=record.rid)
+                pp.edit_byte_array(value=record.key, rid=rid)
             else:
-                pp.write_to_physical_page(record.columns[i - META_DATA_NUM_COLUMNS], record.rid)
+                pp.edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
         
         print("Record inserted into frame")
-        print(record.rid)
+        print(rid)
     
     def update_record(self, record:Record):
         pass

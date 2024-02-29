@@ -56,7 +56,12 @@ class Disk:
         if not os.path.exists(path_to_physical_page):
             raise ValueError
         with open(path_to_physical_page, 'rb') as ppf:
-            return ppf.read(Config.PHYSICAL_PAGE_SIZE)
+            byte_data = ppf.read(Config.PHYSICAL_PAGE_SIZE)
+
+
+            return Physical_Page(byte_data)
+        
+            # return ppf.read(Config.PHYSICAL_PAGE_SIZE)
 
 DISK = Disk()
 

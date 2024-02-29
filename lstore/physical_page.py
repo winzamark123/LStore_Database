@@ -1,4 +1,5 @@
 import os
+from lstore.record import RID
 from lstore.config import *
 
 class Physical_Page:
@@ -8,22 +9,32 @@ class Physical_Page:
     :param page_number: int         # page_number of this physical page corresponds to the base page it's on
 
     """
+
     def __init__(self, column_number:int):
-        self.num_records = 0
+        # self.num_records = 0
         # entry size of physical page entry differs between columns (RID colum: 2 bytes, StudentID column: 8 bytes, etc..)
-        self.entry_size = DATA_ENTRY_SIZE 
+        # self.entry_size = DATA_ENTRY_SIZE 
         self.column_number = column_number 
         self.updates = 0
         self.data = bytearray(PHYSICAL_PAGE_SIZE)
+    
+    @classmethod
+    def from_bytes(cls, column_number:int, bytes_data: bytes):
+         # Create an instance with default or specified values
+        instance = cls(column_number, page_number)
+        # Now fill in the data with the bytes provided
+        instance.data = bytearray(bytes_data)
+        # Calculate the number of records based on the actual bytes length and entry_size (assuming full entries)
+        return instance
 
     # checks capacity of page
     def has_capacity(self)->bool:
         return ((self.num_records + 1) * self.entry_size <= PHYSICAL_PAGE_SIZE) and ((self.num_records + 1) <= RECORDS_PER_PAGE)
 
     # write to physical page
-    def write_to_physical_page(self, value:int, rid:int, update: bool=False)->None:
+    def edit_byte_array(self, value:int, rid:int, update: bool=False)->None:
         # Perform capacity check only if update is False
-        if not update and not self.__has_capacity():
+        if not update and not self.has_capacity():
             raise OverflowError("Not enough space in physical page or Reached record limit")
 
         # Gets offset with RID
@@ -35,7 +46,7 @@ class Physical_Page:
         # Convert integer to (entry_size) bytes
         value_bytes = int.to_bytes(value, self.entry_size, byteorder='big', signed=True)
         self.data[start:end] = value_bytes
-        print(f'Inserted value ({value}) in page ({self.column_index}) into Bytes ({start} - {end})')
+        # print(f'Inserted value ({value}) in page ({self.column_index}) into Bytes ({start} - {end})')
 
         # Increment num_records only if update is False
         if not update:

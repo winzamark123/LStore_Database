@@ -1,6 +1,8 @@
 import lstore.config as Config
 
 class RID:
+    def __int__(self)->int:
+        return self.rid
 
     def __init__(self, rid:int)->None:
         self.rid = rid
@@ -10,6 +12,7 @@ class RID:
     
     def get_base_page_index(self):
         return (self.rid // Config.RECORDS_PER_PAGE) % Config.NUM_BASE_PAGES
+    
 
 class Record:
 
@@ -30,4 +33,7 @@ class Record:
 
     def get_base_page_index(self):
         return self.rid.get_base_page_index()
+    
+    def get_rid(self):
+        return self.rid.rid
 
