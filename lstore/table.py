@@ -24,7 +24,7 @@ class Table:
         # self.key_column:int        = Config.META_DATA_NUM_COLUMNS + key_index
         self.num_records:int       = num_records
 
-        self.index:Index           = Index(table_dir_path=table_dir_path, primary_key_index=key_index, order=Config.ORDER_CHOICE)
+        self.index:Index           = Index(table_dir_path=table_dir_path, num_columns=num_columns, primary_key_index=key_index, order=Config.ORDER_CHOICE)
 
         self.page_ranges:dict[int,Page_Range] = dict()
         if self.__get_num_page_ranges():
@@ -34,11 +34,13 @@ class Table:
         self.num_records += 1
         return self.num_records
 
-    def __get_num_page_ranges(self):
-        return len([
-            os.path.join(self.table_dir_path, _) for _ in os.listdir(self.table_dir_path)
-            if os.path.isdir(os.path.join(self.table_dir_path, _))
-        ])
+    def __get_num_page_ranges(self)->int:
+        count = 0
+        for _ in os.listdir(self.table_dir_path):
+            if _ == "index": continue
+            elif os.path.isdir(os.path.join(self.table_dir_path, _)):
+                count += 1
+        return count
 
     def load_page_ranges(self)->dict[int,Page_Range]:
         page_range_dirs = [
@@ -46,7 +48,8 @@ class Table:
             if os.path.isdir(os.path.join(self.table_dir_path, _))
         ]
         for page_range_dir in page_range_dirs:
-            page_range_index = int(page_range_dir.removeprefix("PR"))
+            print("PAGE_RANGE_DIR", page_range_dir)
+            page_range_index = int(page_range_dir[page_range_dir.rfind('/')].removeprefix("PR"))
             metadata = DISK.read_metadata_from_disk()
             self.page_ranges[page_range_index] = \
                 Page_Range(
@@ -92,6 +95,8 @@ class Table:
         """
         
         print("INSERT TABLE")
+        print(self.page_ranges)
+        print(self.__get_num_page_ranges())
         if self.__get_num_page_ranges() == 0 or not record.get_base_page_index() in self.page_ranges:
             self.create_page_range(self.__get_num_page_ranges())
         self.page_ranges[record.get_page_range_index()].insert_record(record)
