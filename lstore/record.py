@@ -30,3 +30,4 @@ class Record:
 
     def get_base_page_index(self):
         return self.rid.get_base_page_index()
+

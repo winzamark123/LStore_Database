@@ -62,9 +62,10 @@ class Frame:
                     f.write(b'\x00' * Config.DATA_ENTRY_SIZE)  # Adjust this according to your data structure needs
 
     def insert_record(self, record:Record):
-        #physical_pages = []
-        for i in range(len(record.columns)):
-            self.physical_pages[i].write_to_physical_page(record.columns[i], record.rid)
-            
+        #physical_pages = [Empty Physical Page0, Empty Physical Page1]
+        
+        for i, pp in enumerate(self.physical_pages):
+            pp.write_to_physical_page(record.columns[i], record.rid)
+
 
         pass 
