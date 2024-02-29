@@ -1,4 +1,5 @@
 import lstore.config as Config
+from lstore.record import Record
 from lstore.frame import Frame
 from lstore.disk import DISK
 
@@ -50,7 +51,7 @@ class Bufferpool:
 
         self.frame_count -= 1
 
-    def insert_frame(self, path_to_page: str, num_columns: int, record_info: dict) -> int:
+    def import_frame(self, path_to_page: str, num_columns: int, record_info: dict) -> int:
         if not self.__has_capacity():
             self.evict_frame()
 
@@ -67,5 +68,12 @@ class Bufferpool:
         self.frame_info[record_key] = frame_index
         
         return frame_index
+    
+    def insert_record(self, frame_index:int, record:Record) -> None:
+        self.frames[frame_index].insert_record(record=record)
+        self.frames[frame_index].set_dirty()
+        pass 
+    
+    
     
 BUFFERPOOL = Bufferpool()

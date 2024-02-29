@@ -23,6 +23,7 @@ class Record:
     
     def get_values(self):
         return (self.key,) + tuple(self.columns)
+        #123123, 0, 0 ,0, 0
     
     def get_page_range_index(self):
         return self.rid.get_page_range_index()

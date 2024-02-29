@@ -1,6 +1,7 @@
 import lstore.page_range as Page_Range
 from lstore.disk import DISK
 import lstore.config as Config
+from lstore.record import Record
 import os 
 from lstore.physical_page import Physical_Page
 from datetime import datetime 
@@ -60,3 +61,10 @@ class Frame:
                     # Initialize the file if needed; for example, writing empty bytes:
                     f.write(b'\x00' * Config.DATA_ENTRY_SIZE)  # Adjust this according to your data structure needs
 
+    def insert_record(self, record:Record):
+        #physical_pages = []
+        for i in range(len(record.columns)):
+            self.physical_pages[i].write_to_physical_page(record.columns[i], record.rid)
+            
+
+        pass 

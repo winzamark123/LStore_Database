@@ -1,4 +1,5 @@
 import time
+from lstore.bufferpool import BUFFERPOOL
 from lstore.config import *
 from lstore.record import Record, RID
 from lstore.physical_page import Physical_Page
@@ -181,60 +182,6 @@ class Page:
         
         return True
 
-# class Tail_Page(Page):
-
-#     def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
-#         # Call the constructor of the parent class (Page)
-#         super().__init__(num_columns, entry_sizes, key_column, is_tail_page=True)
-
-#         # returns value of indirection in for base records
-    
-#     def check_tail_record_indirection(self, rid:int)->int:
-            
-#         # indirection column of base page
-#         indirection_page = self._get_indirection_page()
-
-#         indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
-
-#         return indirection_value_base_record
-
-#     # returns value of schema encoding in base record
-#     def check_tail_record_schema_encoding(self, rid:int)->int:
-    
-#         # indirection column of base page
-#         schema_encoding_page = self._get_schema_encoding_page()
-
-#         schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
-
-#         return schema_encoding_value_base_record
-        
-
-# class Base_Page(Page):
-
-#     def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
-#         # Call the constructor of the parent class (Page)
-#         super().__init__(num_columns, entry_sizes, key_column, is_tail_page=False)
-
-#     # returns value of indirection in for base records
-#     def check_base_record_indirection(self, rid:int)->int:
-            
-#         # indirection column of base page
-#         indirection_page = self._get_indirection_page()
-
-#         indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
-
-#         return indirection_value_base_record
-
-#     # returns value of schema encoding in base record
-#     def check_base_record_schema_encoding(self, rid:int)->int:
-    
-#         # indirection column of base page
-#         schema_encoding_page = self._get_schema_encoding_page()
-
-#         schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
-
-#         return schema_encoding_value_base_record
-    
 class Base_Page:
 
     def __init__(self, base_page_dir_path:str, base_page_index:int)->None:
@@ -243,7 +190,19 @@ class Base_Page:
 
     def insert_record(self, record:Record)->None:
         self.insert_new_record(record)
+
+        record_info = {
+            "page_range_num": record.get_page_range_index(),
+            "page_type": "base",
+            "page_num": record.get_base_page_index()
+        } 
+
+        frame_index = BUFFERPOOL.import_frame(self, path_to_page=self.path_to_page, record_info=record_info)
+        BUFFERPOOL.insert_record(frame_index=frame_index, record=record)
+
         
+
+
 
     def get_record(self, rid:RID)->Record:
         pass
