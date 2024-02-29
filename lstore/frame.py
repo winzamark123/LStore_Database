@@ -63,9 +63,10 @@ class Frame:
 
     def insert_record(self, record:Record):
         #physical_pages = [Empty Physical Page0, Empty Physical Page1]
-        
+        #META = RID(TICKED), IC(RID, TICKED), SCHEMA(0), BASE_RID(0)
         for i, pp in enumerate(self.physical_pages):
             pp.write_to_physical_page(record.columns[i], record.rid)
-
-
         pass 
+    
+    def update_record(self, record:Record):
+        pass

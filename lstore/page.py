@@ -185,7 +185,6 @@ class Page:
 class Base_Page:
 
     def __init__(self, base_page_dir_path:str, base_page_index:int)->None:
-        # TODO
         super().__init__(base_page_dir_path, base_page_index)
 
     def insert_record(self, record:Record)->None:
@@ -197,7 +196,9 @@ class Base_Page:
             "page_num": record.get_base_page_index()
         } 
 
-        frame_index = BUFFERPOOL.import_frame(self, path_to_page=self.path_to_page, record_info=record_info)
+        #META = RID, IC, SCHEMA, BASE_RID
+
+        frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
         BUFFERPOOL.insert_record(frame_index=frame_index, record=record)
 
         
