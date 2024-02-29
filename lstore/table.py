@@ -19,12 +19,12 @@ class Table:
 
     def __init__(self, table_dir_path:str, num_columns:int, key_index:int, num_records:int)->None:
         self.table_dir_path:str    = table_dir_path
-        self.num_columns:int       = num_columns + Config.META_DATA_NUM_COLUMNS
+        self.num_columns:int       = num_columns 
         self.key_index:int         = key_index
-        self.key_column:int        = Config.META_DATA_NUM_COLUMNS + key_index
+        # self.key_column:int        = Config.META_DATA_NUM_COLUMNS + key_index
         self.num_records:int       = num_records
 
-        self.index:Index           = Index(table_dir_path, key_index, Config.ORDER_CHOICE)
+        self.index:Index           = Index(table_dir_path=table_dir_path, primary_key_index=key_index, order=Config.ORDER_CHOICE)
 
         self.page_ranges:dict[int,Page_Range] = dict()
         if self.__get_num_page_ranges():
@@ -73,22 +73,25 @@ class Table:
         DISK.write_metadata_to_disk(page_range_dir_path, metadata)
         self.page_ranges[page_range_index] = Page_Range(page_range_dir_path, 0, 0)
 
-    def create_record(self, columns)->Record:
+    def create_record(self, columns:tuple)->Record:
         """
         Create a record.
         """
+        print("CREATE RECORD", columns)
 
         if len(columns) != self.num_columns:
             raise ValueError
         
-        return Record(self.__increment_num_records(), columns[self.key_column], columns)
+        print("CREATE RECORD")
+        return Record(self.__increment_num_records(), columns[self.key_index], columns)
 
 
     def insert_record(self, record:Record)->None:
         """
         Insert record into table.
         """
-
+        
+        print("INSERT TABLE")
         if self.__get_num_page_ranges() == 0 or not record.get_base_page_index() in self.page_ranges:
             self.create_page_range(self.__get_num_page_ranges())
         self.page_ranges[record.get_page_range_index()].insert_record(record)

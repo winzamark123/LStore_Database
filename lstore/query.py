@@ -40,6 +40,7 @@ class Query:
         # Returns False if insert fails for whatever reason
         """
         try:
+            print("INSERT")
             self.table.insert_record(self.table.create_record(columns))
         except ValueError:
             return False

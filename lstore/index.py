@@ -67,7 +67,7 @@ class Index_Column:
 class Index:
 
   def __init__(self, table_dir_path:str, primary_key_index:int, order:int)->None:
-    self.index_dir_path = os.path.exists(os.path.join(table_dir_path), "index")
+    self.index_dir_path = os.path.exists(os.path.join(table_dir_path, "index"))
     if not os.path.exists(self.index_dir_path):
       os.makedirs(self.index_dir_path, exist_ok=False)
     self.indices:dict[int,Index_Column] = dict() # {column_index: Index_Column}

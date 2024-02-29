@@ -15,11 +15,11 @@ class Disk:
         return os.path.commonpath([parent]) == os.path.commonpath([parent, child])
 
     def set_database(self, db_dir_path:str):
-        self.root_path = db_dir_path
-        if not os.path.exists(self.root_path):
-            os.makedirs(self.root_path, exist_ok=True)
-            print(f"Database initialized at {self.root_path}")
-        print(f"Database from path {self.root_path} has been opened.")
+        self.root = db_dir_path
+        if not os.path.exists(self.root):
+            os.makedirs(self.root, exist_ok=True)
+            print(f"Database initialized at {self.root}")
+        print(f"Database from path {self.root} has been opened.")
 
     def create_path_directory(self, dir_path:str)->None:
         if os.path.exists(dir_path): raise ValueError
@@ -35,8 +35,16 @@ class Disk:
         if not self.__is_dir_under_root(path_for_metadata): raise ValueError
         if not os.path.exists(path_for_metadata):
             raise ValueError
-        with open(os.path.join(path_for_metadata), "metadata.pkl", 'rb') as mdf:
-            return dict(pickle.loads(mdf))
+        
+        metadata_file_path = os.path.join(path_for_metadata, "metadata.pkl")  # Corrected line
+        if not os.path.exists(metadata_file_path):
+            raise ValueError("Metadata file does not exist")
+
+        with open(metadata_file_path, 'rb') as mdf:  # Corrected line
+            return pickle.load(mdf)  # Corrected from pickle.loads to pickle.load     
+        # with open(os.path.join(path_for_metadata), "metadata.pkl", 'rb') as mdf:
+        #     print("PATH FOR META", path_for_metadata)
+        #     return dict(pickle.loads(mdf))
 
     def write_physical_page_to_disk(self, path_to_physical_page:str, physical_page:Physical_Page)->None:
         if not self.__is_dir_under_root(path_to_physical_page): raise ValueError

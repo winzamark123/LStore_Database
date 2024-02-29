@@ -76,6 +76,9 @@ class Frame:
                 pp.write_to_physical_page(value=record.key, rid=record.rid)
             else:
                 pp.write_to_physical_page(record.columns[i - META_DATA_NUM_COLUMNS], record.rid)
+        
+        print("Record inserted into frame")
+        print(record.rid)
     
     def update_record(self, record:Record):
         pass

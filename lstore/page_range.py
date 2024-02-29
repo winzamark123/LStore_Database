@@ -96,7 +96,7 @@ class Page_Range:
         """
         Insert record into page range.
         """
-
+        print("INSERT PAGE_RANGE")
         if len(self.base_pages) == 0 or not record.get_base_page_index() in self.base_pages:
             self.create_base_page(self.__get_num_base_pages())
         self.base_pages[record.get_base_page_index()].insert_record(record)

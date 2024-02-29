@@ -71,6 +71,7 @@ class Bufferpool:
         return frame_index
     
     def insert_record(self, key_index:int, frame_index:int, record:Record) -> None:
+        print("INSERT BUFFER")
         self.frames[frame_index].insert_record(key_index=key_index, record=record)
         self.frames[frame_index].set_dirty()
         pass 

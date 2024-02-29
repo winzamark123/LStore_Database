@@ -55,7 +55,7 @@ class Database:
         for table in self.tables.values():
             table.close()
 
-    def create_table(self, table_name:str, num_columns:int, key_index:int)->None:
+    def create_table(self, table_name:str, num_columns:int, key_index:int)->Table:
         """
         Creates a new table to be inserted into the database.
         :param name: string         #Table name
@@ -81,6 +81,7 @@ class Database:
         # create table
         self.tables[table_name] = Table(table_dir_path, num_columns, key_index, 0)
         print(f"Table {table_name} created.")
+        return self.tables[table_name]
 
     def drop_table(self, table_name:str)->None:
         """
