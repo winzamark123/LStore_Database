@@ -159,7 +159,7 @@ class Page:
     # returns physical_page(column) that has the Schema Encodings
     def _get_schema_encoding_page(self)->Physical_Page:
         for physical_Page in self.physical_pages:
-            if(physical_Page.column_number == SCHEMA_ENCODING):
+            if(physical_Page.column_number == SCHEMA_ENCODING_COLUMN):
                 return physical_Page
 
     # returns page needed
@@ -184,8 +184,7 @@ class Page:
 
 class Base_Page:
 
-    def __init__(self, base_page_dir_path:str, base_page_index:int)->None:
-        super().__init__(base_page_dir_path, base_page_index)
+    def __init__(self, num_columns:int, base_page_dir_path:str, base_page_index:int)->None:
 
     def insert_record(self, record:Record)->None:
         self.insert_new_record(record)

@@ -19,7 +19,7 @@ class Table:
 
     def __init__(self, table_dir_path:str, num_columns:int, key_index:int, num_records:int)->None:
         self.table_dir_path:str    = table_dir_path
-        self.num_columns:int       = num_columns
+        self.num_columns:int       = num_columns + Config.META_DATA_NUM_COLUMNS
         self.key_index:int         = key_index
         self.key_column:int        = Config.META_DATA_NUM_COLUMNS + key_index
         self.num_records:int       = num_records
@@ -50,9 +50,10 @@ class Table:
             metadata = DISK.read_metadata_from_disk()
             self.page_ranges[page_range_index] = \
                 Page_Range(
-                    metadata["page_range_dir_path"],
-                    metadata["page_range_index"],
-                    metadata["tps_index"]
+                    num_columns=self.num_columns,
+                    page_range_dir_path=metadata["page_range_dir_path"],
+                    page_range_index=metadata["page_range_index"],
+                    tps_index=metadata["tps_index"]                    
                 )
 
     def create_page_range(self, page_range_index:int)->None:

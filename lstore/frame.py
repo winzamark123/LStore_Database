@@ -1,4 +1,5 @@
 import lstore.page_range as Page_Range
+from lstore.config import *
 from lstore.disk import DISK
 import lstore.config as Config
 from lstore.record import Record
@@ -62,11 +63,17 @@ class Frame:
                     f.write(b'\x00' * Config.DATA_ENTRY_SIZE)  # Adjust this according to your data structure needs
 
     def insert_record(self, record:Record):
-        #physical_pages = [Empty Physical Page0, Empty Physical Page1]
-        #META = RID(TICKED), IC(RID, TICKED), SCHEMA(0), BASE_RID(0)
-        for i, pp in enumerate(self.physical_pages):
-            pp.write_to_physical_page(record.columns[i], record.rid)
-        pass 
+        for i , pp in enumerate(self.physical_pages, start=0):
+            if i == RID_COLUMN:
+                pp.write_to_physical_page(value=record.rid, rid=record.rid)
+            if i == INDIRECTION_COLUMN:
+                pp.write_to_physical_page(value=record.rid, rid=record.rid)
+            if i == BASE_RID_COLUMN:
+                pp.write_to_physical_page(value=0, rid=record.rid)
+            if i == SCHEMA_ENCODING_COLUMN:
+                pp.write_to_physical_page(value=0, rid=record.rid)
+
+            pp.write_to_physical_page(record.columns[i - META_DATA_NUM_COLUMNS], record.rid)
     
     def update_record(self, record:Record):
         pass
