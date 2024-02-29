@@ -62,7 +62,7 @@ class Frame:
                     f.write(b'\x00' * Config.PHYSICAL_PAGE_SIZE)  # Adjust this according to your data structure needs
                 self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_physical_page))
 
-    def insert_record(self, key_index:int, record:Record):
+    def insert_record(self, key_index:int, record:Record) -> None:
         rid = record.get_rid()
 
         for i , pp in enumerate(self.physical_pages):
@@ -83,6 +83,28 @@ class Frame:
                 pp.edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
 
     def get_record(self, rid:int) -> Record:
+        indir = self.physical_page[0].value_exists_at_bytes(rid=rid)
+        # temp_rid = self.physical_page[1].value_exists_at_bytes(rid=rid)
+        print("Indir", indir)
+        # print("temp_rid", temp_rid)
+
+        temp_list = []
+        if indir == rid:
+            for pp in self.physical_pages[META_DATA_NUM_COLUMNS:]:
+                temp_list.append(pp.value_exists_at_bytes(rid=rid))
+                #TODO 
+            return Record(rid=rid, columns=tuple(temp_list))
+                
+
+
+
+
+
+
+        
+
+
+
 
         pass 
 

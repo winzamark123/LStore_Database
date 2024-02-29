@@ -13,6 +13,8 @@ class RID:
     def get_base_page_index(self):
         return (self.rid // Config.RECORDS_PER_PAGE) % Config.NUM_BASE_PAGES
     
+    
+    
 
 class Record:
 

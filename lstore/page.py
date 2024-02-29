@@ -218,7 +218,7 @@ class Base_Page:
 
 
 
-    def get_record(self, rid:RID)->Record:
+    def get_record(self, rid:int)->Record:
         frame_index = BUFFERPOOL.is_record_in_buffer(rid)
         if frame_index < 0: #frame_index is -1 if the record is not in the bufferpool
             return None

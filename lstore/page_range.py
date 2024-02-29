@@ -106,8 +106,15 @@ class Page_Range:
         Get record from page range.
         """
 
+        #get the base page 
         if rid.get_base_page_index() not in self.base_pages:
             raise ValueError
+        
+        #import frame with the BP 
+        BP_frame = self.base_pages[rid.get_base_page_index()].get_record(rid)
+        #get indirection of base record 
+        #import frame with TP 
+        #get the record associated with indirection 
 
         return self.base_pages[rid.get_base_page_index()].get_record(rid)
 
