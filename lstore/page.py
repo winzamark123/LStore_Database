@@ -213,8 +213,10 @@ class Base_Page:
         frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
         BUFFERPOOL.insert_record(key_index=self.key_index, frame_index=frame_index, record=record)
 
-        temp_file = DISK.read_physical_page_from_disk(f"{self.path_to_page}/0.bin") 
-        print(temp_file)
+        # for i in range(0, 4096, 8):
+        #     print(int.from_bytes(BUFFERPOOL.frames[frame_index].physical_pages[5].data[i:i+8]))
+
+
 
     def get_record(self, rid:RID)->Record:
         pass

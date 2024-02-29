@@ -57,9 +57,7 @@ class Disk:
             raise ValueError
         with open(path_to_physical_page, 'rb') as ppf:
             byte_data = ppf.read(Config.PHYSICAL_PAGE_SIZE)
-
-
-            return Physical_Page(byte_data)
+            return Physical_Page.from_bytes(byte_data)
         
             # return ppf.read(Config.PHYSICAL_PAGE_SIZE)
 

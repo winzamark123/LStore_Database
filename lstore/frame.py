@@ -46,7 +46,7 @@ class Frame:
         self.pin_count += 1 
 
         for i in range(num_columns):
-            self.physical_pages.append(Physical_Page(i))
+            # self.physical_pages.append(Physical_Page())
 
             path_to_physical_page = f"{path_to_page}/{i}.bin"
 
@@ -67,7 +67,10 @@ class Frame:
         #disk
 
         rid = record.get_rid()
-        for i , pp in enumerate(self.physical_pages, start=0):
+            
+        print("LENGTH of PP", len(self.physical_pages))
+        for i , pp in enumerate(self.physical_pages):
+            print("I", i)
             if i == RID_COLUMN:
                 pp.edit_byte_array(value=rid, rid=rid)
             elif i == INDIRECTION_COLUMN:
@@ -79,7 +82,15 @@ class Frame:
             elif i == key_index:
                 pp.edit_byte_array(value=record.key, rid=rid)
             else:
+                print("INDEX", i - META_DATA_NUM_COLUMNS)
+                print(len(record.columns))
+                # print("RECORDS", record.columns[i])
                 pp.edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
+
+            for j in range(0, 4096, 8):
+                print("BRO", int.from_bytes(pp.data[j:j+8]))
+
+
         
         print("Record inserted into frame")
         print(rid)
