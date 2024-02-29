@@ -1,4 +1,5 @@
-import time
+import os 
+from lstore.disk import DISK
 from lstore.bufferpool import BUFFERPOOL
 from lstore.config import *
 from lstore.record import Record, RID
@@ -184,10 +185,22 @@ class Page:
 
 class Base_Page:
 
-    def __init__(self, num_columns:int, base_page_dir_path:str, base_page_index:int)->None:
+    def __init__(self, base_page_dir_path:str, base_page_index:int)->None:
+        self.base_page_index = base_page_index
+        self.path_to_page = base_page_dir_path
+
+        self.meta_data = self.__read_metadata()
+
+        self.num_columns = self.meta_data["num_columns"] + META_DATA_NUM_COLUMNS 
+        self.key_index = self.meta_data["key_index"]
+        
+    def __read_metadata(self)->dict:
+        table_path = os.path.dirname(os.path.dirname(self.path_to_page))
+        return DISK.read_metadata_from_disk(table_path)
 
     def insert_record(self, record:Record)->None:
         self.insert_new_record(record)
+        
 
         record_info = {
             "page_range_num": record.get_page_range_index(),

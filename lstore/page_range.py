@@ -5,11 +5,10 @@ from lstore.record import Record, RID
 import os
 
 class Page_Range:
-    def __init__(self, num_columns: int, page_range_dir_path:str, page_range_index:int, tps_index:int)->None:
+    def __init__(self, page_range_dir_path:str, page_range_index:int, tps_index:int)->None:
         self.page_range_dir_path:str        = page_range_dir_path
         self.page_range_index:int           = page_range_index
         self.tps_index:int                  = tps_index
-        self.num_columns:int                = num_columns
 
         self.base_pages:dict[int,Base_Page] = dict()
         if self.__get_num_base_pages():
@@ -41,7 +40,6 @@ class Page_Range:
             metadata = DISK.read_metadata_from_disk(base_page_dir)
             self.base_pages[base_page_index] = \
                 Base_Page(
-                    num_columns=self.num_columns,
                     base_page_dir_path=metadata["base_page_dir_path"],
                     base_page_index=metadata["base_page_index"],
                 )

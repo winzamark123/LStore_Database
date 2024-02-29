@@ -50,7 +50,6 @@ class Table:
             metadata = DISK.read_metadata_from_disk()
             self.page_ranges[page_range_index] = \
                 Page_Range(
-                    num_columns=self.num_columns,
                     page_range_dir_path=metadata["page_range_dir_path"],
                     page_range_index=metadata["page_range_index"],
                     tps_index=metadata["tps_index"]                    
