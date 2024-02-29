@@ -12,7 +12,7 @@ class Frame:
         self.is_dirty = 0 # Boolean to check if the physical_page has been modified
         self.pin_count = 0
         self.is_pin = False
-        self.physical_pages = []
+        self.physical_pages:list[Physical_Page] = []
         self.time_in_buffer = datetime.now()
         self.is_tail = False 
         
@@ -59,7 +59,7 @@ class Frame:
                 # Example: initializing an empty file
                 with open(path_to_physical_page, 'wb') as f:
                     # Initialize the file if needed; for example, writing empty bytes:
-                    f.write(b'\x00' * Config.DATA_ENTRY_SIZE)  # Adjust this according to your data structure needs
+                    f.write(b'\x00' * Config.PHYSICAL_PAGE_SIZE)  # Adjust this according to your data structure needs
                 self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_physical_page))
 
     def insert_record(self, key_index:int, record:Record):
@@ -102,9 +102,6 @@ class Frame:
                 print("INDEX", i - META_DATA_NUM_COLUMNS)
                 print(len(record.columns))
                 pp.edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
-
-            for j in range(0, 4096, 8):
-                print("BRO", int.from_bytes(pp.data[j:j+8]))
 
 
         

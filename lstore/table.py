@@ -48,7 +48,6 @@ class Table:
             if os.path.isdir(os.path.join(self.table_dir_path, _))
         ]
         for page_range_dir in page_range_dirs:
-            print("PAGE_RANGE_DIR", page_range_dir)
             page_range_index = int(page_range_dir[page_range_dir.rfind('/')].removeprefix("PR"))
             metadata = DISK.read_metadata_from_disk()
             self.page_ranges[page_range_index] = \
@@ -95,8 +94,6 @@ class Table:
         """
         
         print("INSERT TABLE")
-        print(self.page_ranges)
-        print(self.__get_num_page_ranges())
         if self.__get_num_page_ranges() == 0 or not record.get_base_page_index() in self.page_ranges:
             self.create_page_range(self.__get_num_page_ranges())
         self.page_ranges[record.get_page_range_index()].insert_record(record)

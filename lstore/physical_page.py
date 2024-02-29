@@ -33,17 +33,11 @@ class Physical_Page:
     def edit_byte_array(self, value:int, rid:int)->None:
         # Gets offset with RID
         offset = self.__get_offset(rid)
-        start = offset
-
-        print("OFFSET", offset)
-        print("RID", rid)
-        # Stop writing at (32 bytes + 8 bytes) = 40 bytes
-        end = start + DATA_ENTRY_SIZE 
-
         # Convert integer to (entry_size) bytes
-        value_bytes = int.to_bytes(value, DATA_ENTRY_SIZE, byteorder='big', signed=True)
-        self.data[start:end] = value_bytes
-        # print(f'Inserted value ({value}) in page ({self.column_index}) into Bytes ({start} - {end})')
+        bytes_to_insert = value.to_bytes(length=DATA_ENTRY_SIZE, byteorder='big')
+        self.data = self.data[:offset] + bytes_to_insert + self.data[offset + len(bytes_to_insert):]
+
+        # print("Input", int.from_bytes(self.data[offset:offset+DATA_ENTRY_SIZE], byteorder="big"))
 
 
     # checks if a value is in physical page
