@@ -50,7 +50,7 @@ class Bufferpool:
 
         self.frame_count -= 1
 
-    def insert_frame(self, path_to_page: str, num_columns: int, record_info: dict):
+    def insert_frame(self, path_to_page: str, num_columns: int, record_info: dict) -> int:
         if not self.__has_capacity():
             self.evict_frame()
 
