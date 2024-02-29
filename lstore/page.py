@@ -218,7 +218,11 @@ class Base_Page:
 
 
     def get_record(self, rid:RID)->Record:
-        pass
+        frame_index = BUFFERPOOL.is_record_in_buffer(rid)
+        if frame_index < 0: #frame_index is -1 if the record is not in the bufferpool
+            return None
+        else:
+            return BUFFERPOOL.frames[frame_index].get_record(rid)
 
     def update_record(self, rid:RID, new_record:Record)->None:
         frame_index = BUFFERPOOL.get_record_from_buffer(rid, "base", rid.get_base_page_index())
