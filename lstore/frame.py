@@ -2,7 +2,7 @@ import lstore.page_range as Page_Range
 from lstore.config import *
 from lstore.disk import DISK
 import lstore.config as Config
-from lstore.record import Record
+from lstore.record import Record, RID
 import os 
 from lstore.physical_page import Physical_Page
 from datetime import datetime 
@@ -14,7 +14,7 @@ class Frame:
         self.is_pin = False
         self.physical_pages:list[Physical_Page] = []
         self.time_in_buffer = datetime.now()
-        self.is_tail = False 
+        self.is_tail = False
         
         self.path_to_page = path_to_page 
 
@@ -103,10 +103,16 @@ class Frame:
                 print(len(record.columns))
                 pp.edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
 
-
-        
         print("Record inserted into frame")
         print(rid)
     
-    def update_record(self, record:Record):
-        pass
+    def update_record(self, rid:RID, new_record:Record):
+        old_record_columns = list()
+        for i, physical_page in enumerate(self.physical_pages):
+            if i == RID_COLUMN: continue
+            elif i == INDIRECTION_COLUMN:
+                record_tail_page_path = physical_page.get_byte_array()
+            
+        #   old_record_columns.append(physical_page.get_byte_array())
+        # old_record_columns = tuple(old_record_columns)
+

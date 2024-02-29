@@ -71,7 +71,7 @@ class Index_Column:
 class Index:
 
   def __init__(self, table_dir_path:str, num_columns:int, primary_key_index:int, order:int)->None:
-    if primary_key_index >= num_columns: raise IndexError
+    assert primary_key_index < num_columns, IndexError
     
     self.index_dir_path:str             = os.path.join(table_dir_path, "index")
     self.num_columns:int                = num_columns

@@ -200,7 +200,6 @@ class Base_Page:
         return DISK.read_metadata_from_disk(table_path)
 
     def insert_record(self, record:Record)->None:
-        print("INSERT PAGE")
         # self.insert_new_record(record)
         record_info = {
             "page_range_num": record.get_page_range_index(),
@@ -222,7 +221,8 @@ class Base_Page:
         pass
 
     def update_record(self, rid:RID, new_record:Record)->None:
-        pass
+        frame_index = BUFFERPOOL.get_record_from_buffer(rid, "base", rid.get_base_page_index())
+        
 
     def delete_record(self, rid:RID)->None:
         pass
