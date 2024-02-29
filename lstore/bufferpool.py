@@ -1,13 +1,12 @@
 import lstore.config as Config
-from lstore.physical_page import Physical_Page
 from lstore.frame import Frame
 from lstore.disk import DISK
 
 class Bufferpool:
     def __init__(self):
-        self.frames = {}
-        self.frame_info = {}
-        self.frame_count = 0
+        self.frames:dict          = {}
+        self.frame_info:dict      = {}
+        self.frame_count:int      = 0
     
     def __has_capacity(self) -> bool:
         return self.frame_count < Config.BUFFERPOOL_FRAME_SIZE
@@ -24,7 +23,7 @@ class Bufferpool:
             return frame_index
         return -1
 
-    def evict_frame(self):
+    def evict_frame(self)->None:
     # Find the least recently used frame that is not pinned
     # Function that finds the frame that has the longest time in the bufferpool that is not pinned
         lru_frame_key, lru_frame = min(
@@ -48,6 +47,8 @@ class Bufferpool:
         if lru_frame_key:
             del self.frames[lru_frame_key]
             del self.frame_info[lru_frame_key]
+
+        self.frame_count -= 1
 
     def insert_frame(self, path_to_page: str, num_columns: int, record_info: dict):
         if not self.__has_capacity():

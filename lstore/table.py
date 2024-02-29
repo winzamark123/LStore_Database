@@ -5,6 +5,7 @@ from lstore.page_range import Page_Range
 from lstore.bufferpool import Bufferpool
 from lstore.page import Page
 from lstore.disk import DISK
+from lstore.record import Record, RID
 import os
 import threading
 import copy
@@ -17,36 +18,42 @@ class Table:
     """
 
     def __init__(self, table_dir_path:str, num_columns:int, key_index:int, num_records:int)->None:
-        self.table_dir_path = table_dir_path
-        self.num_columns = num_columns
-        self.key_index = key_index
-        self.key_column = Config.META_DATA_NUM_COLUMNS + key_index
-        self.num_records = num_records
+        self.table_dir_path:str    = table_dir_path
+        self.num_columns:int       = num_columns
+        self.key_index:int         = key_index
+        self.key_column:int        = Config.META_DATA_NUM_COLUMNS + key_index
+        self.num_records:int       = num_records
 
-        self.index = Index(table_dir_path, key_index, Config.ORDER_CHOICE)
-        self.bufferpool = Bufferpool(table_dir_path)
+        self.index:Index           = Index(table_dir_path, key_index, Config.ORDER_CHOICE)
 
-        self.num_page_ranges = len([_ for _ in os.listdir(table_dir_path) if os.path.isdir(_)])
-        self.page_ranges:dict[int,Page_Range] = None
-        if self.num_page_ranges:
+        self.page_ranges:dict[int,Page_Range] = dict()
+        if self.__get_num_page_ranges():
             self.page_ranges = self.load_page_ranges()
 
+    def __increment_num_records(self)->int:
+        self.num_records += 1
+        return self.num_records
+
+    def __get_num_page_ranges(self):
+        return len([
+            os.path.join(self.table_dir_path, _) for _ in os.listdir(self.table_dir_path)
+            if os.path.isdir(os.path.join(self.table_dir_path, _))
+        ])
+
     def load_page_ranges(self)->dict[int,Page_Range]:
-        page_range_dirs = [_ for _ in os.listdir(self.table_dir_path) if os.path.isdir(_)]
+        page_range_dirs = [
+            os.path.join(self.table_dir_path, _) for _ in os.listdir(self.table_dir_path)
+            if os.path.isdir(os.path.join(self.table_dir_path, _))
+        ]
         for page_range_dir in page_range_dirs:
             page_range_index = int(page_range_dir.removeprefix("PR"))
             metadata = DISK.read_metadata_from_disk()
             self.page_ranges[page_range_index] = \
                 Page_Range(
                     metadata["page_range_dir_path"],
-                    metadata["num_base_pages"],
+                    metadata["page_range_index"],
+                    metadata["tps_index"]
                 )
-
-    def insert_record(self)->None:
-        if self.num_page_ranges == 0:
-            self.create_page_range(self.num_page_ranges)
-        # TODO: insert somewhere
-        #Page_range.insert_record()
 
     def create_page_range(self, page_range_index:int)->None:
         """
@@ -56,17 +63,65 @@ class Table:
         page_range_dir_path = os.path.join(self.table_dir_path, f"PR{page_range_index}")
         if os.path.exists(page_range_dir_path):
             raise ValueError
-        os.makedirs(page_range_dir_path, exist_ok=False)
 
-        # create metadata for page range
+        DISK.create_path_directory(page_range_dir_path)
         metadata = {
             "page_range_dir_path": page_range_dir_path,
-            "num_base_pages": 0,
+            "page_range_index": page_range_index,
+            "tps_index": 0,
         }
         DISK.write_metadata_to_disk(page_range_dir_path, metadata)
+        self.page_ranges[page_range_index] = Page_Range(page_range_dir_path, 0, 0)
 
-        # create page range
-        self.page_ranges[page_range_index] = Page_Range(page_range_dir_path, 0)
+    def create_record(self, columns)->Record:
+        """
+        Create a record.
+        """
+
+        if len(columns) != self.num_columns:
+            raise ValueError
+        
+        return Record(self.__increment_num_records(), columns[self.key_column], columns)
+
+
+    def insert_record(self, record:Record)->None:
+        """
+        Insert record into table.
+        """
+
+        if self.__get_num_page_ranges() == 0 or not record.get_base_page_index() in self.page_ranges:
+            self.create_page_range(self.__get_num_page_ranges())
+        self.page_ranges[record.get_page_range_index()].insert_record(record)
+
+    def get_record(self, rid:RID)->Record:
+        """
+        Get record from table.
+        """
+
+        if not rid.get_page_range_index() in self.page_ranges:
+            raise ValueError
+
+        return self.page_ranges[rid.get_page_range_index()].get_record()
+
+    def update_record(self, rid:RID, updated_record:Record)->None:
+        """
+        Update record from table.
+        """
+
+        if not rid.get_page_range_index() in self.page_ranges:
+            raise ValueError
+        
+        self.page_ranges[rid.get_page_range_index()].update_record(rid, updated_record)
+
+    def delete_record(self, rid:RID)->None:
+        """
+        Delete record from table.
+        """
+
+        if not rid.get_page_range_index() in self.page_ranges:
+            raise ValueError
+        
+        self.page_ranges[rid.get_page_range_index()].delete_record(rid)
 
     @classmethod
     def reset_base_page_counter(cls):

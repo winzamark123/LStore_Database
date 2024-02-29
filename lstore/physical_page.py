@@ -45,7 +45,7 @@ class Physical_Page:
 
     # checks if a value is in physical page
     def check_value_in_page(self, value_to_find:int, rid:int)->bool:
-        #print('\nFunction: check_value_in_page')
+
         offset = self.__get_offset(rid)
         start = offset
         end = start + self.entry_size

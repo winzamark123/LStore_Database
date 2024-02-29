@@ -1,6 +1,6 @@
 import time
 from lstore.config import *
-from lstore.record import Record
+from lstore.record import Record, RID
 from lstore.physical_page import Physical_Page
 
 class Page:
@@ -26,15 +26,15 @@ class Page:
             Page.base_page_counter += 1
             self.page_number = Page.base_page_counter
         
-        self.physical_pages = [] 
-        self.key_index = key_index 
-        self.num_columns = num_columns
+        self.physical_pages:list     = [] 
+        self.key_index:int           = key_index
+        self.num_columns:int         = num_columns
 
         for i in range(self.num_columns):
             self.physical_pages.append(Physical_Page(column_number=i))
         
-        self.num_records = 0
-        self.last_record = 0
+        self.num_records:int        = 0
+        self.last_record:int        = 0
 
     # updates indirection column with new LID
     def update_indirection_base_column(self, new_value_LID:int, rid:int,)->bool:
@@ -181,58 +181,75 @@ class Page:
         
         return True
 
+# class Tail_Page(Page):
+
+#     def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
+#         # Call the constructor of the parent class (Page)
+#         super().__init__(num_columns, entry_sizes, key_column, is_tail_page=True)
+
+#         # returns value of indirection in for base records
+    
+#     def check_tail_record_indirection(self, rid:int)->int:
+            
+#         # indirection column of base page
+#         indirection_page = self._get_indirection_page()
+
+#         indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
+
+#         return indirection_value_base_record
+
+#     # returns value of schema encoding in base record
+#     def check_tail_record_schema_encoding(self, rid:int)->int:
+    
+#         # indirection column of base page
+#         schema_encoding_page = self._get_schema_encoding_page()
+
+#         schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
+
+#         return schema_encoding_value_base_record
         
 
-class Tail_Page(Page):
+# class Base_Page(Page):
 
-    def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
-        # Call the constructor of the parent class (Page)
-        super().__init__(num_columns, entry_sizes, key_column, is_tail_page=True)
+#     def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
+#         # Call the constructor of the parent class (Page)
+#         super().__init__(num_columns, entry_sizes, key_column, is_tail_page=False)
 
-        # returns value of indirection in for base records
-    
-    def check_tail_record_indirection(self, rid:int)->int:
+#     # returns value of indirection in for base records
+#     def check_base_record_indirection(self, rid:int)->int:
             
-        # indirection column of base page
-        indirection_page = self._get_indirection_page()
+#         # indirection column of base page
+#         indirection_page = self._get_indirection_page()
 
-        indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
+#         indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
 
-        return indirection_value_base_record
+#         return indirection_value_base_record
 
-    # returns value of schema encoding in base record
-    def check_tail_record_schema_encoding(self, rid:int)->int:
+#     # returns value of schema encoding in base record
+#     def check_base_record_schema_encoding(self, rid:int)->int:
     
-        # indirection column of base page
-        schema_encoding_page = self._get_schema_encoding_page()
+#         # indirection column of base page
+#         schema_encoding_page = self._get_schema_encoding_page()
 
-        schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
+#         schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
 
-        return schema_encoding_value_base_record
+#         return schema_encoding_value_base_record
+    
+class Base_Page:
+
+    def __init__(self, base_page_dir_path:str, base_page_index:int)->None:
+        # TODO
+        super().__init__(base_page_dir_path, base_page_index)
+
+    def insert_record(self, record:Record)->None:
+        self.insert_new_record(record)
         
 
-class Base_Page(Page):
+    def get_record(self, rid:RID)->Record:
+        pass
 
-    def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
-        # Call the constructor of the parent class (Page)
-        super().__init__(num_columns, entry_sizes, key_column, is_tail_page=False)
+    def update_record(self, rid:RID, new_record:Record)->None:
+        pass
 
-    # returns value of indirection in for base records
-    def check_base_record_indirection(self, rid:int)->int:
-            
-        # indirection column of base page
-        indirection_page = self._get_indirection_page()
-
-        indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
-
-        return indirection_value_base_record
-
-    # returns value of schema encoding in base record
-    def check_base_record_schema_encoding(self, rid:int)->int:
-    
-        # indirection column of base page
-        schema_encoding_page = self._get_schema_encoding_page()
-
-        schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
-
-        return schema_encoding_value_base_record
+    def delete_record(self, rid:RID)->None:
+        pass
