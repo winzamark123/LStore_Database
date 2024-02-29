@@ -42,9 +42,6 @@ class Disk:
 
         with open(metadata_file_path, 'rb') as mdf:  # Corrected line
             return pickle.load(mdf)  # Corrected from pickle.loads to pickle.load     
-        # with open(os.path.join(path_for_metadata), "metadata.pkl", 'rb') as mdf:
-        #     print("PATH FOR META", path_for_metadata)
-        #     return dict(pickle.loads(mdf))
 
     def write_physical_page_to_disk(self, path_to_physical_page:str, physical_page:Physical_Page)->None:
         if not self.__is_dir_under_root(path_to_physical_page): raise ValueError

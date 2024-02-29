@@ -63,28 +63,7 @@ class Frame:
                 self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_physical_page))
 
     def insert_record(self, key_index:int, record:Record):
-        #self.physical_pages = [Physical_Page(i) for i in range(num_columns)]
-        #disk
-
         rid = record.get_rid()
-            
-        for i in range(len(self.physical_pages)):
-            if i == RID_COLUMN:
-                self.physical_pages[i].edit_byte_array(rid, rid)
-                continue
-            if i == INDIRECTION_COLUMN:
-                self.physical_pages[i].edit_byte_array(rid, rid)
-                continue
-            if i == BASE_RID_COLUMN:
-                self.physical_pages[i].edit_byte_array(0, rid)
-                continue
-            if i == SCHEMA_ENCODING_COLUMN:
-                self.physical_pages[i].edit_byte_array(0, rid)
-                continue
-            if i == key_index:
-                self.physical_pages[i].edit_byte_array(record.key, rid)
-                continue
-            self.physical_pages[i].edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
 
         for i , pp in enumerate(self.physical_pages):
             print("I", i)
@@ -103,10 +82,9 @@ class Frame:
                 print(len(record.columns))
                 pp.edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
 
+    def get_record(self, rid:int) -> Record:
 
-        
-        print("Record inserted into frame")
-        print(rid)
-    
+        pass 
+
     def update_record(self, record:Record):
         pass
