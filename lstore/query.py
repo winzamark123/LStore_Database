@@ -64,8 +64,8 @@ class Query:
                 record_list.append(self.table.get_record(rid))
         except ValueError:
             return False
-        else:
-            return record_list
+        
+
 
         # TODO: implement TPL record locking
 
@@ -90,13 +90,13 @@ class Query:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, primary_key, *columns)->bool:
-        rid = self.table.index.locate(primary_key, self.table.key_column)
+        rid = self.table.index.locate(primary_key, self.table.key_index)
         if len(rid) > 1: raise ValueError
         elif len(rid) == 0:
             return False
 
         try:
-            self.table.update_record(rid.pop())
+            self.table.update_record(rid.pop(), columns)
         except ValueError: # TODO: TPL record locking
             return False
         else:

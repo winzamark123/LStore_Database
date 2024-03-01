@@ -31,14 +31,15 @@ class Physical_Page:
 
     # write to physical page
     def edit_byte_array(self, value:int, rid:int)->None:
-        # Gets offset with RID
         offset = self.__get_offset(rid)
-        # Convert integer to (entry_size) bytes
         bytes_to_insert = value.to_bytes(length=DATA_ENTRY_SIZE, byteorder='big')
         self.data = self.data[:offset] + bytes_to_insert + self.data[offset + len(bytes_to_insert):]
+        print("value", value)
+        print("resulting inserted data", int.from_bytes(self.data[offset:offset+DATA_ENTRY_SIZE], byteorder="big"))
 
-        # print("Input", int.from_bytes(self.data[offset:offset+DATA_ENTRY_SIZE], byteorder="big"))
-
+    def get_byte_array(self, rid:int)->bytearray:
+        offset = self.__get_offset(rid)
+        return self.data[offset:offset+DATA_ENTRY_SIZE]
 
     # checks if a value is in physical page
     def check_value_in_page(self, value_to_find:int, rid:int)->bool:

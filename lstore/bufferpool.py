@@ -1,29 +1,51 @@
 import lstore.config as Config
-from lstore.record import Record
+from lstore.record import Record, RID
 from lstore.frame import Frame
 from lstore.disk import DISK
 
 class Bufferpool:
     def __init__(self):
-        self.frames:dict          = {}
-        self.frame_info:dict      = {}
-        self.frame_count:int      = 0
+        self.frames:dict[int,Frame] = {}
+        self.frame_info:dict        = {}
+        self.frame_count:int        = 0
         
     
     def __has_capacity(self) -> bool:
         return self.frame_count < Config.BUFFERPOOL_FRAME_SIZE
 
-    def is_record_in_buffer(self, record_info: dict) -> int:
-        page_range_info = record_info["page_range_num"]
-        page_type_info = record_info["page_type"]
-        page_num_info = record_info["page_num"]
-        record_key = (page_range_info, page_type_info, page_num_info)
+    def is_record_in_buffer(self, rid:RID, page_type:str, page_index:int)->bool:
+        record_key = (
+            rid.get_page_range_index(),
+            page_type,
+            page_index
+        )
 
         if record_key in self.frame_info:
-            print("Record is in bufferpool")
-            frame_index = self.frame_info[record_key]
-            return frame_index
-        return -1
+            return True
+        else:
+            return False
+
+    def get_record_from_buffer(self, rid:RID, page_type:str, page_index:int)->int:
+        record_key = (
+            rid.get_page_range_index(),
+            page_type,
+            page_index
+        )
+        if not record_key in self.frame_info:
+            raise ValueError
+        return self.frame_info.index(record_key)
+
+    # def is_record_in_buffer(self, record_info: dict) -> int:
+    #     page_range_info = record_info["page_range_num"]
+    #     page_type_info = record_info["page_type"]
+    #     page_num_info = record_info["page_num"]
+    #     record_key = (page_range_info, page_type_info, page_num_info)
+
+    #     if record_key in self.frame_info:
+    #         print("Record is in bufferpool")
+    #         frame_index = self.frame_info[record_key]
+    #         return frame_index
+    #     return -1
 
     def evict_frame(self)->None:
     # Find the least recently used frame that is not pinned
@@ -72,10 +94,11 @@ class Bufferpool:
     
     def insert_record(self, key_index:int, frame_index:int, record:Record) -> None:
         print("INSERT BUFFER")
-        
         self.frames[frame_index].insert_record(key_index=key_index, record=record)
         self.frames[frame_index].set_dirty()
     
+    def update_record(self, rid:RID, frame_index:int, new_record:Record)->None:
+        pass
     
     
 BUFFERPOOL = Bufferpool()
