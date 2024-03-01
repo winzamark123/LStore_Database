@@ -1,72 +1,108 @@
 from lstore.table import Table
-from lstore.disk import Disk
+from lstore.disk import DISK
+import os
+import pickle
+from shutil import rmtree
 
-import os 
-class Database():
+class Database:
 
-    def __init__(self):
-        self.tables = {}
-        self.db_name = None
-        self.disks = {}
-        pass
+    def __init__(self)->None:
+        self.db_dir_path:str        = None
+        self.tables:dict[str,Table] = None
 
-    def open(self, db_name:str) -> None:
-
+    def open(self, db_dir_path:str)->None:
         """
-        Takes in a path from the root of the directory and opens the database at that location
+        Takes in a path from the root of the directory and opens the database at that location.
+
+        If a database is already initialized, raises a ValueError.
         """
-        self.db_name = db_name # Store the db_name
-        path_name = os.getcwd() + '/' + db_name # /*/ECS165
 
-        if not os.path.exists(path_name):
-            os.makedirs(path_name)
-            print("Database directory created at:", path_name)
-        
-    def close(self):
-        for table_name, table in self.tables.items():
-            disk = self.disks[table_name]
-            disk.save_table_metadata(table)
-        self.tables = {}
+        if self.db_dir_path != None:
+            raise ValueError
 
-    """
-    # Creates a new table
-    :param name: string         #Table name
-    :param num_columns: int     #Number of Columns: all columns are integer
-    :param key: int             #Index of table key in columns
-    """
+        self.db_dir_path = db_dir_path
+        DISK.set_database(db_dir_path)
+        self.tables = dict()
+
+        # load stuff from database if it had been created before
+        if os.path.exists(db_dir_path):
+            table_dirs = [
+                os.path.join(db_dir_path, _) for _ in os.listdir(db_dir_path)
+                if os.path.isdir(os.path.join(db_dir_path, _))
+            ]
+            for table_dir in table_dirs:
+                metadata = dict(pickle.loads(os.path.join(table_dir, "metadata.pkl")))
+                self.tables[metadata["table_dir_path"]] = \
+                    Table(
+                        metadata["table_dir_path"],
+                        metadata["num_columns"],
+                        metadata["key_index"],
+                        metadata["num_records"]
+                    )
+
+    def close(self)->None:
+        """
+        Saves all tables in database to disk.
+
+        If no database found, raise a ValueError.
+        """
+
+        if self.db_dir_path == None:
+            raise ValueError
+
+        self.db_dir_path = None
+        self.disk = None
+        for table in self.tables.values():
+            table.close()
+
     def create_table(self, table_name:str, num_columns:int, key_index:int)->Table:
+        """
+        Creates a new table to be inserted into the database.
+        :param name: string         #Table name
+        :param num_columns: int     #Number of Columns: all columns are integer
+        :param key: int             #Index of table key in columns
+        """
+
         if table_name in self.tables:
-            print("Table already exists")
             raise ValueError(f"Table {table_name} already exists.")
-        
-        new_table = Table(table_name, num_columns, key_index)
-        self.tables[table_name] = new_table
-        self.disks[table_name] = Disk(self.db_name, table_name, num_columns)
-        print(f"Table {table_name} created")
 
-        return new_table
+        table_dir_path = os.path.join(self.db_dir_path, table_name)
+        os.makedirs(table_dir_path, exist_ok=False)
 
-    
-    """
-    # Deletes the specified table
-    """
+        # save metadata of table
+        metadata = {
+            "table_dir_path": table_dir_path,
+            "num_columns": num_columns,
+            "key_index": key_index,
+            "num_records": 0
+        }
+        DISK.write_metadata_to_disk(table_dir_path, metadata)
+
+        # create table
+        self.tables[table_name] = Table(table_dir_path, num_columns, key_index, 0)
+        print(f"Table {table_name} created.")
+        return self.tables[table_name]
+
     def drop_table(self, table_name:str)->None:
-        if table_name in self.tables[table_name]:
-            del self.tables[table_name]
-            del self.disks[table_name]
-            
-        else:
-            print("Table does not exist")
-            raise ValueError(f"Table {table_name} does not exist.")
-        
+        """
+        Delete the specified table.
 
-    
-    """
-    # Returns table with the passed name
-    """
-    def get_table(self, name:str)->Table:
-        if name in self.tables:
-            return self.tables[name]
-        else:
-            print("Table does not exist")
-            return None
+        WARNING: This will delete all data associated with the table.
+        """
+
+        if not table_name in self.tables[table_name]:
+            raise ValueError
+        rmtree(os.path.join(self.db_dir_path, table_name))
+        del self.tables[table_name]
+        print(f"Table {table_name} dropped.")
+
+    def get_table(self, table_name:str)->Table:
+        """
+        Returns table with the passed name
+
+        If a table isn't found, it raises a ValueError.
+        """
+
+        if not table_name in self.tables:
+            raise ValueError
+        return self.tables[table_name]

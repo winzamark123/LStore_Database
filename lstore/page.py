@@ -1,6 +1,8 @@
-import time
+import os 
+from lstore.disk import DISK
+from lstore.bufferpool import BUFFERPOOL
 from lstore.config import *
-from lstore.record import Record
+from lstore.record import Record, RID
 from lstore.physical_page import Physical_Page
 
 class Page:
@@ -16,7 +18,7 @@ class Page:
     base_page_counter = 0
     tail_page_counter = 0
 
-    def __init__(self, num_columns:int, entry_sizes:list, key_column:int, is_tail_page: bool = False)->None:
+    def __init__(self, num_columns:int, key_index:int, is_tail_page: bool = False)->None:
 
         if is_tail_page:
             # Increment the tail_page_counter each time a Tail_Page object is created
@@ -26,20 +28,15 @@ class Page:
             Page.base_page_counter += 1
             self.page_number = Page.base_page_counter
         
-        # list of physical_pages in base page
-        self.physical_pages = [] 
-    
-        # column (physical page) the key value is going to be at 
-        self.primary_key_column = key_column
+        self.physical_pages:list     = [] 
+        self.key_index:int           = key_index
+        self.num_columns:int         = num_columns
 
-        # adds to list of physical_pages depending the amount of columns
-        for column_number ,entry_size in enumerate(entry_sizes, start=0): 
-            column_page = Physical_Page(entry_size=entry_size, column_number=column_number)
-            self.physical_pages.append(column_page)
-
-        self.num_records = 0
-
-        self.last_record = 0
+        for i in range(self.num_columns):
+            self.physical_pages.append(Physical_Page(column_number=i))
+        
+        self.num_records:int        = 0
+        self.last_record:int        = 0
 
     # updates indirection column with new LID
     def update_indirection_base_column(self, new_value_LID:int, rid:int,)->bool:
@@ -76,7 +73,6 @@ class Page:
         # grabs rid page
         rid_page = self.get_rid_page()
 
-        #print(f'RID ({rid} getting inserted)')
         # checks if RID exists)
         if(rid_page.check_value_in_page(rid,rid) == False): 
 
@@ -131,8 +127,8 @@ class Page:
                 # gets page which corresponds to each column
                 page_to_write = self.get_page(column_number=column_num) 
                 page_to_write.write_to_physical_page(value=column_data, rid=rid)
-            #print("\nRecord Inserted!")
             self.num_records += 1
+
             return True
         else:
             raise KeyError(f"RID ({rid}) already exists.")
@@ -140,7 +136,7 @@ class Page:
     # returns physical_page(column) that has the primary keys 
     def get_primary_key_page(self)->Physical_Page:
         for physical_Page in self.physical_pages:
-            if(physical_Page.column_number == self.primary_key_column ):
+            if(physical_Page.column_number == self.key_index ):
                 return physical_Page
 
     # returns physical_page(column) that has the RIDs
@@ -164,7 +160,7 @@ class Page:
     # returns physical_page(column) that has the Schema Encodings
     def _get_schema_encoding_page(self)->Physical_Page:
         for physical_Page in self.physical_pages:
-            if(physical_Page.column_number == SCHEMA_ENCODING):
+            if(physical_Page.column_number == SCHEMA_ENCODING_COLUMN):
                 return physical_Page
 
     # returns page needed
@@ -187,58 +183,88 @@ class Page:
         
         return True
 
+class Base_Page:
+
+    def __init__(self, base_page_dir_path:str, base_page_index:int)->None:
+        self.base_page_index = base_page_index
+        self.path_to_page = base_page_dir_path
+
+        self.meta_data = self.__read_metadata()
+
+        self.num_columns = self.meta_data["num_columns"] + META_DATA_NUM_COLUMNS 
+        self.key_index = self.meta_data["key_index"]
+        
+    def __read_metadata(self)->dict:
+        table_path = os.path.dirname(os.path.dirname(self.path_to_page))
+        print(table_path)
+        return DISK.read_metadata_from_disk(table_path)
+
+    def insert_record(self, record:Record)->None:
+        # self.insert_new_record(record)
+        record_info = {
+            "page_range_num": record.get_page_range_index(),
+            "page_type": "base",
+            "page_num": record.get_base_page_index()
+        } 
+
+        #META = RID, IC, SCHEMA, BASE_RID
+
+        frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
+        BUFFERPOOL.insert_record(key_index=self.key_index, frame_index=frame_index, record=record)
+
+        # for i in range(0, 4096, 8):
+        #     print(int.from_bytes(BUFFERPOOL.frames[frame_index].physical_pages[5].data[i:i+8]))
+
+
+
+    def get_record(self, rid:int)->Record:
+        frame_index = BUFFERPOOL.is_record_in_buffer(rid)
+        if frame_index < 0: #frame_index is -1 if the record is not in the bufferpool
+            return None
+        else:
+            return BUFFERPOOL.frames[frame_index].get_record(rid)
+
+    def update_record(self, rid:RID, new_record:Record)->None:
+        frame_index = BUFFERPOOL.get_record_from_buffer(rid, "base", rid.get_base_page_index())
         
 
-class Tail_Page(Page):
+    def delete_record(self, rid:RID)->None:
+        pass
 
-    def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
-        # Call the constructor of the parent class (Page)
-        super().__init__(num_columns, entry_sizes, key_column, is_tail_page=True)
+class Tail_Page:
 
-        # returns value of indirection in for base records
-    
-    def check_tail_record_indirection(self, rid:int)->int:
-            
-        # indirection column of base page
-        indirection_page = self._get_indirection_page()
+    def __init__(self, tail_page_dir_path:str, tail_page_index:int)->None:
+        self.tail_page_index = tail_page_index
+        self.path_to_page = tail_page_dir_path
 
-        indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
+        self.meta_data = self.__read_metadata()
 
-        return indirection_value_base_record
+        self.num_columns = self.meta_data["num_columns"] + META_DATA_NUM_COLUMNS 
+        self.key_index = self.meta_data["key_index"]
 
-    # returns value of schema encoding in base record
-    def check_tail_record_schema_encoding(self, rid:int)->int:
-    
-        # indirection column of base page
-        schema_encoding_page = self._get_schema_encoding_page()
+    def __read_metadata(self)->dict:
+        table_path = os.path.dirname(os.path.dirname(self.path_to_page))
+        return DISK.read_metadata_from_disk(table_path)
 
-        schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
+    def insert_record(self, record:Record)->None:
+        self.insert_new_record(record)
 
-        return schema_encoding_value_base_record
-        
+        record_info = {
+            "page_range_num": record.get_page_range_index(),
+            "page_type": "tail",
+            "page_num": record.get_base_page_index()
+        } 
 
-class Base_Page(Page):
+        #META = RID, IC, SCHEMA, BASE_RID
 
-    def __init__(self, num_columns:int, entry_sizes:list, key_column:int)->None:
-        # Call the constructor of the parent class (Page)
-        super().__init__(num_columns, entry_sizes, key_column, is_tail_page=False)
+        frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
+        BUFFERPOOL.insert_record(key_index=self.key_index, frame_index=frame_index, record=record)
 
-    # returns value of indirection in for base records
-    def check_base_record_indirection(self, rid:int)->int:
-            
-        # indirection column of base page
-        indirection_page = self._get_indirection_page()
+    def get_record(self, rid:RID)->Record:
+        pass
 
-        indirection_value_base_record = indirection_page.value_exists_at_bytes(rid)
+    def update_record(self, rid:RID, new_record:Record)->None:
+        pass
 
-        return indirection_value_base_record
-
-    # returns value of schema encoding in base record
-    def check_base_record_schema_encoding(self, rid:int)->int:
-    
-        # indirection column of base page
-        schema_encoding_page = self._get_schema_encoding_page()
-
-        schema_encoding_value_base_record = schema_encoding_page.value_exists_at_bytes(rid)
-
-        return schema_encoding_value_base_record
+    def delete_record(self, rid:RID)->None:
+        pass

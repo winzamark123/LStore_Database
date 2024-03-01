@@ -1,64 +1,91 @@
-import os 
-import json
-from lstore.table import Table
+import os
+import pickle
 from lstore.physical_page import Physical_Page
+import lstore.config as Config
 
-class Disk():
-    def __init__(self, db_name:str, table_name:str, num_columns:int):
-        self.path_name = os.getcwd() + '/' + db_name + '/' + table_name # /*/ECS165/Grades
+class Disk:
+    def __init__(self):
+        self.root = None
 
-        if not os.path.exists(self.path_name):
-            os.makedirs(self.path_name)
-            print("Table directory created at:", self.path_name)
+    def __is_dir_under_root(self, dir_path:str)->bool:
+        assert self.root != None, ValueError
+
+        parent = os.path.abspath(self.root)
+        child = os.path.abspath(dir_path)
+        return os.path.commonpath([parent]) == os.path.commonpath([parent, child])
+
+    def set_database(self, db_dir_path:str):
+        self.root = db_dir_path
+        if not os.path.exists(self.root):
+            os.makedirs(self.root, exist_ok=True)
+            print(f"Database initialized at {self.root}")
+        print(f"Database from path {self.root} has been opened.")
+
+    def create_path_directory(self, dir_path:str)->None:
+        if os.path.exists(dir_path): raise ValueError
+        if not self.__is_dir_under_root(dir_path): raise ValueError
+        os.makedirs(dir_path)
+
+    def write_metadata_to_disk(self, path_for_metadata:str, metadata:dict)->None:
+        if not self.__is_dir_under_root(path_for_metadata): raise ValueError
+        with open(os.path.join(path_for_metadata, "metadata.pkl"), 'wb') as mdf:
+            pickle.dump(metadata, mdf)
+
+    def read_metadata_from_disk(self, path_for_metadata)->dict:
+        if not self.__is_dir_under_root(path_for_metadata): raise ValueError
+        if not os.path.exists(path_for_metadata):
+            raise ValueError
         
-        for column_index in range(num_columns):
-            file_name = self.path_name + '/' + str(column_index)
-            if not os.path.exists(file_name):
-                file = open(file_name, 'wb')
+        metadata_file_path = os.path.join(path_for_metadata, "metadata.pkl")  # Corrected line
+        if not os.path.exists(metadata_file_path):
+            raise ValueError("Metadata file does not exist")
 
-                # empty_page = Page(0, [0], 0)
-                # file.write((0).to_bytes(4, byteorder='big'))
-                # file.write((empty_page.num_records).page_to_bytes())
-                # file.write(empty_page.physical_pages.to_bytes())
-    
-    def save_table_metadata(self, table:Table) -> bool:
-        table_data = table.meta_table_to_disk()
-        table_file = os.path.join(self.path_name, '_metadata.json')
-        try: 
-            with open(table_file, 'w') as file:
-                json.dump(table_data, file)
-            print("Table metadata saved to:", table_file)
-            return True 
-        except Exception as e:
-            print("Error saving table metadata:", e)
-            return False
-    
-    def load_table_metadata(self) -> Table:
-        table_metadata_file = os.path.join(self.path_name, '_metadata.json')
-        try: 
-            with open(table_metadata_file, 'r') as file:
-                table_data = json.load(file)
-                table = Table.meta_disk_to_table(table_data)
-                return table
-        except Exception as e:
-            print("Error loading table metadata:", e)
-            return None
+        with open(metadata_file_path, 'rb') as mdf:  # Corrected line
+            return pickle.load(mdf)  # Corrected from pickle.loads to pickle.load     
 
-    def load_page(self, col_num: int) -> Physical_Page:
-        page_num_file = os.path.join(self.path_name, str(col_num))
-        try:
-            with open(page_num_file, 'rb') as file:
-                num_records = int.from_bytes(file.read(4), byteorder='big')
-                physical_pages = int.from_bytes(file.read(4), byteorder='big')
-                page = Physical_Page(col_num, [0], num_records)
-                page.physical_pages = physical_pages
-                return page
-        except Exception as e:
-            print("Error loading page:", e)
-            return None
-        pass
+    def write_physical_page_to_disk(self, path_to_physical_page:str, physical_page:Physical_Page)->None:
+        if not self.__is_dir_under_root(path_to_physical_page): raise ValueError
+        with open(os.path.join(path_to_physical_page, f"{physical_page.column_index}.bin"), 'wb') as ppf:
+            ppf.write(physical_page.data)
+
+    def read_physical_page_from_disk(self, path_to_physical_page:str)->Physical_Page:
+        if not self.__is_dir_under_root(path_to_physical_page): raise ValueError
+        if not os.path.exists(path_to_physical_page):
+            raise ValueError
+        with open(path_to_physical_page, 'rb') as ppf:
+            byte_data = ppf.read(Config.PHYSICAL_PAGE_SIZE)
+            return Physical_Page.from_bytes(byte_data)
         
-    def save_page(self, physical_page: Physical_Page) -> bool:
-        pass   
+            # return ppf.read(Config.PHYSICAL_PAGE_SIZE)
 
-        
+DISK = Disk()
+
+"""
+note: 4 metadata columns per base/tail page
+
+Database Directory
+    Table 1 Directory (w/ 5 columns)
+        metadata.pkl -> {table_dir_path, num_columns, key_index, num_page_ranges}
+        PR1
+            metadata.pkl -> {page_range_path, num_base_pages, num_tail_pages}
+            BP1 (512 records in base page -> 1 physical page per column)
+                metadata.pkl -> {base_page_path, num_records, page_index}
+                0.pp
+                1.pp
+                ...
+                8.pp
+            TP1 (potentially infinite # records)
+                1.pp
+                2.pp
+                ...
+                9.pp
+            BP2
+            TP2
+    Table Directory
+        PR
+            BP1
+                1.pp
+                ...
+                10.bin
+"""
+
