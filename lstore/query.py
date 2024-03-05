@@ -65,7 +65,7 @@ class Query:
         except ValueError:
             return False
         
-
+        return record_list
 
         # TODO: implement TPL record locking
 

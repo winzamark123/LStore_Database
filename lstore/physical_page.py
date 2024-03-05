@@ -1,4 +1,3 @@
-import os
 from lstore.record import RID
 from lstore.config import *
 

@@ -1,4 +1,3 @@
-import lstore.page_range as Page_Range
 from lstore.config import *
 from lstore.disk import DISK
 import lstore.config as Config
@@ -41,6 +40,10 @@ class Frame:
     def has_capacity(self) -> bool:
         return self.physical_pages[0].has_capacity()
     
+    def load_key_index(self):
+        
+        pass
+    
     def load_data(self, num_columns: int, path_to_page: str):
         self.pin_frame() #pin itself
         self.pin_count += 1 
@@ -66,7 +69,7 @@ class Frame:
         rid = record.get_rid()
 
         for i , pp in enumerate(self.physical_pages):
-            print("I", i)
+            # print("I", i)
             if i == RID_COLUMN:
                 pp.edit_byte_array(value=rid, rid=rid)
             elif i == INDIRECTION_COLUMN:
@@ -78,12 +81,12 @@ class Frame:
             elif i == key_index:
                 pp.edit_byte_array(value=record.key, rid=rid)
             else:
-                print("INDEX", i - META_DATA_NUM_COLUMNS)
-                print(len(record.columns))
+                # print("INDEX", i - META_DATA_NUM_COLUMNS)
+                # print(len(record.columns))
                 pp.edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
 
-        print("Record inserted into frame")
-        print(rid)
+        # print("Record inserted into frame")
+        # print(rid)
     
     def update_record(self, rid:RID, new_record:Record):
         old_record_columns = list()
@@ -96,8 +99,9 @@ class Frame:
         # old_record_columns = tuple(old_record_columns)
 
 
-    def get_record(self, rid:int) -> Record:
-
+    def get_record(self, rid:RID) -> Record:
+        DISK.read_metadata_from_disk(self.path_to_page)
+        return Record(rid=rid,)
         pass 
 
     def update_record(self, record:Record):

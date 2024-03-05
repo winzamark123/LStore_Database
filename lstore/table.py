@@ -87,7 +87,6 @@ class Table:
         print("CREATE RECORD")
         return Record(self.__increment_num_records(), columns[self.key_index], columns)
 
-
     def insert_record(self, record:Record)->None:
         """
         Insert record into table.

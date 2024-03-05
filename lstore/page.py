@@ -31,22 +31,19 @@ class Base_Page:
         } 
 
         #META = RID, IC, SCHEMA, BASE_RID
-
         frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
         BUFFERPOOL.insert_record(key_index=self.key_index, frame_index=frame_index, record=record)
 
-        # for i in range(0, 4096, 8):
-        #     print(int.from_bytes(BUFFERPOOL.frames[frame_index].physical_pages[5].data[i:i+8]))
-
-    def get_record(self, rid:int)->Record:
-        frame_index = BUFFERPOOL.is_record_in_buffer(rid)
-        if frame_index < 0: #frame_index is -1 if the record is not in the bufferpool
+    def get_record(self, rid:RID)->Record:
+        if not BUFFERPOOL.is_record_in_buffer(rid=rid, page_type="base", page_num=rid.get_base_page_index()):
             return None
         else:
-            return BUFFERPOOL.frames[frame_index].get_record(rid)
+            frame_index = BUFFERPOOL.get_record_from_buffer(rid, "base", rid.get_base_page_index()) 
+
 
     def update_record(self, rid:RID, new_record:Record)->None:
         frame_index = BUFFERPOOL.get_record_from_buffer(rid, "base", rid.get_base_page_index())
+        pass
         
 
     def delete_record(self, rid:RID)->None:

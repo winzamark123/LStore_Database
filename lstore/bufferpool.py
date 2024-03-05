@@ -9,7 +9,6 @@ class Bufferpool:
         self.frame_info:dict        = {}
         self.frame_count:int        = 0
         
-    
     def __has_capacity(self) -> bool:
         return self.frame_count < Config.BUFFERPOOL_FRAME_SIZE
 
@@ -34,18 +33,6 @@ class Bufferpool:
         if not record_key in self.frame_info:
             raise ValueError
         return self.frame_info.index(record_key)
-
-    # def is_record_in_buffer(self, record_info: dict) -> int:
-    #     page_range_info = record_info["page_range_num"]
-    #     page_type_info = record_info["page_type"]
-    #     page_num_info = record_info["page_num"]
-    #     record_key = (page_range_info, page_type_info, page_num_info)
-
-    #     if record_key in self.frame_info:
-    #         print("Record is in bufferpool")
-    #         frame_index = self.frame_info[record_key]
-    #         return frame_index
-    #     return -1
 
     def evict_frame(self)->None:
     # Find the least recently used frame that is not pinned
