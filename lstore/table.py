@@ -3,7 +3,6 @@ from lstore.physical_page import Physical_Page
 import lstore.config as Config
 from lstore.page_range import Page_Range
 from lstore.bufferpool import Bufferpool
-from lstore.page import Page
 from lstore.disk import DISK
 from lstore.record import Record, RID
 import os
@@ -40,6 +39,9 @@ class Table:
             if _ == "index": continue
             elif os.path.isdir(os.path.join(self.table_dir_path, _)):
                 count += 1
+            
+
+        print(f'Page Ranges {count}')
         return count
 
     def load_page_ranges(self)->dict[int,Page_Range]:
@@ -61,7 +63,6 @@ class Table:
         """
         Creates a page range directory in disk
         """
-
         page_range_dir_path = os.path.join(self.table_dir_path, f"PR{page_range_index}")
         if os.path.exists(page_range_dir_path):
             raise ValueError
@@ -73,7 +74,7 @@ class Table:
             "tps_index": 0,
         }
         DISK.write_metadata_to_disk(page_range_dir_path, metadata)
-        self.page_ranges[page_range_index] = Page_Range(page_range_dir_path, 0, 0)
+        self.page_ranges[page_range_index] = Page_Range(page_range_dir_path=page_range_dir_path, page_range_index=page_range_index, tps_index=0)
 
     def create_record(self, columns:tuple)->Record:
         """
@@ -85,7 +86,7 @@ class Table:
             raise ValueError
         
         print("CREATE RECORD")
-        return Record(self.__increment_num_records(), columns[self.key_index], columns)
+        return Record(rid=self.__increment_num_records(), key=columns[self.key_index], columns=columns)
 
 
     def insert_record(self, record:Record)->None:
@@ -94,8 +95,13 @@ class Table:
         """
         
         print("INSERT TABLE")
-        if self.__get_num_page_ranges() == 0 or not record.get_base_page_index() in self.page_ranges:
+        
+        
+        # checks if a page range is available
+        if self.__get_num_page_ranges() == 0 or not record.get_page_range_index() in self.page_ranges:
             self.create_page_range(self.__get_num_page_ranges())
+        
+        # insert record to page range
         self.page_ranges[record.get_page_range_index()].insert_record(record)
 
     def get_record(self, rid:RID)->Record:
@@ -127,11 +133,6 @@ class Table:
             raise ValueError
         
         self.page_ranges[rid.get_page_range_index()].delete_record(rid)
-
-    @classmethod
-    def reset_base_page_counter(cls):
-        # Reset the base_page_counter to 0
-        Page.base_page_counter = 1
 
     # Get Page Range and Base Page from RID
     def get_list_of_addresses(self, rids)-> list:
