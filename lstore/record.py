@@ -8,10 +8,10 @@ class RID:
         self.rid = rid
     
     def get_page_range_index(self):
-        return self.rid // (Config.RECORDS_PER_PAGE * Config.NUM_BASE_PAGES)
+        return (self.rid - 1) // (Config.RECORDS_PER_PAGE * Config.NUM_BASE_PAGES)
     
     def get_base_page_index(self):
-        return (self.rid // Config.RECORDS_PER_PAGE) % Config.NUM_BASE_PAGES
+        return ((self.rid - 1) // Config.RECORDS_PER_PAGE) % Config.NUM_BASE_PAGES
     
     def get_pp_index(self):
         return (self.rid % Config.RECORDS_PER_PAGE)

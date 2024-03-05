@@ -24,7 +24,7 @@ class Database:
         DISK.set_database(db_dir_path)
         self.tables = dict()
 
-        # load stuff from database if it had been created before
+        # load data from database if it had been created before
         if os.path.exists(db_dir_path):
             table_dirs = [
                 os.path.join(db_dir_path, _) for _ in os.listdir(db_dir_path)

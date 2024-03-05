@@ -41,7 +41,8 @@ class Frame:
         return self.physical_pages[0].has_capacity()
     
     def load_data(self, num_columns: int, path_to_page: str):
-        self.pin_frame() #pin itself
+        # pin frame
+        self.pin_frame() 
         self.pin_count += 1 
 
         for i in range(num_columns):
@@ -80,6 +81,7 @@ class Frame:
                 # print("INDEX", i - META_DATA_NUM_COLUMNS)
                 # print(len(record.columns))
                 pp.edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
+
 
         # print("Record inserted into frame")
         # print(rid)

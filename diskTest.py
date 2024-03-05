@@ -20,7 +20,7 @@ query = Query(grades_table)
 # dictionary for records to test the database: test directory
 records = {}
 
-number_of_records = 1000
+number_of_records = 2049
 number_of_aggregates = 100
 number_of_updates = 10
 
@@ -85,7 +85,8 @@ for i in range(0, number_of_aggregates):
 print("Aggregate finished")
 db.close()
 
-dir_path = os.getcwd() + "/ECS165/"  
+dir_path = os.getcwd() + '/ECS165/Grades'
+
 files = os.listdir(dir_path)
 
 for file in files:

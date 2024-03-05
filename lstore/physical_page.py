@@ -17,7 +17,7 @@ class Physical_Page:
     
     @classmethod
     def from_bytes(cls, bytes_data: bytes):
-         # Create an instance with default or specified values
+        # Create an instance with default or specified values
         instance = cls()
         # Now fill in the data with the bytes provided
         instance.data = bytearray(bytes_data)
