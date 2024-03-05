@@ -67,7 +67,10 @@ class Physical_Page:
         return data_value 
 
     # calculates our offset to know where the RID entry is at in the physical page
-    def __get_offset(self, rid:int)->int:
+    def __get_offset(self, rid:RID)->int:
+        if isinstance(rid, RID):
+            rid = rid.to_int()
+
         if(rid < 0):
             rid = abs(rid)
         return (rid-1) * DATA_ENTRY_SIZE % PHYSICAL_PAGE_SIZE        

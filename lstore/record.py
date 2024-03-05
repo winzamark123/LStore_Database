@@ -16,6 +16,9 @@ class RID:
     def get_pp_index(self):
         return (self.rid % Config.RECORDS_PER_PAGE)
     
+    def to_int(self):
+        return self.rid
+    
     
     
 
@@ -41,4 +44,7 @@ class Record:
     
     def get_rid(self):
         return self.rid.rid
+    
+    def get_columns(self):
+        return self.columns
 

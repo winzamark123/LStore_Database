@@ -1,4 +1,5 @@
 from lstore.table import Table
+from lstore.record import RID
 from lstore.record import Record
 
 class Query:
@@ -58,18 +59,19 @@ class Query:
         # Assume that select will never be called on a key that doesn't exist
         """
         rids = self.table.index.locate(search_key, search_key_index)
-        print("RID", rids)
+        # print("RID", rids)
         record_list = list()
         try:
             for rid in rids:
-                print("RID", rid)
-                print("GET_RECORD", self.table.get_record(rid))
+                rid = RID(rid=rid)
+                # print("RID", rid)
+                # print("GET_RECORD", self.table.get_record(rid))
 
                 record_list.append(self.table.get_record(rid))
         except ValueError:
             return False
 
-        print("RECORD_LIST", record_list)
+        # print("RECORD_LIST", record_list)
         return record_list
 
         # TODO: implement TPL record locking
