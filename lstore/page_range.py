@@ -104,7 +104,7 @@ class Page_Range:
         # appends new record to base page
         self.base_pages[record.get_base_page_index()].insert_record(record)
 
-    def get_record(self, rid:RID)->Record:
+    def get_record(self, rid:RID, key_index:int)->Record:
         """
         Get record from page range.
         """
@@ -113,15 +113,18 @@ class Page_Range:
         if rid.get_base_page_index() not in self.base_pages:
             raise ValueError
         
+        self.base_pages[rid.get_base_page_index()].get_record(rid=rid, key_index=key_index) 
+        
+
         #import frame with the BP 
-        BP_frame = self.base_pages[rid.get_base_page_index()].get_record(rid)
+        # BP_frame = self.base_pages[rid.get_base_page_index()].get_record(rid)
         #get indirection of base record 
         #import frame with TP 
         #get the record associated with indirection 
 
         return self.base_pages[rid.get_base_page_index()].get_record(rid)
 
-    def update_record(self, rid:RID, updated_record:Record)->None:
+    def update_record(self, rid:int, updated_record:Record)->None:
         """
         Update record from page range.
         """

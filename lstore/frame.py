@@ -1,4 +1,3 @@
-import lstore.page_range as Page_Range
 from lstore.config import *
 from lstore.disk import DISK
 import lstore.config as Config
@@ -67,7 +66,7 @@ class Frame:
         rid = record.get_rid()
 
         for i , pp in enumerate(self.physical_pages):
-            print("I", i)
+            # print("I", i)
             if i == RID_COLUMN:
                 pp.edit_byte_array(value=rid, rid=rid)
             elif i == INDIRECTION_COLUMN:
@@ -79,12 +78,13 @@ class Frame:
             elif i == key_index:
                 pp.edit_byte_array(value=record.key, rid=rid)
             else:
-                print("INDEX", i - META_DATA_NUM_COLUMNS)
-                print(len(record.columns))
-                pp.edit_byte_array(value=record.columns[i - META_DATA_NUM_COLUMNS], rid=rid)
+                # print("INDEX", i - META_DATA_NUM_COLUMNS)
+                # print(len(record.columns))
+                pp.edit_byte_array(record.columns[i - META_DATA_NUM_COLUMNS], rid)
 
-        print("Record inserted into frame")
-        print(rid)
+
+        # print("Record inserted into frame")
+        # print(rid)
     
     def update_record(self, rid:RID, new_record:Record):
         old_record_columns = list()
@@ -97,9 +97,25 @@ class Frame:
         # old_record_columns = tuple(old_record_columns)
 
 
-    def get_record(self, rid:int) -> Record:
+    def get_record(self, rid:RID, key_index: int) -> Record:
+        record_columns = list()
+        for i, physical_page in enumerate(self.physical_pages):
+            if i == RID_COLUMN:
+                continue
+            elif i == INDIRECTION_COLUMN:
+                # record_tail_page_path = physical_page.get_data(rid)
+                continue
+            elif i == BASE_RID_COLUMN:
+                continue
+            elif i == SCHEMA_ENCODING_COLUMN:
+                continue
+            elif i == key_index: #not needed but included for now 
+                record_columns.append(physical_page.get_data(rid))
+            else:
+                record_columns.append(physical_page.get_data(rid))
+        record_columns = tuple(record_columns)
 
-        pass 
-
+        return Record(rid=rid, key=key_index, columns=record_columns)
+        
     def update_record(self, record:Record):
         pass

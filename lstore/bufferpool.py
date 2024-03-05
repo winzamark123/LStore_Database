@@ -9,7 +9,6 @@ class Bufferpool:
         self.frame_info:dict        = {}
         self.frame_count:int        = 0
         
-    
     def __has_capacity(self) -> bool:
         return self.frame_count < Config.BUFFERPOOL_FRAME_SIZE
 
@@ -25,8 +24,9 @@ class Bufferpool:
         else:
             return False
 
-    # returns frame index
-    def get_frame_index(self, rid:RID, page_type:str, page_index:int)->int: 
+
+    #returns frame_index
+    def get_frame_index(self, rid:RID, page_type:str, page_index:int)->int: #returns frame_index 
         record_key = (
             rid.get_page_range_index(),
             page_type,
@@ -34,7 +34,14 @@ class Bufferpool:
         )
         if not record_key in self.frame_info:
             raise ValueError
-        return self.frame_info[record_key] 
+
+        return self.frame_info[record_key]
+    
+    #returns record
+    def get_record_from_buffer(self, rid: RID, frame_index: int, key_index: int) -> Record:
+        if not frame_index in self.frames:
+            raise ValueError
+        return self.frames[frame_index].get_record(rid=rid, key_index=key_index)
 
     #     page_range_info = record_info["page_range_num"]
     #     page_type_info = record_info["page_type"]

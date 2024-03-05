@@ -29,30 +29,42 @@ class Base_Page:
             "page_num": record.get_base_page_index()
         } 
 
-        # checks if page is in frame already
+
+        #META = RID, IC, SCHEMA, BASE_RID
         if BUFFERPOOL.is_record_in_buffer(rid=record.rid, page_type=record_info['page_type'], page_index=record_info['page_num']):
             frame_index = BUFFERPOOL.get_frame_index(rid=record.rid, page_type=record_info['page_type'], page_index=record_info['page_num'])
         else:
             frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
-        BUFFERPOOL.insert_record(key_index=self.key_index, frame_index=frame_index, record=record)
-
-
-        print(f'frame index {frame_index} for {self.path_to_page}')
-
+            
+        # checks if page is in frame already
+       
         # for j in range(self.num_columns):
         #     print(f'Base page {self.base_page_index} physical page ({j})')
         #     for i in range(0, 4096, 8):
-        #         print(int.from_bytes(BUFFERPOOL.frames[frame_index].physical_pages[j].data[i:i+8], byteorder='big'))
+        #         print(int.from_bytes(BUFFERPOOL.frames[frame_index].physical_pages[j].data[i:i+8], byteorder='big')
+            
+        BUFFERPOOL.insert_record(key_index=self.key_index, frame_index=frame_index, record=record)
 
-    def get_record(self, rid:int)->Record:
-        frame_index = BUFFERPOOL.is_record_in_buffer(rid)
-        if frame_index < 0: #frame_index is -1 if the record is not in the bufferpool
-            return None
+    #get record from bufferpool
+    def get_record(self, rid:RID, key_index:int)->Record:
+        if not BUFFERPOOL.is_record_in_buffer(rid=rid, page_type="base", page_num=rid.get_base_page_index()):
+            #TODO read from disk 
+            record_info = {
+                "page_range_num": rid.get_page_range_index(),
+                "page_type": "base",
+                "page_num": rid.get_base_page_index()
+            }
+
+            frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
         else:
-            return BUFFERPOOL.frames[frame_index].get_record(rid)
+            frame_index = BUFFERPOOL.get_frame_index(rid, "base", rid.get_base_page_index()) 
+
+        return BUFFERPOOL.get_record_from_buffer(rid=rid, frame_index=frame_index, key_index=key_index)
+        
 
     def update_record(self, rid:RID, new_record:Record)->None:
         frame_index = BUFFERPOOL.get_record_from_buffer(rid, "base", rid.get_base_page_index())
+        pass
         
 
     def delete_record(self, rid:RID)->None:
