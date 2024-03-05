@@ -95,8 +95,8 @@ class Bufferpool:
 
         page_range_info = record_info["page_range_num"]
         page_type_info = record_info["page_type"]
-        page_num_info = record_info["page_num"]
-        record_key = (page_range_info, page_type_info, page_num_info)
+        page_index_info = record_info["page_index"]
+        record_key = (page_range_info, page_type_info, page_index_info)
 
         self.frame_info[record_key] = frame_index
         

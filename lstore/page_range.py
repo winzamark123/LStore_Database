@@ -1,6 +1,6 @@
 import lstore.config as Config
 from lstore.disk import DISK
-from lstore.page import Base_Page
+from lstore.page import Base_Page, Tail_Page
 from lstore.record import Record, RID
 import os
 
@@ -122,7 +122,7 @@ class Page_Range:
         #import frame with TP 
         #get the record associated with indirection 
 
-        return self.base_pages[rid.get_base_page_index()].get_record(rid)
+        return self.base_pages[rid.get_base_page_index()].get_record(rid=rid, key_index=key_index)
 
     def update_record(self, rid:int, updated_record:Record)->None:
         """

@@ -93,13 +93,13 @@ class Table:
         Insert record into table.
         """
         
-        print("INSERT TABLE")
-        
-        
         # checks if a page range is available
         if self.__get_num_page_ranges() == 0 or not record.get_page_range_index() in self.page_ranges:
             self.create_page_range(self.__get_num_page_ranges())
-        
+
+        #insert record to index
+        self.index.insert_record_to_index(record_columns=record.get_columns(), rid=record.get_rid())
+
         # insert record to page range
         self.page_ranges[record.get_page_range_index()].insert_record(record)
 

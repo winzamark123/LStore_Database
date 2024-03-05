@@ -26,13 +26,13 @@ class Base_Page:
         record_info = {
             "page_range_num": record.get_page_range_index(),
             "page_type": "base",
-            "page_num": record.get_base_page_index()
+            "page_index": record.get_base_page_index()
         } 
 
 
         #META = RID, IC, SCHEMA, BASE_RID
-        if BUFFERPOOL.is_record_in_buffer(rid=record.rid, page_type=record_info['page_type'], page_index=record_info['page_num']):
-            frame_index = BUFFERPOOL.get_frame_index(rid=record.rid, page_type=record_info['page_type'], page_index=record_info['page_num'])
+        if BUFFERPOOL.is_record_in_buffer(rid=record.rid, page_type=record_info['page_type'], page_index=record_info['page_index']):
+            frame_index = BUFFERPOOL.get_frame_index(rid=record.rid, page_type=record_info['page_type'], page_index=record_info['page_index'])
         else:
             frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
             
@@ -47,12 +47,12 @@ class Base_Page:
 
     #get record from bufferpool
     def get_record(self, rid:RID, key_index:int)->Record:
-        if not BUFFERPOOL.is_record_in_buffer(rid=rid, page_type="base", page_num=rid.get_base_page_index()):
+        if not BUFFERPOOL.is_record_in_buffer(rid=rid, page_type="base", page_index=rid.get_base_page_index()):
             #TODO read from disk 
             record_info = {
                 "page_range_num": rid.get_page_range_index(),
                 "page_type": "base",
-                "page_num": rid.get_base_page_index()
+                "page_index": rid.get_base_page_index()
             }
 
             frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
@@ -91,7 +91,7 @@ class Tail_Page:
         record_info = {
             "page_range_num": record.get_page_range_index(),
             "page_type": "tail",
-            "page_num": record.get_base_page_index()
+            "page_index": record.get_base_page_index()
         } 
 
         #META = RID, IC, SCHEMA, BASE_RID
