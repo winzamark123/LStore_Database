@@ -105,7 +105,7 @@ class Table:
         if not rid.get_page_range_index() in self.page_ranges:
             raise ValueError
 
-        return self.page_ranges[rid.get_page_range_index()].get_record()
+        return self.page_ranges[rid.get_page_range_index()].get_record(rid=rid, key_index=self.key_index)
 
     def update_record(self, rid:RID, updated_record:Record)->None:
         """

@@ -34,12 +34,22 @@ class Base_Page:
         frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
         BUFFERPOOL.insert_record(key_index=self.key_index, frame_index=frame_index, record=record)
 
-    def get_record(self, rid:RID)->Record:
+    #get record from bufferpool
+    def get_record(self, rid:RID, key_index:int)->Record:
         if not BUFFERPOOL.is_record_in_buffer(rid=rid, page_type="base", page_num=rid.get_base_page_index()):
-            return None
-        else:
-            frame_index = BUFFERPOOL.get_record_from_buffer(rid, "base", rid.get_base_page_index()) 
+            #TODO read from disk 
+            record_info = {
+                "page_range_num": rid.get_page_range_index(),
+                "page_type": "base",
+                "page_num": rid.get_base_page_index()
+            }
 
+            frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
+        else:
+            frame_index = BUFFERPOOL.get_frame_index(rid, "base", rid.get_base_page_index()) 
+
+        return BUFFERPOOL.get_record_from_buffer(rid=rid, frame_index=frame_index, key_index=key_index)
+        
 
     def update_record(self, rid:RID, new_record:Record)->None:
         frame_index = BUFFERPOOL.get_record_from_buffer(rid, "base", rid.get_base_page_index())

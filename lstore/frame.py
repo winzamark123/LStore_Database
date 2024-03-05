@@ -40,10 +40,6 @@ class Frame:
     def has_capacity(self) -> bool:
         return self.physical_pages[0].has_capacity()
     
-    def load_key_index(self):
-        
-        pass
-    
     def load_data(self, num_columns: int, path_to_page: str):
         self.pin_frame() #pin itself
         self.pin_count += 1 
@@ -99,10 +95,25 @@ class Frame:
         # old_record_columns = tuple(old_record_columns)
 
 
-    def get_record(self, rid:RID) -> Record:
-        DISK.read_metadata_from_disk(self.path_to_page)
-        return Record(rid=rid,)
-        pass 
+    def get_record(self, rid:RID, key_index: int) -> Record:
+        record_columns = list()
+        for i, physical_page in enumerate(self.physical_pages):
+            if i == RID_COLUMN:
+                continue
+            elif i == INDIRECTION_COLUMN:
+                # record_tail_page_path = physical_page.get_data(rid)
+                continue
+            elif i == BASE_RID_COLUMN:
+                continue
+            elif i == SCHEMA_ENCODING_COLUMN:
+                continue
+            elif i == key_index: #not needed but included for now 
+                record_columns.append(physical_page.get_data(rid))
+            else:
+                record_columns.append(physical_page.get_data(rid))
+        record_columns = tuple(record_columns)
 
+        return Record(rid=rid, key=key_index, columns=record_columns)
+        
     def update_record(self, record:Record):
         pass

@@ -101,7 +101,7 @@ class Page_Range:
             self.create_base_page(self.__get_num_base_pages())
         self.base_pages[record.get_base_page_index()].insert_record(record)
 
-    def get_record(self, rid:RID)->Record:
+    def get_record(self, rid:RID, key_index:int)->Record:
         """
         Get record from page range.
         """
@@ -110,7 +110,7 @@ class Page_Range:
         if rid.get_base_page_index() not in self.base_pages:
             raise ValueError
         
-        self.base_pages[rid.get_base_page_index()].get_record(rid) 
+        self.base_pages[rid.get_base_page_index()].get_record(rid=rid, key_index=key_index) 
         
 
         #import frame with the BP 

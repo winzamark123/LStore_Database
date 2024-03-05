@@ -24,7 +24,8 @@ class Bufferpool:
         else:
             return False
 
-    def get_record_from_buffer(self, rid:RID, page_type:str, page_index:int)->int:
+    #returns frame_index
+    def get_frame_index(self, rid:RID, page_type:str, page_index:int)->int: #returns frame_index 
         record_key = (
             rid.get_page_range_index(),
             page_type,
@@ -32,7 +33,13 @@ class Bufferpool:
         )
         if not record_key in self.frame_info:
             raise ValueError
-        return self.frame_info.index(record_key)
+        return self.frame_info[record_key]
+    
+    #returns record
+    def get_record_from_buffer(self, rid: RID, frame_index: int, key_index: int) -> Record:
+        if not frame_index in self.frames:
+            raise ValueError
+        return self.frames[frame_index].get_record(rid=rid, key_index=key_index)
 
     def evict_frame(self)->None:
     # Find the least recently used frame that is not pinned
