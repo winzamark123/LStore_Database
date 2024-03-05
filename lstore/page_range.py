@@ -1,6 +1,6 @@
 import lstore.config as Config
 from lstore.disk import DISK
-from lstore.page import Base_Page, Tail_Page, Page
+from lstore.page import Base_Page
 from lstore.record import Record, RID
 import os
 
@@ -97,8 +97,11 @@ class Page_Range:
         Insert record into page range.
         """
         print("INSERT PAGE_RANGE")
+        # checks if base page exists to put in new record, else create one
         if len(self.base_pages) == 0 or not record.get_base_page_index() in self.base_pages:
             self.create_base_page(self.__get_num_base_pages())
+        
+        # appends new record to base page
         self.base_pages[record.get_base_page_index()].insert_record(record)
 
     def get_record(self, rid:RID)->Record:

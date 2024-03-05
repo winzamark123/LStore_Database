@@ -25,7 +25,8 @@ class Bufferpool:
         else:
             return False
 
-    def get_record_from_buffer(self, rid:RID, page_type:str, page_index:int)->int:
+    # returns frame index
+    def get_frame_index(self, rid:RID, page_type:str, page_index:int)->int: 
         record_key = (
             rid.get_page_range_index(),
             page_type,
@@ -33,9 +34,8 @@ class Bufferpool:
         )
         if not record_key in self.frame_info:
             raise ValueError
-        return self.frame_info.index(record_key)
+        return self.frame_info[record_key] 
 
-    # def is_record_in_buffer(self, record_info: dict) -> int:
     #     page_range_info = record_info["page_range_num"]
     #     page_type_info = record_info["page_type"]
     #     page_num_info = record_info["page_num"]
@@ -48,13 +48,14 @@ class Bufferpool:
     #     return -1
 
     def evict_frame(self)->None:
+        print("evicting frame")
     # Find the least recently used frame that is not pinned
     # Function that finds the frame that has the longest time in the bufferpool that is not pinned
         lru_frame_key, lru_frame = min(
             ((key, frame) for key, frame in self.frames.items() if not frame.is_pin), 
             key=lambda item: item[1].time_in_bufferpool, default=(None, None)
         )
-    
+        print(f"eviction frame: {lru_frame}")
     # IF THE FRAME IS DIRTY, IT WRITES IT TO THE DISK
         if lru_frame and lru_frame.is_dirty:
             # Save the frame's data back to disk before eviction
@@ -74,6 +75,7 @@ class Bufferpool:
 
         self.frame_count -= 1
 
+
     def import_frame(self, path_to_page: str, num_columns: int, record_info: dict) -> int:
         if not self.__has_capacity():
             self.evict_frame()
@@ -81,6 +83,7 @@ class Bufferpool:
         self.frame_count += 1
         frame_index = self.frame_count
         self.frames[frame_index] = Frame(path_to_page= path_to_page)
+        print(f'Frame Time: {self.frames[frame_index].time_in_buffer}')
         self.frames[frame_index].load_data(num_columns=num_columns, path_to_page=path_to_page) 
 
         page_range_info = record_info["page_range_num"]
