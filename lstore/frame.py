@@ -1,4 +1,3 @@
-from lstore.config import Config
 from lstore.disk import DISK
 import lstore.config as Config
 from lstore.record import Record, RID
@@ -31,7 +30,6 @@ class Frame:
     def pin_frame(self):
         self.pin_count += 1
         self.is_pin = True
-
         self.last_time_used = datetime.now()
    
     def unpin_frame(self):
@@ -41,8 +39,7 @@ class Frame:
     def has_capacity(self)->bool:
         return self.physical_pages[0].has_capacity()
 
-    def load_data(self, num_columns:int, path_to_page: str)->None:
-        # pin frame
+    def load_data(self, num_columns:int, path_to_page:str)->None:
         self.pin_frame()
 
         for i in range(num_columns):
@@ -51,7 +48,7 @@ class Frame:
             path_to_physical_page = f"{path_to_page}/{i}.bin"
             # Check if the file exists to decide whether to read from it or initialize a new one
             if os.path.exists(path_to_page):
-                self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_page))
+                self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_physical_page))
 
             else:
                 # If the file does not exist, you may need to create and initialize it
@@ -60,16 +57,12 @@ class Frame:
                     # Initialize the file if needed; for example, writing empty bytes:
 
                     f.write(b'\x00' * Config.PHYSICAL_PAGE_SIZE)  # Adjust this according to your data structure needs
-                self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_page))
-        self.pin_count -= 1
+                self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_physical_page))
+        self.unpin_frame()
 
     def insert_record(self, record:Record) -> None:
-
-        rid = record.get_rid()
-        
-        # pin frame
-        self.pin_frame() 
-
+        self.pin_frame()
+        rid = record.get_rid()        
         for i , pp in enumerate(self.physical_pages):
             # print("I", i)
             if i == Config.RID_COLUMN:
@@ -89,8 +82,10 @@ class Frame:
 
         # print("Record inserted into frame")
         # print(rid)
+        self.unpin_frame()
 
     def update_record(self, rid:RID, new_record:Record):
+        self.pin_frame()
         old_record_columns = list()
         for i, physical_page in enumerate(self.physical_pages):
             if i == Config.RID_COLUMN: continue
@@ -99,8 +94,10 @@ class Frame:
 
         #   old_record_columns.append(physical_page.get_byte_array())
         # old_record_columns = tuple(old_record_columns)
+        self.unpin_frame()
 
     def get_data(self, rid:RID) -> tuple:
+        self.pin_frame()
         data_columns = list()
         for i, physical_page in enumerate(self.physical_pages):
             if i == Config.RID_COLUMN:
@@ -115,6 +112,7 @@ class Frame:
             else:
                 data_columns.append(physical_page.get_data(rid))
         data_columns = tuple(data_columns)
+        self.unpin_frame()
         return data_columns
 
     def update_record(self, record:Record):

@@ -18,6 +18,7 @@ class Bufferpool:
     #returns data
 
     def __evict_frame(self)->None:
+        return 
         print("evicting frame")
         lru_time_frame = None
         lru_frame_index = 0
@@ -73,33 +74,26 @@ class Bufferpool:
 
         print(f"Finished evicting, new frame count {self.frame_count}")
 
-        pass
-
-
     def __import_frame(self, path_to_page: str, num_columns: int)->None:
         if not self.__has_capacity():
             self.__evict_frame()
             
         self.frames[path_to_page] = Frame(path_to_page= path_to_page)
-        print(f'Frame Time: {self.frames[path_to_page].time_in_buffer}')
         self.frames[path_to_page].load_data(num_columns=num_columns, path_to_page=path_to_page)
 
-    def insert_record(self, page_path:str, record:Record)->None:
+    def insert_record(self, page_path:str, record:Record, num_columns=int)->None:
         if not self.__is_record_in_buffer(page_path):
-            self.__import_frame(path_to_page=page_path, num_columns=Config.NUM_COLUMNS)
-
-
-
+            self.__import_frame(path_to_page=page_path, num_columns=num_columns)
 
         self.frames[page_path].insert_record(record=record)
 
-    def get_data_from_buffer(self, rid: RID, page_path:str, num_columns=int)->tuple: #return data
-        if not self.__is_record_in_buffer(rid, page_path):
+    def get_data_from_buffer(self, rid: RID, page_path:str, num_columns:int)->tuple: #return data
+        if not self.__is_record_in_buffer(page_path):
             self.__import_frame(path_to_page=page_path, num_columns=num_columns)
         
         return self.frames[page_path].get_data(rid)
 
-    def update_record(self, rid:RID, new_record:Record)->None:
+    def update_record(self, rid:RID, new_record:Record, num_columns:int)->None:
         pass
 
     def delete_record(self, rid:RID)->None:

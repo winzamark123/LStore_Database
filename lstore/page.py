@@ -23,7 +23,7 @@ class Base_Page:
         #     for i in range(0, 4096, 8):
         #         print(int.from_bytes(BUFFERPOOL.frames[frame_index].physical_pages[j].data[i:i+8], byteorder='big')
 
-        BUFFERPOOL.insert_record(page_path=self.base_page_path, record=record)
+        BUFFERPOOL.insert_record(page_path=self.base_page_path, record=record, num_columns=self.num_columns)
 
     #get data from bufferpool
     def get_data(self, rid:RID)->tuple:
