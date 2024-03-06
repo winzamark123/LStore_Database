@@ -34,8 +34,8 @@ class Physical_Page:
         offset = self.__get_offset(rid)
         bytes_to_insert = value.to_bytes(length=DATA_ENTRY_SIZE, byteorder='big')
         self.data = self.data[:offset] + bytes_to_insert + self.data[offset + len(bytes_to_insert):]
-        print("value", value)
-        print("resulting inserted data", int.from_bytes(self.data[offset:offset+DATA_ENTRY_SIZE], byteorder="big"))
+        # print("value", value)
+        # print("resulting inserted data", int.from_bytes(self.data[offset:offset+DATA_ENTRY_SIZE], byteorder="big"))
 
     def __get_byte_array(self, rid:int)->bytearray:
         offset = self.__get_offset(rid)

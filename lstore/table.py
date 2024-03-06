@@ -32,6 +32,10 @@ class Table:
     def __increment_num_records(self)->int:
         self.num_records += 1
         return self.num_records
+    
+    def __decrement_num_records(self)->int:
+        self.num_records -= 1
+        return self.num_records
 
     def __get_num_page_ranges(self)->int:
         count = 0
@@ -124,14 +128,20 @@ class Table:
         self.page_ranges[rid.get_page_range_index()].update_record(rid, updated_column)
 
     def delete_record(self, rid:RID)->None:
-        """
+        """        
         Delete record from table.
         """
+        if isinstance(rid, int):
+            rid = RID(rid=rid)
 
         if not rid.get_page_range_index() in self.page_ranges:
             raise ValueError
         
         self.page_ranges[rid.get_page_range_index()].delete_record(rid)
+        #TODO: remove from index
+        # self.index.drop_index(rid)
+        self.__decrement_num_records()
+        
 
     # Get Page Range and Base Page from RID
     def get_list_of_addresses(self, rids)-> list:

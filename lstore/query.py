@@ -13,7 +13,7 @@ class Query:
         self.table = table
         self.inserted_keys = {}
 
-
+    #SWITCH THE RID TO 0 
     def delete(self, primary_key)->bool:
         """
         # internal Method
@@ -22,7 +22,7 @@ class Query:
         # Return False if record doesn't exist or is locked due to 2PL
         """
 
-        rids = self.table.index.locate(primary_key, self.table.key_column)
+        rids = self.table.index.locate(primary_key, self.table.key_index)
 
         try:
             for rid in rids:
@@ -66,9 +66,6 @@ class Query:
 
                 filtered_list = [data_columns[i] for i in range(len(data_columns)) 
                                    if projected_columns_index[i] == 1]
-
-
-                print("FILTERED", filtered_list)
                 filtered_record = Record(rid=rid, key=self.table.key_index, columns=filtered_list)
                 records_list.append(filtered_record)
         except ValueError:

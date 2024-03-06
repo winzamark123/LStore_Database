@@ -83,6 +83,19 @@ class Frame:
         # print("Record inserted into frame")
         # print(rid)
         self.unpin_frame()
+    
+    def delete_record(self, rid:RID):
+        self.pin_frame()
+
+        for i, physical_page in enumerate(self.physical_pages):
+            if i == Config.RID_COLUMN:
+                physical_page.edit_byte_array(value=0, rid=rid)
+        
+        if not self.check_dirty_status():
+            self.set_dirty()
+
+        self.unpin_frame()
+
 
     def update_record(self, rid:RID, new_record:Record):
         self.pin_frame()
