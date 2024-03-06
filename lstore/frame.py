@@ -11,9 +11,7 @@ class Frame:
         self.pin_count = 0
         self.is_pin = False
         self.physical_pages:list[Physical_Page] = []
-
-
-        self.path_to_page = path_to_page
+        # self.path_to_page = path_to_page
 
     def get_pin_count(self) -> int:
         return self.pin_count
@@ -31,7 +29,7 @@ class Frame:
         self.pin_count += 1
         self.is_pin = True
         self.last_time_used = datetime.now()
-   
+
     def unpin_frame(self):
         self.is_pin = False
         self.pin_count -= 1
@@ -47,17 +45,18 @@ class Frame:
 
             path_to_physical_page = f"{path_to_page}/{i}.bin"
             # Check if the file exists to decide whether to read from it or initialize a new one
-            if os.path.exists(path_to_page):
+            if os.path.exists(path_to_physical_page):
                 self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_physical_page))
 
             else:
                 # If the file does not exist, you may need to create and initialize it
                 # Example: initializing an empty file
-                with open(path_to_page, 'wb') as f:
+                with open(path_to_physical_page, 'wb') as f:
                     # Initialize the file if needed; for example, writing empty bytes:
 
                     f.write(b'\x00' * Config.PHYSICAL_PAGE_SIZE)  # Adjust this according to your data structure needs
                 self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_physical_page))
+                
         self.unpin_frame()
 
     def insert_record(self, record:Record) -> None:
@@ -77,6 +76,7 @@ class Frame:
                 pp.edit_byte_array(record.columns[i - Config.META_DATA_NUM_COLUMNS], rid)
 
         if not self.check_dirty_status():
+            print("frame set to dirty")
             # sets frame to be dirty
             self.set_dirty()
 
@@ -110,7 +110,7 @@ class Frame:
             elif i == Config.SCHEMA_ENCODING_COLUMN:
                 continue
             else:
-                data_columns.append(physical_page.get_data(rid))
+                data_columns.append(physical_page.value_exists_at_bytes(rid.to_int()))
         data_columns = tuple(data_columns)
         self.unpin_frame()
         return data_columns

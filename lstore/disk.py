@@ -46,6 +46,7 @@ class Disk:
     def write_physical_page_to_disk(self, path_to_physical_page:str, physical_page:Physical_Page, page_index:int)->None:
         if not self.__is_dir_under_root(path_to_physical_page): raise ValueError
         with open(os.path.join(path_to_physical_page, f"{page_index}.bin"), 'wb') as ppf:
+            print(f'writing to physical page: {path_to_physical_page}/{page_index}.bin')
             ppf.write(physical_page.data)
 
     def read_physical_page_from_disk(self, path_to_physical_page:str)->Physical_Page:
