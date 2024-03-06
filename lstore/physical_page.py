@@ -1,3 +1,4 @@
+import os
 from lstore.record import RID
 from lstore.config import *
 
@@ -33,9 +34,12 @@ class Physical_Page:
         offset = self.__get_offset(rid)
         bytes_to_insert = value.to_bytes(length=DATA_ENTRY_SIZE, byteorder='big')
         self.data = self.data[:offset] + bytes_to_insert + self.data[offset + len(bytes_to_insert):]
-        # print("value", value)
-        # print("resulting inserted data", int.from_bytes(self.data[offset:offset+DATA_ENTRY_SIZE], byteorder="big"))
+        print("value", value)
+        print("resulting inserted data", int.from_bytes(self.data[offset:offset+DATA_ENTRY_SIZE], byteorder="big"))
 
+    def get_byte_array(self, rid:int)->bytearray:
+        offset = self.__get_offset(rid)
+        return self.data[offset:offset+DATA_ENTRY_SIZE]
 
     # checks if a value is in physical page
     def check_value_in_page(self, value_to_find:int, rid:int)->bool:
@@ -55,22 +59,17 @@ class Physical_Page:
             #print(f"value {entry_value} was not found at Bytes ({start} - {end})")
             return False
 
-    def get_byte_array(self, rid:int)->bytearray:
+    def value_exists_at_bytes(self, rid:int)->int:
+        # print('\nFunction: value_exists_at_bytes()')
         offset = self.__get_offset(rid)
-        return self.data[offset:offset+DATA_ENTRY_SIZE]
-
-    def get_data(self, rid:int)->int:
-        offset = self.__get_offset(rid)
-        entry_bytes = self.data[offset:offset+DATA_ENTRY_SIZE]
-
-        data_value = int.from_bytes(entry_bytes, byteorder='big', signed=True)
-        return data_value 
+        start = offset
+        end = start + DATA_ENTRY_SIZE
+        entry_bytes = self.data[start:end]
+        value_in_page = int.from_bytes(entry_bytes, byteorder='big', signed=True)
+        return value_in_page
 
     # calculates our offset to know where the RID entry is at in the physical page
-    def __get_offset(self, rid:RID)->int:
-        if isinstance(rid, RID):
-            rid = rid.to_int()
-
+    def __get_offset(self, rid:int)->int:
         if(rid < 0):
             rid = abs(rid)
         return (rid-1) * DATA_ENTRY_SIZE % PHYSICAL_PAGE_SIZE        

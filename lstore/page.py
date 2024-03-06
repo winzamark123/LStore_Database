@@ -34,10 +34,10 @@ class Base_Page:
         if BUFFERPOOL.is_record_in_buffer(rid=record.rid, page_type=record_info['page_type'], page_index=record_info['page_index']):
             frame_index = BUFFERPOOL.get_frame_index(rid=record.rid, page_type=record_info['page_type'], page_index=record_info['page_index'])
         else:
+            print("importing new frame")
             frame_index = BUFFERPOOL.import_frame(path_to_page=self.path_to_page, num_columns=self.num_columns, record_info=record_info)
             
         # checks if page is in frame already
-       
         # for j in range(self.num_columns):
         #     print(f'Base page {self.base_page_index} physical page ({j})')
         #     for i in range(0, 4096, 8):

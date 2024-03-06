@@ -71,7 +71,7 @@ class Query:
         except ValueError:
             return False
 
-        # print("RECORD_LIST", record_list)
+        print("RECORD_LIST", record_list)
         return record_list
 
         # TODO: implement TPL record locking
