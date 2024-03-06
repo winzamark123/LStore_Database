@@ -41,7 +41,6 @@ class Query:
         # Returns False if insert fails for whatever reason
         """
         try:
-            print("INSERT")
             self.table.insert_record(self.table.create_record(columns))
         except ValueError:
             return False
@@ -69,6 +68,7 @@ class Query:
                                    if projected_columns_index[i] == 1]
 
 
+                print("FILTERED", filtered_list)
                 filtered_record = Record(rid=rid, key=self.table.key_index, columns=filtered_list)
                 records_list.append(filtered_record)
         except ValueError:

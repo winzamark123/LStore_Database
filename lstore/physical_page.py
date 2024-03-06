@@ -37,9 +37,12 @@ class Physical_Page:
         print("value", value)
         print("resulting inserted data", int.from_bytes(self.data[offset:offset+DATA_ENTRY_SIZE], byteorder="big"))
 
-    def get_byte_array(self, rid:int)->bytearray:
+    def __get_byte_array(self, rid:int)->bytearray:
         offset = self.__get_offset(rid)
         return self.data[offset:offset+DATA_ENTRY_SIZE]
+    
+    def get_data(self, rid:int)->int:
+        return int.from_bytes(self.__get_byte_array(rid), byteorder='big')
 
     # checks if a value is in physical page
     def check_value_in_page(self, value_to_find:int, rid:int)->bool:
@@ -70,6 +73,10 @@ class Physical_Page:
 
     # calculates our offset to know where the RID entry is at in the physical page
     def __get_offset(self, rid:int)->int:
+
+        if isinstance(rid, RID):
+            rid = rid.to_int()
+
         if(rid < 0):
             rid = abs(rid)
         return (rid-1) * DATA_ENTRY_SIZE % PHYSICAL_PAGE_SIZE        
