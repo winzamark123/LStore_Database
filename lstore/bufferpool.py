@@ -8,26 +8,13 @@ class Bufferpool:
         self.frames:dict[int,Frame] = {}
         self.frame_info:dict        = {}
         self.frame_count:int        = 0
+        self.empty_frame_index:int  = self.frame_count
+        self.empty_frame_indices: list = []  # Track empty frame indices
+
         
     def __has_capacity(self) -> bool:
-        print(f"checking capacity with frame count {self.frame_count} and capacity is {self.frame_count < 2}")
-        return self.frame_count < Config.BUFFERPOOL_FRAME_SIZE
-
-    def __update_frame_indexes(self, delete_index:int)->None:
-
-        # updating frame_info dic
-        for key,value in self.frame_info.items():
-                # frame index is greater than index that was deleted then subtract frame index by 1
-                if value > delete_index: 
-                    print("Updating Index",delete_index, value)
-                    self.frame_info[key] = value - 1
-        
-        # updating frames dic (in in the works) 
-        for key,value in self.frames():
-                if key > delete_index: 
-                    print("Updating Index",delete_index, value)
-                    self.frame_info[key] = value - 1
-
+        print(f"checking capacity with frame count {self.frame_count} and capacity is {self.frame_count < 25}")
+        return self.frame_count < 25#Config.BUFFERPOOL_FRAME_SIZE
 
     def is_record_in_buffer(self, rid:RID, page_type:str, page_index:int)->bool:
         record_key = (
@@ -114,8 +101,16 @@ class Bufferpool:
                     key_delete = key
             del self.frame_info[key_delete]
 
+            # Update empty frame indices
+            self.empty_frame_indices.append(lru_frame_index)
+
+        # Update empty frame index
+        if self.empty_frame_indices:
+            self.empty_frame_index = self.empty_frame_indices[0]
+        else:
+            self.empty_frame_index = None
+
         # updates indexes for frames
-        self.__update_frame_indexes(delete_index=frame_index)
         self.frame_count -= 1
 
         print(f"Finished evicting, new frame count {self.frame_count}")
@@ -124,9 +119,15 @@ class Bufferpool:
     def import_frame(self, path_to_page: str, num_columns: int, record_info: dict) -> int:
         if not self.__has_capacity():
             self.evict_frame()
+            self.frame_count += 1
+            frame_index = self.empty_frame_index
+        else: 
+            self.frame_count += 1
+            frame_index = self.frame_count
+            # self.empty_frame_index += 1
 
+        print(f"frame_index for frame: {frame_index}")
         self.frame_count += 1
-        frame_index = self.frame_count
         self.frames[frame_index] = Frame(path_to_page= path_to_page)
         self.frames[frame_index].load_data(num_columns=num_columns, path_to_page=path_to_page) 
 
