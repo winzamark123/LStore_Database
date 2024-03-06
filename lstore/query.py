@@ -59,20 +59,23 @@ class Query:
         # Assume that select will never be called on a key that doesn't exist
         """
         rids = self.table.index.locate(search_key, search_key_index)
-        # print("RID", rids)
-        record_list = list()
+        records_list = list()
         try:
             for rid in rids:
                 rid = RID(rid=rid)
-                # print("RID", rid)
-                # print("GET_RECORD", self.table.get_record(rid))
+                record = self.table.get_record(rid)
 
-                record_list.append(self.table.get_record(rid))
+                filtered_list = [record.columns[i] for i in range(len(record.columns)) 
+                                   if projected_columns_index[i] == 1]
+
+
+                filtered_record = Record(rid=rid, key=record.key, columns=filtered_list)
+                records_list.append(filtered_record)
         except ValueError:
             return False
 
-        print("RECORD_LIST", record_list)
-        return record_list
+        return records_list 
+
 
         # TODO: implement TPL record locking
 
