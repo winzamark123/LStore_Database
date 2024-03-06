@@ -103,17 +103,17 @@ class Table:
         # insert record to page range
         self.page_ranges[record.get_page_range_index()].insert_record(record)
 
-    def get_record(self, rid:RID)->Record:
+
+    def get_data(self, rid:RID)->tuple:
         """
-        Get record from table.
+        Get data for record from table.
         """
 
         if not rid.get_page_range_index() in self.page_ranges:
             raise ValueError
+        return self.page_ranges[rid.get_page_range_index()].get_data(rid)
 
-        return self.page_ranges[rid.get_page_range_index()].get_record(rid=rid, key_index=self.key_index)
-
-    def update_record(self, rid:RID, updated_record:Record)->None:
+    def update_record(self, rid:RID, updated_column:tuple)->None:
         """
         Update record from table.
         """
@@ -121,7 +121,7 @@ class Table:
         if not rid.get_page_range_index() in self.page_ranges:
             raise ValueError
         
-        self.page_ranges[rid.get_page_range_index()].update_record(rid, updated_record)
+        self.page_ranges[rid.get_page_range_index()].update_record(rid, updated_column)
 
     def delete_record(self, rid:RID)->None:
         """

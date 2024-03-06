@@ -63,13 +63,13 @@ class Query:
         try:
             for rid in rids:
                 rid = RID(rid=rid)
-                record = self.table.get_record(rid)
+                data_columns = self.table.get_data(rid)
 
-                filtered_list = [record.columns[i] for i in range(len(record.columns)) 
+                filtered_list = [data_columns[i] for i in range(len(data_columns)) 
                                    if projected_columns_index[i] == 1]
 
 
-                filtered_record = Record(rid=rid, key=record.key, columns=filtered_list)
+                filtered_record = Record(rid=rid, key=self.table.key_index, columns=filtered_list)
                 records_list.append(filtered_record)
         except ValueError:
             return False

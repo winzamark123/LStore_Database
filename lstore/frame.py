@@ -14,6 +14,7 @@ class Frame:
         self.physical_pages:list[Physical_Page] = []
         self.last_time_used = datetime.now()
         self.is_tail = False
+
         
         self.path_to_page = path_to_page 
 
@@ -99,9 +100,8 @@ class Frame:
         #   old_record_columns.append(physical_page.get_byte_array())
         # old_record_columns = tuple(old_record_columns)
 
-
-    def get_record(self, rid:RID, key_index: int) -> Record:
-        record_columns = list()
+    def get_data(self, rid:RID) -> tuple:
+        data_columns = list()
         for i, physical_page in enumerate(self.physical_pages):
             if i == RID_COLUMN:
                 continue
@@ -112,13 +112,10 @@ class Frame:
                 continue
             elif i == SCHEMA_ENCODING_COLUMN:
                 continue
-            elif i == key_index: #not needed but included for now 
-                record_columns.append(physical_page.get_data(rid))
-            else:
-                record_columns.append(physical_page.get_data(rid))
-        record_columns = tuple(record_columns)
-
-        return Record(rid=rid, key=key_index, columns=record_columns)
+            else: 
+                data_columns.append(physical_page.get_data(rid))
+        data_columns = tuple(data_columns)
+        return data_columns
         
     def update_record(self, record:Record):
         pass
