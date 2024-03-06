@@ -16,8 +16,6 @@ class Frame:
 
         self.path_to_page = path_to_page
 
-
-
     def get_pin_count(self) -> int:
         return self.pin_count
 
