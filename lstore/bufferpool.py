@@ -13,16 +13,19 @@ class Bufferpool:
     def __is_record_in_buffer(self, page_path:str)->bool:
         return page_path in self.frames
 
+
+
     #returns data
 
     def __evict_frame(self)->None:
         #TODO: save the empty frame index
         pass
 
+
     def __import_frame(self, path_to_page: str, num_columns: int)->None:
         if not self.__has_capacity():
             self.__evict_frame()
-
+            
         self.frames[path_to_page] = Frame(path_to_page= path_to_page)
         print(f'Frame Time: {self.frames[path_to_page].time_in_buffer}')
         self.frames[path_to_page].load_data(num_columns=num_columns, path_to_page=path_to_page)
@@ -30,6 +33,9 @@ class Bufferpool:
     def insert_record(self, page_path:str, record:Record)->None:
         if not self.__is_record_in_buffer(page_path):
             self.__import_frame(path_to_page=page_path, num_columns=Config.NUM_COLUMNS)
+
+
+
 
         self.frames[page_path].insert_record(record=record)
 

@@ -76,6 +76,7 @@ class Query:
 
         return records_list 
 
+
         # TODO: implement TPL record locking
 
     """

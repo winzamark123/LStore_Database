@@ -15,8 +15,9 @@ class Base_Page:
         table_path = os.path.dirname(os.path.dirname(self.base_page_path))
         return DISK.read_metadata_from_disk(table_path)["num_columns"]
 
-
     def insert_record(self, record:Record)->None:
+
+
         # for j in range(self.num_columns):
         #     print(f'Base page {self.base_page_index} physical page ({j})')
         #     for i in range(0, 4096, 8):
