@@ -110,7 +110,8 @@ class Frame:
             elif i == Config.SCHEMA_ENCODING_COLUMN:
                 continue
             else:
-                data_columns.append(physical_page.value_exists_at_bytes(rid.to_int()))
+                # data_columns.append(physical_page.get_byte_array(rid))
+                data_columns.append(physical_page.get_data(rid))
         data_columns = tuple(data_columns)
         self.unpin_frame()
         return data_columns
