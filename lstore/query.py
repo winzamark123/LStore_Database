@@ -119,8 +119,18 @@ class Query:
         # Returns False if no record exists in the given range
         """
 
-        rids = self.table.index.locate_range(start_range,end_range, self.table.key_column)
-        return len(rids) if len(rids) > 0 else False
+        rids = self.table.index.locate_range(start_range,end_range, self.table.key_index)
+        output = 0 
+        try: 
+            for rid in rids:
+                rid = RID(rid=rid)
+                data_columns = self.table.get_data(rid)
+                output += data_columns[aggregate_column_index]
+        except ValueError:
+            return False
+
+        return output
+
 
     """
     :param start_range: int         # Start of the key range to aggregate
