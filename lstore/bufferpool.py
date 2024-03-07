@@ -70,7 +70,12 @@ class Bufferpool:
     def update_record(self, rid:RID, new_record:Record, num_columns:int)->None:
         pass
 
-    def delete_record(self, rid:RID)->None:
+    def delete_record(self, rid:RID, page_path:str, num_columns:int)->None:
+        if not self.__is_record_in_buffer(rid.get_base_page_path()):
+            self.__import_frame(path_to_page=rid.get_base_page_path(), num_columns=num_columns)
+        
+        self.frames[page_path].delete_record(rid=rid)
+
         pass
 
 
