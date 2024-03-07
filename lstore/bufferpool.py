@@ -56,10 +56,15 @@ class Bufferpool:
         self.frames[path_to_page] = Frame(path_to_page= path_to_page)
         self.frames[path_to_page].load_data(num_columns=num_columns, path_to_page=path_to_page)
 
-    def insert_record(self, page_path:str, record:Record, num_columns=int)->None:
+    def insert_record(self, page_path:str, record:Record, num_columns=int, record_meta_data:list = None)->None:
         if not self.__is_record_in_buffer(page_path):
             self.__import_frame(path_to_page=page_path, num_columns=num_columns)
-        self.frames[page_path].insert_record(record=record)
+
+        # if record meta_data is not none then it's tail page and it needs the meta data list 
+        if record_meta_data == None:
+            self.frames[page_path].insert_record(record=record)
+        else:
+            self.frames[page_path].insert_record(record=record, record_meta_data=record_meta_data)
 
     def get_data_from_buffer(self, rid: RID, page_path:str, num_columns:int)->tuple: #return data
         if not self.__is_record_in_buffer(page_path):

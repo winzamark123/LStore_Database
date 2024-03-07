@@ -48,14 +48,14 @@ class Tail_Page:
         table_path = os.path.dirname(os.path.dirname(self.tail_page_path))
         return DISK.read_metadata_from_disk(table_path)["num_columns"]
 
-    def insert_record(self, record:Record, meta_data:list)->None:
+    def insert_record(self, record:Record, record_meta_data:list)->None:
 
-
+        print(f'Inserting TID {record.get_rid()} to path {self.tail_page_path} with meta data for the record: {record_meta_data}')
         # for j in range(self.num_columns):
         #     print(f'Base page {self.base_page_index} physical page ({j})')
         #     for i in range(0, 4096, 8):
         #         print(int.from_bytes(BUFFERPOOL.frames[frame_index].physical_pages[j].data[i:i+8], byteorder='big')
-        BUFFERPOOL.insert_record(page_path=self.tail_page_path, record=record, num_columns=self.num_columns)
+        BUFFERPOOL.insert_record(page_path=self.tail_page_path, record=record, num_columns=self.num_columns, record_meta_data=record_meta_data)
 
     #get data from bufferpool
     def get_data(self, rid:RID)->tuple:

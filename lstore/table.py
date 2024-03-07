@@ -122,20 +122,36 @@ class Table:
         """
         if not rid.get_page_range_index() in self.page_ranges:
             raise ValueError
-        
+
+
         # meta data of base record we want to update
         base_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(rid=rid)
+        
+        # meta data for tail record [Base_RID, TID, Base_SC, Base_RID]
+        record_meta_data = base_meta_data.copy()
+        record_meta_data[Config.BASE_RID_COLUMN] = rid.to_int() 
 
         # checks if indirection is equals to itself, if so then we make a copy of the base record first (used for merging)
         if base_meta_data[Config.INDIRECTION_COLUMN] == rid.to_int():
             base_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
             tail_record = self.create_record(columns=base_columns, record_type='Tail')
-            self.page_ranges[rid.get_page_range_index()].update_record(record=tail_record, record_meta_data=base_meta_data) 
+            self.page_ranges[rid.get_page_range_index()].update_record(record=tail_record, record_meta_data=record_meta_data) 
 
-        print(f'Updated columns: {updated_column}')
-        print(f'tail record to insert: {tail_record.rid.to_int()} : {tail_record.columns}')
+        new_schema_encoding = base_meta_data[Config.SCHEMA_ENCODING_COLUMN] | self.__get_schema_encoding(list(updated_column))
+
         print(f'base meta data ({rid.to_int()}) : {base_meta_data}')
 
+
+    def __get_schema_encoding(self,columns:list):
+        schema_encoding = ''
+        for item in columns:
+            # if value in column is not 'None' add 1
+            if item or item == 0:
+                schema_encoding = schema_encoding + '1'
+            # else add 0
+            else:
+                schema_encoding = schema_encoding + '0'
+        return int(schema_encoding, 2)
 
     def delete_record(self, rid:RID)->None:
         """

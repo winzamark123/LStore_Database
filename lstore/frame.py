@@ -59,21 +59,39 @@ class Frame:
                 
         self.unpin_frame()
 
-    def insert_record(self, record:Record) -> None:
+    def insert_record(self, record:Record, record_meta_data:list = None) -> None:
         self.pin_frame()
-        rid = record.get_rid()        
-        for i , pp in enumerate(self.physical_pages):
-            # print("I", i)
-            if i == Config.RID_COLUMN:
-                pp.edit_byte_array(value=rid, rid=rid)
-            elif i == Config.INDIRECTION_COLUMN:
-                pp.edit_byte_array(value=rid, rid=rid)
-            elif i == Config.BASE_RID_COLUMN:
-                pp.edit_byte_array(value=0, rid=rid)
-            elif i == Config.SCHEMA_ENCODING_COLUMN:
-                pp.edit_byte_array(value=0, rid=rid)
-            else:
-                pp.edit_byte_array(record.columns[i - Config.META_DATA_NUM_COLUMNS], rid)
+        rid = record.get_rid()      
+        print(f"Rid putting inputted {rid}") 
+        if record_meta_data == None:
+            for i , pp in enumerate(self.physical_pages):
+                # print("I", i)
+                if i == Config.RID_COLUMN:
+                    pp.edit_byte_array(value=rid, rid=rid)
+                elif i == Config.INDIRECTION_COLUMN:
+                    pp.edit_byte_array(value=rid, rid=rid)
+                elif i == Config.BASE_RID_COLUMN:
+                    pp.edit_byte_array(value=0, rid=rid)
+                elif i == Config.SCHEMA_ENCODING_COLUMN:
+                    pp.edit_byte_array(value=0, rid=rid)
+                else:
+                    pp.edit_byte_array(record.columns[i - Config.META_DATA_NUM_COLUMNS], rid)
+
+        else:
+            print(f"inserting tail record {rid}")
+            for i , pp in enumerate(self.physical_pages):
+                # print("I", i)
+                if i == Config.RID_COLUMN:
+                    pp.edit_byte_array(value=rid, rid=rid)
+                elif i == Config.INDIRECTION_COLUMN:
+                    pp.edit_byte_array(value=record_meta_data[Config.INDIRECTION_COLUMN], rid=rid)
+                elif i == Config.BASE_RID_COLUMN:
+                    pp.edit_byte_array(value=record_meta_data[Config.BASE_RID_COLUMN], rid=rid)
+                elif i == Config.SCHEMA_ENCODING_COLUMN:
+                    pp.edit_byte_array(value=record_meta_data[Config.SCHEMA_ENCODING_COLUMN], rid=rid)
+                else:
+                    pp.edit_byte_array(value=record.columns[i - Config.META_DATA_NUM_COLUMNS], rid=rid)
+ 
 
         if not self.check_dirty_status():
             print("frame set to dirty")

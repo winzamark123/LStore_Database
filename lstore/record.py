@@ -19,7 +19,9 @@ class RID:
     def to_int(self):
         return self.rid
     
-    
+    def get_tail_page_index(self):
+        page_index = (abs(self.rid) - 1) // Config.RECORDS_PER_PAGE 
+        return page_index
     
 
 class Record:

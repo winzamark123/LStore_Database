@@ -100,7 +100,7 @@ class Page_Range:
         DISK.write_metadata_to_disk(tail_page_dir_path, metadata)
         self.tail_pages[tail_page_index] = Tail_Page(tail_page_dir_path, tail_page_index)
 
-    def insert_record(self, record:Record, page_type:str = 'Base', base_meta_data:list = None)->None:
+    def insert_record(self, record:Record, page_type:str = 'Base', record_meta_data:list = None)->None:
         """
         Insert record into page range.
         """
@@ -119,12 +119,14 @@ class Page_Range:
             if len(self.tail_pages) == 0 or (self.__tid_count() + 1) % Config.RECORDS_PER_PAGE == 0:
                 self.create_tail_page(self.__get_num_tail_pages())
 
-            # change rid to be a tid which corresponds to this specific page range 
-            record.rid = RID(rid=self.__decrement_tid())
-            self.tail_pages[self.__get_num_tail_pages].insert_record(record=record, meta_data=base_meta_data)
+            self.tail_pages[record.rid.get_tail_page_index()].insert_record(record=record, record_meta_data=record_meta_data)
 
     def update_record(self, record:Record, record_meta_data:list)->bool:
-        pass
+
+        # change rid to be a tid which corresponds to this specific page range only 
+        record.rid = RID(self.__decrement_tid())
+        self.insert_record(record=record, page_type='Tail', record_meta_data=record_meta_data) 
+        return True
 
     def __create_tail_record(self, columns:tuple):
         

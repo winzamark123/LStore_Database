@@ -103,7 +103,7 @@ class Query:
     def update(self, primary_key, *columns)->bool:
 
         none_count = 0
-        for i in columns:
+        for i in range(len(columns)):
             if columns[i] == None:
                 none_count += 1
             if none_count == self.table.num_columns:
@@ -111,7 +111,6 @@ class Query:
 
         rid = self.table.index.locate(primary_key, self.table.key_index)
         rid = RID(rid=list(rid)[0])
-        print(columns)
         self.table.update_record(rid=rid, updated_column=columns) 
         # if len(rid) > 1: raise ValueError
         # elif len(rid) == 0:
