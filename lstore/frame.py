@@ -92,8 +92,6 @@ class Frame:
             elif i == Config.INDIRECTION_COLUMN:
                 record_tail_page_path = physical_page.get_byte_array()
 
-        #   old_record_columns.append(physical_page.get_byte_array())
-        # old_record_columns = tuple(old_record_columns)
         self.unpin_frame()
 
     def get_data(self, rid:RID) -> tuple:
@@ -113,8 +111,26 @@ class Frame:
                 # data_columns.append(physical_page.get_byte_array(rid))
                 data_columns.append(physical_page.get_data(rid))
         data_columns = tuple(data_columns)
+        print(f'data columns: {data_columns}')
         self.unpin_frame()
         return data_columns
 
-    def update_record(self, record:Record):
-        pass
+    # gets meta data for page 
+    def get_meta_data(self, rid:RID)->[int]:
+        self.pin_frame()
+        meta_data_columns = [] 
+        for i, physical_page in enumerate(self.physical_pages):
+            if i == Config.RID_COLUMN:
+                meta_data_columns.append(physical_page.get_data(rid))    
+            elif i == Config.INDIRECTION_COLUMN:
+                meta_data_columns.append(physical_page.get_data(rid))
+            elif i == Config.BASE_RID_COLUMN:
+                meta_data_columns.append(physical_page.get_data(rid))
+            elif i == Config.SCHEMA_ENCODING_COLUMN:
+                meta_data_columns.append(physical_page.get_data(rid))
+            else:
+                continue
+        print(f'data columns: {meta_data_columns}')
+        self.unpin_frame()
+        return meta_data_columns
+

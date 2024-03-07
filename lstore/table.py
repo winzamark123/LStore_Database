@@ -28,11 +28,11 @@ class Table:
         self.page_ranges:dict[int,Page_Range] = dict()
         if self.__get_num_page_ranges():
             self.page_ranges = self.load_page_ranges()
-
+        
     def __increment_num_records(self)->int:
         self.num_records += 1
         return self.num_records
-
+    
     def __get_num_page_ranges(self)->int:
         count = 0
         for _ in os.listdir(self.table_dir_path):
@@ -76,17 +76,20 @@ class Table:
         DISK.write_metadata_to_disk(page_range_dir_path, metadata)
         self.page_ranges[page_range_index] = Page_Range(page_range_dir_path=page_range_dir_path, page_range_index=page_range_index, tps_index=0)
 
-    def create_record(self, columns:tuple)->Record:
+    def create_record(self, columns:tuple, record_type:str = 'Base')->Record:
         """
         Create a record.
         """
-        print("CREATE RECORD", columns)
 
         if len(columns) != self.num_columns:
             raise ValueError
         
         print("CREATE RECORD")
-        return Record(rid=self.__increment_num_records(), key=columns[self.key_index], columns=columns)
+        if record_type == 'Base':
+            return Record(rid=self.__increment_num_records(), key=columns[self.key_index], columns=columns)
+        
+        return Record(rid=0, key=columns[self.key_index], columns=columns)
+
 
     def insert_record(self, record:Record)->None:
         """
@@ -101,7 +104,7 @@ class Table:
         self.index.insert_record_to_index(record_columns=record.get_columns(), rid=record.get_rid())
 
         # insert record to page range
-        self.page_ranges[record.get_page_range_index()].insert_record(record)
+        self.page_ranges[record.get_page_range_index()].insert_record(record=record)
 
 
     def get_data(self, rid:RID)->tuple:
@@ -117,11 +120,22 @@ class Table:
         """
         Update record from table.
         """
-
         if not rid.get_page_range_index() in self.page_ranges:
             raise ValueError
         
-        self.page_ranges[rid.get_page_range_index()].update_record(rid, updated_column)
+        # meta data of base record we want to update
+        base_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(rid=rid)
+
+        # checks if indirection is equals to itself, if so then we make a copy of the base record first (used for merging)
+        if base_meta_data[Config.INDIRECTION_COLUMN] == rid.to_int():
+            base_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
+            tail_record = self.create_record(columns=base_columns, record_type='Tail')
+            self.page_ranges[rid.get_page_range_index()].update_record(record=tail_record, record_meta_data=base_meta_data) 
+
+        print(f'Updated columns: {updated_column}')
+        print(f'tail record to insert: {tail_record.rid.to_int()} : {tail_record.columns}')
+        print(f'base meta data ({rid.to_int()}) : {base_meta_data}')
+
 
     def delete_record(self, rid:RID)->None:
         """

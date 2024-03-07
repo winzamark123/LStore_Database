@@ -1,3 +1,4 @@
+from lstore.bufferpool import BUFFERPOOL
 from lstore.table import Table
 from lstore.record import RID
 from lstore.record import Record
@@ -68,7 +69,7 @@ class Query:
                                    if projected_columns_index[i] == 1]
 
 
-                print("FILTERED", filtered_list)
+                print("FILTERED", filtered_list, ' with rid: ', rid)
                 filtered_record = Record(rid=rid, key=self.table.key_index, columns=filtered_list)
                 records_list.append(filtered_record)
         except ValueError:
@@ -100,17 +101,28 @@ class Query:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, primary_key, *columns)->bool:
-        rid = self.table.index.locate(primary_key, self.table.key_index)
-        if len(rid) > 1: raise ValueError
-        elif len(rid) == 0:
-            return False
 
-        try:
-            self.table.update_record(rid.pop(), columns)
-        except ValueError: # TODO: TPL record locking
-            return False
-        else:
-            return True
+        none_count = 0
+        for i in columns:
+            if columns[i] == None:
+                none_count += 1
+            if none_count == self.table.num_columns:
+                return True
+
+        rid = self.table.index.locate(primary_key, self.table.key_index)
+        rid = RID(rid=list(rid)[0])
+        print(columns)
+        self.table.update_record(rid=rid, updated_column=columns) 
+        # if len(rid) > 1: raise ValueError
+        # elif len(rid) == 0:
+        #     return False
+
+        # try:
+        #     self.table.update_record(rid.pop(), columns)
+        # except ValueError: # TODO: TPL record locking
+        #     return False
+        # else:
+        #     return True
 
     def sum(self, start_range, end_range, aggregate_column_index)->int:
         """

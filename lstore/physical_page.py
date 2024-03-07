@@ -41,7 +41,7 @@ class Physical_Page:
         offset = self.__get_offset(rid)
         return self.data[offset:offset+DATA_ENTRY_SIZE]
     
-    def get_data(self, rid:int)->int:
+    def get_data(self, rid:RID)->int:
         return int.from_bytes(self.__get_byte_array(rid), byteorder='big')
 
     # checks if a value is in physical page
