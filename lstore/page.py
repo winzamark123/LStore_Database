@@ -1,11 +1,12 @@
+""" page module for lstore """
 import os
 from lstore.disk import DISK
 from lstore.bufferpool import BUFFERPOOL
 from lstore.record import Record, RID
-from lstore.physical_page import Physical_Page
 from lstore import config as Config
 
 class Base_Page:
+    """ Base Page class """
     def __init__(self, base_page_dir_path:str, base_page_index:int)->None:
         self.base_page_index = base_page_index
         self.base_page_path = base_page_dir_path
@@ -30,14 +31,14 @@ class Base_Page:
         return BUFFERPOOL.get_data_from_buffer(rid=rid, page_path=self.base_page_path, num_columns=self.num_columns)
 
     def get_meta_data(self, rid:RID)->list[int]:
-        return BUFFERPOOL.get_meta_data(rid=rid, path_to_page=self.base_page_path) 
+        return BUFFERPOOL.get_meta_data(rid=rid, path_to_page=self.base_page_path)
 
     def update_meta_data(self,rid:RID, meta_data:list)->None:
         # print(f'Updating meta data for {rid.to_int()} with these meta {meta_data}')
         BUFFERPOOL.update_meta_data(rid=rid, path_to_page=self.base_page_path, meta_data=meta_data)
 
     def delete_record(self, rid:RID)->None:
-        pass
+        BUFFERPOOL.delete_record(rid=rid, page_path=self.base_page_path, num_columns=self.num_columns)
 
 class Tail_Page:
 

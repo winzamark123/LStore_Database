@@ -77,23 +77,21 @@ class Query:
 
         return records_list 
 
-
         # TODO: implement TPL record locking
 
-    """
-    # Read matching record with specified search key
-    # :param search_key: the value you want to search based on
-    # :param search_key_index: the column index you want to search based on
-    # :param projected_columns_index: what columns to return. array of 1 or 0 values.
-    # :param relative_version: the relative version of the record you need to retreive.
-    # Returns a list of Record objects upon success
-    # Returns False if record locked by TPL
-    # Assume that select will never be called on a key that doesn't exist
-    """
     def select_version(self, search_key, search_key_index, projected_columns_index, relative_version):
+        """
+        # Read matching record with specified search key
+        # :param search_key: the value you want to search based on
+        # :param search_key_index: the column index you want to search based on
+        # :param projected_columns_index: what columns to return. array of 1 or 0 values.
+        # :param relative_version: the relative version of the record you need to retreive.
+        # Returns a list of Record objects upon success
+        # Returns False if record locked by TPL
+        # Assume that select will never be called on a key that doesn't exist
+        """
         # TODO
         pass
-
 
     """
     # Update a record with specified key and columns
@@ -142,7 +140,6 @@ class Query:
 
         return output
 
-
     """
     :param start_range: int         # Start of the key range to aggregate
     :param end_range: int           # End of the key range to aggregate
@@ -155,7 +152,6 @@ class Query:
     def sum_version(self, start_range, end_range, aggregate_column_index, relative_version):
         # TODO
         pass
-
 
     """
     incremenets one column of the record

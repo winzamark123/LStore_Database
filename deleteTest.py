@@ -48,6 +48,7 @@ print("Select finished")
 
 print("NUMBER OF RECORDS", grades_table.num_records)
 print("First Record", query.select(92106429, 0, [1, 1, 1, 1, 1])[0].columns)
+
 # DELETE TEST
 for i in range(0, number_of_records):
     query.delete(92106429 + i)

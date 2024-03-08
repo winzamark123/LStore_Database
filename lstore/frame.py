@@ -116,7 +116,6 @@ class Frame:
 
         self.unpin_frame()
 
-
     def update_meta_data(self, rid:RID ,meta_data:list):
         self.pin_frame()
 

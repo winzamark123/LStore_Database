@@ -4,13 +4,14 @@ import os
 import pickle
 from shutil import rmtree
 
+
 class Database:
 
-    def __init__(self)->None:
-        self.db_dir_path:str        = None
-        self.tables:dict[str,Table] = None
+    def __init__(self) -> None:
+        self.db_dir_path: str = None
+        self.tables: dict[str, Table] = None
 
-    def open(self, db_dir_path:str)->None:
+    def open(self, db_dir_path: str) -> None:
         """
         Takes in a path from the root of the directory and opens the database at that location.
 
@@ -27,20 +28,20 @@ class Database:
         # load data from database if it had been created before
         if os.path.exists(db_dir_path):
             table_dirs = [
-                os.path.join(db_dir_path, _) for _ in os.listdir(db_dir_path)
+                os.path.join(db_dir_path, _)
+                for _ in os.listdir(db_dir_path)
                 if os.path.isdir(os.path.join(db_dir_path, _))
             ]
             for table_dir in table_dirs:
                 metadata = dict(pickle.loads(os.path.join(table_dir, "metadata.pkl")))
-                self.tables[metadata["table_dir_path"]] = \
-                    Table(
-                        metadata["table_dir_path"],
-                        metadata["num_columns"],
-                        metadata["key_index"],
-                        metadata["num_records"]
-                    )
+                self.tables[metadata["table_dir_path"]] = Table(
+                    metadata["table_dir_path"],
+                    metadata["num_columns"],
+                    metadata["key_index"],
+                    metadata["num_records"],
+                )
 
-    def close(self)->None:
+    def close(self) -> None:
         """
         Saves all tables in database to disk.
 
@@ -55,7 +56,7 @@ class Database:
         for table in self.tables.values():
             table.close()
 
-    def create_table(self, table_name:str, num_columns:int, key_index:int)->Table:
+    def create_table(self, table_name: str, num_columns: int, key_index: int) -> Table:
         """
         Creates a new table to be inserted into the database.
         :param name: string         #Table name
@@ -74,7 +75,7 @@ class Database:
             "table_dir_path": table_dir_path,
             "num_columns": num_columns,
             "key_index": key_index,
-            "num_records": 0
+            "num_records": 0,
         }
         DISK.write_metadata_to_disk(table_dir_path, metadata)
 
@@ -83,7 +84,7 @@ class Database:
         # print(f"Table {table_name} created.")
         return self.tables[table_name]
 
-    def drop_table(self, table_name:str)->None:
+    def drop_table(self, table_name: str) -> None:
         """
         Delete the specified table.
 
@@ -96,7 +97,7 @@ class Database:
         del self.tables[table_name]
         # print(f"Table {table_name} dropped.")
 
-    def get_table(self, table_name:str)->Table:
+    def get_table(self, table_name: str) -> Table:
         """
         Returns table with the passed name
 

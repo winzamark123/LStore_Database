@@ -1,0 +1,18 @@
+{
+    "editor.codeActionsOnSave": {},
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [],
+    "python.linting.pylintArgs": [],
+    "[python]": {
+        "editor.indentSize": 4,
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "files.trimTrailingWhitespace": true,
+        "editor.formatOnType": true,
+        "editor.defaultFormatter": "ms-python.black-formatter",
+    },
+    "editor.insertSpaces": true
+}
