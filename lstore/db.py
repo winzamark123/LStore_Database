@@ -80,7 +80,7 @@ class Database:
 
         # create table
         self.tables[table_name] = Table(table_dir_path, num_columns, key_index, 0)
-        print(f"Table {table_name} created.")
+        # print(f"Table {table_name} created.")
         return self.tables[table_name]
 
     def drop_table(self, table_name:str)->None:
@@ -94,7 +94,7 @@ class Database:
             raise ValueError
         rmtree(os.path.join(self.db_dir_path, table_name))
         del self.tables[table_name]
-        print(f"Table {table_name} dropped.")
+        # print(f"Table {table_name} dropped.")
 
     def get_table(self, table_name:str)->Table:
         """

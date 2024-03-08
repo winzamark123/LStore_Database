@@ -17,6 +17,14 @@ class Page_Range:
         self.tail_pages:dict[int,Tail_Page] = dict()
         if self.__get_num_tail_pages():
             self.tail_pages = self.__load_tail_pages()
+        self.tid = 0
+
+    def __tid_count(self)->int:
+        return self.tid
+
+    def __decrement_tid(self)->int:
+        self.tid -= 1
+        return self.tid
 
     def __get_num_base_pages(self):
         return len([
@@ -58,7 +66,7 @@ class Page_Range:
                     metadata["tail_page_index"]
                 )
 
-    def create_base_page(self, base_page_index:int) -> Base_Page:
+    def create_base_page(self, base_page_index:int)->None:
         """
         Creates a base page directory in disk.
         """
@@ -75,7 +83,7 @@ class Page_Range:
         DISK.write_metadata_to_disk(base_page_dir_path, metadata)
         self.base_pages[base_page_index] = Base_Page(base_page_dir_path, base_page_index)
 
-    def create_tail_page(self, tail_page_index:int) -> Base_Page:
+    def create_tail_page(self, tail_page_index:int)->None:
         """
         Creates a tail page directory in disk.
         """
@@ -92,37 +100,69 @@ class Page_Range:
         DISK.write_metadata_to_disk(tail_page_dir_path, metadata)
         self.tail_pages[tail_page_index] = Tail_Page(tail_page_dir_path, tail_page_index)
 
-    def insert_record(self, record:Record)->None:
+    def insert_record(self, record:Record, page_type:str = 'Base', record_meta_data:list = None)->None:
         """
         Insert record into page range.
         """
-        print("INSERT PAGE_RANGE")
-        # checks if base page exists to put in new record, else create one
-        if len(self.base_pages) == 0 or not record.get_base_page_index() in self.base_pages:
-            self.create_base_page(self.__get_num_base_pages())
-        
-        # appends new record to base page
-        self.base_pages[record.get_base_page_index()].insert_record(record)
+        # print("INSERT PAGE_RANGE")
 
-    def get_data(self, rid:RID)->tuple:
-        """
-        Get data from page range.
-        """
-        if rid.get_base_page_index() not in self.base_pages:
-            raise ValueError
+        # Checks if base page exists to put in new record, else create one
+        if page_type == 'Base':
+            if len(self.base_pages) == 0 or record.get_base_page_index() not in self.base_pages:
+                self.create_base_page(self.__get_num_base_pages())
+
+            # Appends new record to base page
+            self.base_pages[record.get_base_page_index()].insert_record(record)
+
+        elif page_type == 'Tail':
+            # Checks if tail pages list is empty or if it's reached the limit of records in tail page
+            if len(self.tail_pages) == 0 or (self.__tid_count() + 1) % Config.RECORDS_PER_PAGE == 0:
+                self.create_tail_page(self.__get_num_tail_pages())
+
+            # Appends new record to tail page
+            self.tail_pages[record.rid.get_tail_page_index()].insert_record(record=record, record_meta_data=record_meta_data) 
+
+    def update_record(self, record:Record, record_meta_data:list)->int:
+        # change rid to be a tid which corresponds to this specific page range only 
+        record.rid = RID(self.__decrement_tid())
+        self.insert_record(record=record, page_type='Tail', record_meta_data=record_meta_data) 
+        return record.get_rid() 
+
+    def get_data(self, rid:RID, page_type:str='Base')->tuple:
+        # Check if page type is 'Base'
+        if page_type == 'Base':
+            base_page_index = rid.get_base_page_index()
+            # Check if base page index is in base pages dictionary
+            if base_page_index not in self.base_pages:
+                raise ValueError("Base page index not found.")
+            # Retrieve data from base page and return
+            return self.base_pages[base_page_index].get_data(rid=rid)
         
-        return self.base_pages[rid.get_base_page_index()].get_data(rid=rid)
+        else:
+            tail_page_index = rid.get_tail_page_index()
+            # Check if tail page index is in tail pages dictionary
+            if tail_page_index not in self.tail_pages:
+                raise ValueError("Tail page index not found.")
+            # Retrieve data from tail page and return
+            return self.tail_pages[tail_page_index].get_data(rid=rid)
     
-
-    def update_record(self, rid:int, updated_column:tuple)->None:
+    # returns list of meta data
+    def get_meta_data(self, rid:RID)->[int]:
         """
         Update record from page range.
         """
-
         if rid.get_base_page_index() not in self.base_pages:
             raise ValueError
         
-        self.base_pages[rid.get_base_page_index()].update_record(rid, updated_column)
+        return self.base_pages[rid.get_base_page_index()].get_meta_data(rid=rid)
+
+    def update_meta_data(self, rid:RID, meta_data:list)->bool:
+        
+        if rid.get_base_page_index() not in self.base_pages:
+            raise ValueError
+
+        self.base_pages[rid.get_base_page_index()].update_meta_data(rid=rid,meta_data=meta_data)
+        return True
 
     def delete_record(self, rid:RID)->None:
         """

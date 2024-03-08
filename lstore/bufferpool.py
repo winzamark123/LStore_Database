@@ -14,7 +14,7 @@ class Bufferpool:
         return page_path in self.frames
 
     def __evict_frame(self)->None:
-        print("evicting frame")
+        # print("evicting frame")
         lru_time_frame = None
         lru_frame_path = '' 
 
@@ -56,10 +56,15 @@ class Bufferpool:
         self.frames[path_to_page] = Frame(path_to_page= path_to_page)
         self.frames[path_to_page].load_data(num_columns=num_columns, path_to_page=path_to_page)
 
-    def insert_record(self, page_path:str, record:Record, num_columns=int)->None:
+    def insert_record(self, page_path:str, record:Record, num_columns=int, record_meta_data:list = None)->None:
         if not self.__is_record_in_buffer(page_path):
             self.__import_frame(path_to_page=page_path, num_columns=num_columns)
-        self.frames[page_path].insert_record(record=record)
+
+        # if record meta_data is not none then it's tail page and it needs the meta data list 
+        if record_meta_data == None:
+            self.frames[page_path].insert_record(record=record)
+        else:
+            self.frames[page_path].insert_record(record=record, record_meta_data=record_meta_data)
 
     def get_data_from_buffer(self, rid: RID, page_path:str, num_columns:int)->tuple: #return data
         if not self.__is_record_in_buffer(page_path):
@@ -67,8 +72,17 @@ class Bufferpool:
         
         return self.frames[page_path].get_data(rid)
 
-    def update_record(self, rid:RID, new_record:Record, num_columns:int)->None:
-        pass
+    def get_meta_data(self, rid:RID, path_to_page:str)->[int]:
+        if not self.__is_record_in_buffer(page_path=path_to_page):
+            self.__import_frame(path_to_page=path_to_page, num_columns=num_columns)
+
+        return self.frames[path_to_page].get_meta_data(rid=rid)
+
+    def update_meta_data(self, rid:RID, path_to_page:str, meta_data:list)->None:
+        if not self.__is_record_in_buffer(page_path=path_to_page):
+            self.__import_frame(path_to_page=path_to_page, num_columns=num_columns)
+        
+        self.frames[path_to_page].update_meta_data(rid=rid, meta_data=meta_data)
 
     def delete_record(self, rid:RID, page_path:str, num_columns:int)->None:
         if not self.__is_record_in_buffer(rid.get_base_page_path()):

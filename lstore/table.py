@@ -8,14 +8,13 @@ from lstore.record import Record, RID
 import os
 import threading
 import copy
- 
+
 class Table:
     """
     :param name: string         #Table name
     :param num_columns: int     #Number of Columns
     :param key: int             #Index of table key in columns
     """
-
     def __init__(self, table_dir_path:str, num_columns:int, key_index:int, num_records:int)->None:
         self.table_dir_path:str    = table_dir_path
         self.num_columns:int       = num_columns 
@@ -28,7 +27,7 @@ class Table:
         self.page_ranges:dict[int,Page_Range] = dict()
         if self.__get_num_page_ranges():
             self.page_ranges = self.load_page_ranges()
-
+        
     def __increment_num_records(self)->int:
         self.num_records += 1
         return self.num_records
@@ -45,7 +44,7 @@ class Table:
                 count += 1
             
 
-        print(f'Page Ranges {count}')
+        # print(f'Page Ranges {count}')
         return count
 
     def load_page_ranges(self)->dict[int,Page_Range]:
@@ -80,17 +79,20 @@ class Table:
         DISK.write_metadata_to_disk(page_range_dir_path, metadata)
         self.page_ranges[page_range_index] = Page_Range(page_range_dir_path=page_range_dir_path, page_range_index=page_range_index, tps_index=0)
 
-    def create_record(self, columns:tuple)->Record:
+    def create_record(self, columns:tuple, record_type:str = 'Base')->Record:
         """
         Create a record.
         """
-        print("CREATE RECORD", columns)
 
         if len(columns) != self.num_columns:
             raise ValueError
         
-        print("CREATE RECORD")
-        return Record(rid=self.__increment_num_records(), key=columns[self.key_index], columns=columns)
+        # print("CREATE RECORD")
+        if record_type == 'Base':
+            return Record(rid=self.__increment_num_records(), key=columns[self.key_index], columns=columns)
+        
+        return Record(rid=0, key=columns[self.key_index], columns=columns)
+
 
     def insert_record(self, record:Record)->None:
         """
@@ -105,8 +107,7 @@ class Table:
         self.index.insert_record_to_index(record_columns=record.get_columns(), rid=record.get_rid())
 
         # insert record to page range
-        self.page_ranges[record.get_page_range_index()].insert_record(record)
-
+        self.page_ranges[record.get_page_range_index()].insert_record(record=record)
 
     def get_data(self, rid:RID)->tuple:
         """
@@ -121,11 +122,114 @@ class Table:
         """
         Update record from table.
         """
+        # Ensure that the page range index exists
+        if rid.get_page_range_index() not in self.page_ranges:
+            raise ValueError("Page range index not found.")
 
-        if not rid.get_page_range_index() in self.page_ranges:
-            raise ValueError
+        # Get meta data of the base record to update
+        base_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(rid=rid)
+
+        # Create meta data for the tail record
+        record_meta_data = base_meta_data.copy()
+        record_meta_data[Config.BASE_RID_COLUMN] = rid.to_int()
+        new_schema_encoding = base_meta_data[Config.SCHEMA_ENCODING_COLUMN] | self.__get_schema_encoding(list(updated_column))
+
+        # Check if the indirection is equal to itself
+        if base_meta_data[Config.INDIRECTION_COLUMN] == rid.to_int():
+            # print(f"First update to RID ({rid.to_int()})")
+            base_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
+
+            # Add a copy of the base record
+            prev_tid = self.page_ranges[rid.get_page_range_index()].update_record(
+                record=self.create_record(columns=base_columns, record_type='Tail'),
+                record_meta_data=record_meta_data
+            )
+
+            # Modify columns, otherwise make them 0
+            modified_columns = tuple(0 if val is None or (i == self.key_index) else val for i, val in enumerate(updated_column))
+
+            # Change indirection to point to the previous tail record
+            record_meta_data[Config.INDIRECTION_COLUMN] = prev_tid
+            record_meta_data[Config.SCHEMA_ENCODING_COLUMN] = new_schema_encoding
+
+            # print(f"Update after first copy to RID {rid.to_int()} with these columns {modified_columns}")
+
+            prev_tid = self.page_ranges[rid.get_page_range_index()].update_record(
+                record=self.create_record(columns=modified_columns, record_type='Tail'),
+                record_meta_data=record_meta_data
+            )
+
+        else:
+            # print("Adding to a tail record")
+            # Find the TID to update
+            tid_to_find = RID(rid=record_meta_data[Config.INDIRECTION_COLUMN])
+
+            # Retrieve tail record columns
+            tail_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=tid_to_find, page_type='Tail')
+            tail_columns_list = list(tail_columns)
+
+            # Get list of updated columns in the tail record using the schema encoding
+            updated_columns_indices = self.__analyze_schema_encoding(schema_encoding=record_meta_data[Config.SCHEMA_ENCODING_COLUMN])
+
+            # Initialize update_list with zeros
+            update_list = [0] * self.num_columns
+
+            # Populate update_list with values from the previous tail record
+            for index in range(self.num_columns):
+                if index in updated_columns_indices:
+                    update_list[index] = tail_columns_list[index]
+
+            # Check if the updated_column tuple contains integers
+            for index, item in enumerate(list(updated_column)):
+                if isinstance(item, int):
+                    update_list[index] = item
+
+            # Update the tail record's schema encoding
+            record_meta_data[Config.SCHEMA_ENCODING_COLUMN] = new_schema_encoding
+
+            # Update the base record
+            prev_tid = self.page_ranges[rid.get_page_range_index()].update_record(
+                record=self.create_record(columns=tuple(update_list), record_type='Tail'),
+                record_meta_data=record_meta_data
+            )
+
+        # Finish the update by updating the base record's indirection 
+        update_meta_columns = [prev_tid, new_schema_encoding]
+        if self.page_ranges[rid.get_page_range_index()].update_meta_data(rid=rid, meta_data=update_meta_columns):
+            return True
+
+        return False
+
+    def __get_schema_encoding(self,columns:list):
+        schema_encoding = ''
+        for item in columns:
+            # if value in column is not 'None' add 1
+            if item or item == 0:
+                schema_encoding = schema_encoding + '1'
+            # else add 0
+            else:
+                schema_encoding = schema_encoding + '0'
+        return int(schema_encoding, 2)
+
+    # help determine what columns have been updated
+    def __analyze_schema_encoding(self,schema_encoding: int)-> list:
+        schema_encoding = abs(schema_encoding)
+        if not isinstance(schema_encoding, int):
+            raise TypeError("Schema encoding must be an integer.")
         
-        self.page_ranges[rid.get_page_range_index()].update_record(rid, updated_column)
+        if schema_encoding < 0 or schema_encoding >= 2**(self.num_columns):
+            raise ValueError("Schema encoding must be a 5-bit integer (0-31).")
+
+        # Initialize an empty list to store positions of bits with value 1
+        positions = []
+        # Iterate through each bit position 
+        for i in range(0, self.num_columns):
+            if i != self.key_index:
+                # Check if the bit at position i is 1
+                if schema_encoding & (1 << (4 - i)):
+                    positions.append(i)
+
+        return positions
 
     def delete_record(self, rid:RID)->None:
         """        
@@ -142,7 +246,6 @@ class Table:
         # self.index.drop_index(rid)
         self.__decrement_num_records()
         
-
     # Get Page Range and Base Page from RID
     def get_list_of_addresses(self, rids)-> list:
         addreses = []
@@ -159,8 +262,8 @@ class Table:
     # Implementing without bufferpool right now, will when bufferpool is finished
     @staticmethod
     def __merge(page_range:Page_Range):
-        print("\nMerge starting!!")
-        print(f"TPS before merge: {page_range.tps_range}")
+        # print("\nMerge starting!!")
+        # print(f"TPS before merge: {page_range.tps_range}")
         # records that need updating in base page
         updated_records = {}
 
@@ -169,7 +272,7 @@ class Table:
         # checking until what tail pages to merge
         if page_range.tps_range != 0:
             target_page_num = page_range.get_page_number(page_range.tps_range)
-            print(f'Tail page to stop iterating: {page_range.get_page_number(page_range.tps_range)}')
+            # print(f'Tail page to stop iterating: {page_range.get_page_number(page_range.tps_range)}')
 
         # iterate backwards through tail pages list
         for i in range(len(page_range.tail_pages) - 1, -1, -1):
@@ -178,8 +281,8 @@ class Table:
 
             # Check if the current page number matches the target page number
             if tail_page.page_number >= target_page_num:
-                print(f"MergingTail Page: {tail_page.page_number} ")
-                print(f"Found tail page {tail_page.page_number}")
+                # print(f"MergingTail Page: {tail_page.page_number} ")
+                # print(f"Found tail page {tail_page.page_number}")
 
                 # base_rid and tid page in tail page
                 base_rid_page = tail_page.get_base_rid_page()
@@ -202,7 +305,7 @@ class Table:
                     base_rid_for_tail_record_value = int.from_bytes(base_rid_for_tail_record_bytes, byteorder='big', signed=True)
 
                     if -tid_for_tail_record_value < page_range.tps_range:
-                        print(f"TPS for range : {page_range.tps_range} and TID: {-tid_for_tail_record_value}")
+                        # print(f"TPS for range : {page_range.tps_range} and TID: {-tid_for_tail_record_value}")
 
                         # adds rid if rid is not in update_records dictionary - used to know what base pages to use
                         if base_rid_for_tail_record_value not in updated_records.values():
@@ -223,14 +326,14 @@ class Table:
 
         # sorts list
         base_pages_to_get.sort()
-        print(base_pages_to_get)
+        # print(base_pages_to_get)
 
         i = 0
         # iterate through base pages in page range to find the base pages we are merging
         for base_page in page_range.base_pages:
             if i < len(base_pages_to_get) and base_page.page_number == base_pages_to_get[i] and base_page.num_records == Config.RECORDS_PER_PAGE:
-                print(f"Base page we're in : {base_page.page_number}")
-                print(f"rid_to_base: {rid_to_base}")
+                # print(f"Base page we're in : {base_page.page_number}")
+                # print(f"rid_to_base: {rid_to_base}")
 
                 # keeps track of what columns were updated in this base page
                 updated_columns = []
@@ -238,7 +341,7 @@ class Table:
                 # iterate through rids that are updated and their corresponding base page
                 for key, value in rid_to_base.items():
                     if value == base_page.page_number:
-                        print(f"value: {value}")
+                        # print(f"value: {value}")
                         schema_encoding_for_rid = base_page.check_base_record_schema_encoding(key)
 
                         # let's us know what columns have been updated
@@ -249,7 +352,7 @@ class Table:
                             # updated values of specific columns
                             updated_val = page_range.return_column_value(key,column)
 
-                            print(f'schema encoding: {base_page.check_base_record_schema_encoding(key)} : {update_cols_for_rid} -> [{column} : {updated_val}]  -> RID : {key} -> Page_Num {base_page.page_number}')
+                            # print(f'schema encoding: {base_page.check_base_record_schema_encoding(key)} : {update_cols_for_rid} -> [{column} : {updated_val}]  -> RID : {key} -> Page_Num {base_page.page_number}')
 
                             # updates column for record
                             base_page.physical_pages[Config.META_DATA_NUM_COLUMNS + column].write_to_physical_page(value=updated_val, rid=key, update=True)
@@ -270,12 +373,12 @@ class Table:
 
             # last record merged
             page_range.tps_range = next(iter(updated_records))
-    print("Merge finished")
+    # print("Merge finished")
 
     # TODO: takes buffer pool that it's going to use, since merge has it's own buffer pool so it won't interfere with the main thread
     @staticmethod
     def __merge_update_to_buffer(physical_page:Physical_Page, base_page_number:int):
-        print(f'Physical Page : {physical_page.column_number} for Base Page ({base_page_number})')
+        # print(f'Physical Page : {physical_page.column_number} for Base Page ({base_page_number})')
 
         pass
 
