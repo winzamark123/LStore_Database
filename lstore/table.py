@@ -8,14 +8,13 @@ from lstore.record import Record, RID
 import os
 import threading
 import copy
- 
+
 class Table:
     """
     :param name: string         #Table name
     :param num_columns: int     #Number of Columns
     :param key: int             #Index of table key in columns
     """
-
     def __init__(self, table_dir_path:str, num_columns:int, key_index:int, num_records:int)->None:
         self.table_dir_path:str    = table_dir_path
         self.num_columns:int       = num_columns 
@@ -120,26 +119,83 @@ class Table:
         """
         Update record from table.
         """
-        if not rid.get_page_range_index() in self.page_ranges:
-            raise ValueError
+        # Ensure that the page range index exists
+        if rid.get_page_range_index() not in self.page_ranges:
+            raise ValueError("Page range index not found.")
 
-
-        # meta data of base record we want to update
+        # Get meta data of the base record to update
         base_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(rid=rid)
-        
-        # meta data for tail record [Base_RID, TID, Base_SC, Base_RID]
+
+        # Create meta data for the tail record
         record_meta_data = base_meta_data.copy()
-        record_meta_data[Config.BASE_RID_COLUMN] = rid.to_int() 
-
-        # checks if indirection is equals to itself, if so then we make a copy of the base record first (used for merging)
-        if base_meta_data[Config.INDIRECTION_COLUMN] == rid.to_int():
-            base_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
-            tail_record = self.create_record(columns=base_columns, record_type='Tail')
-            self.page_ranges[rid.get_page_range_index()].update_record(record=tail_record, record_meta_data=record_meta_data) 
-
+        record_meta_data[Config.BASE_RID_COLUMN] = rid.to_int()
         new_schema_encoding = base_meta_data[Config.SCHEMA_ENCODING_COLUMN] | self.__get_schema_encoding(list(updated_column))
 
-        print(f'base meta data ({rid.to_int()}) : {base_meta_data}')
+        # Check if the indirection is equal to itself
+        if base_meta_data[Config.INDIRECTION_COLUMN] == rid.to_int():
+            print(f"First update to RID ({rid.to_int()})")
+            base_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
+
+            # Add a copy of the base record
+            prev_tid = self.page_ranges[rid.get_page_range_index()].update_record(
+                record=self.create_record(columns=base_columns, record_type='Tail'),
+                record_meta_data=record_meta_data
+            )
+
+            # Modify columns, otherwise make them 0
+            modified_columns = tuple(0 if val is None or (i == self.key_index) else val for i, val in enumerate(updated_column))
+
+            # Change indirection to point to the previous tail record
+            record_meta_data[Config.INDIRECTION_COLUMN] = prev_tid
+            record_meta_data[Config.SCHEMA_ENCODING_COLUMN] = new_schema_encoding
+
+            print(f"Update after first copy to RID {rid.to_int()} with these columns {modified_columns}")
+
+            prev_tid = self.page_ranges[rid.get_page_range_index()].update_record(
+                record=self.create_record(columns=modified_columns, record_type='Tail'),
+                record_meta_data=record_meta_data
+            )
+
+        else:
+            print("Adding to a tail record")
+            # Find the TID to update
+            tid_to_find = RID(rid=record_meta_data[Config.INDIRECTION_COLUMN])
+
+            # Retrieve tail record columns
+            tail_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=tid_to_find, page_type='Tail')
+            tail_columns_list = list(tail_columns)
+
+            # Get list of updated columns in the tail record using the schema encoding
+            updated_columns_indices = self.__analyze_schema_encoding(schema_encoding=record_meta_data[Config.SCHEMA_ENCODING_COLUMN])
+
+            # Initialize update_list with zeros
+            update_list = [0] * self.num_columns
+
+            # Populate update_list with values from the previous tail record
+            for index in range(self.num_columns):
+                if index in updated_columns_indices:
+                    update_list[index] = tail_columns_list[index]
+
+            # Check if the updated_column tuple contains integers
+            for index, item in enumerate(list(updated_column)):
+                if isinstance(item, int):
+                    update_list[index] = item
+
+            # Update the tail record's schema encoding
+            record_meta_data[Config.SCHEMA_ENCODING_COLUMN] = new_schema_encoding
+
+            # Update the base record
+            prev_tid = self.page_ranges[rid.get_page_range_index()].update_record(
+                record=self.create_record(columns=tuple(update_list), record_type='Tail'),
+                record_meta_data=record_meta_data
+            )
+
+        # Finish the update by updating the base record's indirection 
+        update_meta_columns = [prev_tid, new_schema_encoding]
+        if self.page_ranges[rid.get_page_range_index()].update_meta_data(rid=rid, meta_data=update_meta_columns):
+            return True
+
+        return False
 
 
     def __get_schema_encoding(self,columns:list):
@@ -152,6 +208,26 @@ class Table:
             else:
                 schema_encoding = schema_encoding + '0'
         return int(schema_encoding, 2)
+
+    # help determine what columns have been updated
+    def __analyze_schema_encoding(self,schema_encoding: int)-> list:
+        schema_encoding = abs(schema_encoding)
+        if not isinstance(schema_encoding, int):
+            raise TypeError("Schema encoding must be an integer.")
+        
+        if schema_encoding < 0 or schema_encoding >= 2**(self.num_columns):
+            raise ValueError("Schema encoding must be a 5-bit integer (0-31).")
+
+        # Initialize an empty list to store positions of bits with value 1
+        positions = []
+        # Iterate through each bit position 
+        for i in range(0, self.num_columns):
+            if i != self.key_index:
+                # Check if the bit at position i is 1
+                if schema_encoding & (1 << (4 - i)):
+                    positions.append(i)
+
+        return positions
 
     def delete_record(self, rid:RID)->None:
         """

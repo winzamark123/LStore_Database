@@ -109,19 +109,16 @@ class Query:
             if none_count == self.table.num_columns:
                 return True
 
+        print("\n\nUpdate starting")
         rid = self.table.index.locate(primary_key, self.table.key_index)
         rid = RID(rid=list(rid)[0])
-        self.table.update_record(rid=rid, updated_column=columns) 
-        # if len(rid) > 1: raise ValueError
-        # elif len(rid) == 0:
-        #     return False
-
-        # try:
-        #     self.table.update_record(rid.pop(), columns)
-        # except ValueError: # TODO: TPL record locking
-        #     return False
-        # else:
-        #     return True
+        
+        try:
+            self.table.update_record(rid=rid, updated_column=columns)
+        except ValueError: # TODO: TPL record locking
+            return False
+        else:
+            return True
 
     def sum(self, start_range, end_range, aggregate_column_index)->int:
         """

@@ -78,6 +78,12 @@ class Bufferpool:
 
         return self.frames[path_to_page].get_meta_data(rid=rid)
 
+    def update_meta_data(self, rid:RID, path_to_page:str, meta_data:list)->None:
+        if not self.__is_record_in_buffer(page_path=path_to_page):
+            self.__import_frame(path_to_page=path_to_page, num_columns=num_columns)
+        
+        self.frames[path_to_page].update_meta_data(rid=rid, meta_data=meta_data)
+
     def delete_record(self, rid:RID)->None:
         pass
 

@@ -38,6 +38,7 @@ for key in keys:
     record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
     error = False
     for i, column in enumerate(record.columns):
+        print(f'colum {column} != {records[key][i]}')
         if column != records[key][i]:
             error = True
     if error:
@@ -60,17 +61,18 @@ for _ in range(number_of_updates):
             # update our test directory
         records[key][i] = value
         query.update(key, *updated_columns)
-        # record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
-        # error = False
-        # for j, column in enumerate(record.columns):
-        #     if column != records[key][j]:
-        #         error = True
-        # if error:
-        #     print('update error on', original, 'and', updated_columns, ':', record, ', correct:', records[key])
-        # else:
-        #     pass
-        #     # print('update on', original, 'and', updated_columns, ':', record)
-        # updated_columns[i] = None
+        record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
+        error = False
+        for j, column in enumerate(record.columns):
+            print(f'after colum {column} != {records[key][j]}')
+            if column != records[key][j]:
+                error = True
+        if error:
+            print('update error on', original, 'and', updated_columns, ':', record.columns, ', correct:', records[key])
+        else:
+            pass
+            # print('update on', original, 'and', updated_columns, ':', record)
+        updated_columns[i] = None
 print("Update finished")
 
 # for i in range(0, number_of_aggregates):

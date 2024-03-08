@@ -33,6 +33,9 @@ class Base_Page:
     def get_meta_data(self, rid:RID)->[int]:
         return BUFFERPOOL.get_meta_data(rid=rid, path_to_page=self.base_page_path) 
 
+    def update_meta_data(self,rid:RID, meta_data:list)->None:
+        print(f'Updating meta data for {rid.to_int()} with these meta {meta_data}')
+        BUFFERPOOL.update_meta_data(rid=rid, path_to_page=self.base_page_path, meta_data=meta_data)
 
     def delete_record(self, rid:RID)->None:
         pass
@@ -62,10 +65,4 @@ class Tail_Page:
         print(f"selecting {self.tail_page_path} ")
         return BUFFERPOOL.get_data_from_buffer(rid=rid, page_path=self.tail_page_path, num_columns=self.num_columns)
 
-    def get_meta_data(self, rid:RID)->[int]:
-        return BUFFERPOOL.get_meta_data(rid=rid, path_to_page=self.base_page_path) 
-
-
-    def delete_record(self, rid:RID)->None:
-        pass
 
