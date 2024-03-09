@@ -31,11 +31,11 @@ class Base_Page:
         return BUFFERPOOL.get_data_from_buffer(rid=rid, page_path=self.base_page_path, num_columns=self.num_columns)
 
     def get_meta_data(self, rid:RID)->list[int]:
-        return BUFFERPOOL.get_meta_data(rid=rid, path_to_page=self.base_page_path)
+        return BUFFERPOOL.get_meta_data(rid=rid, path_to_page=self.base_page_path, num_columns=self.num_columns)
 
     def update_meta_data(self,rid:RID, meta_data:list)->None:
         # print(f'Updating meta data for {rid.to_int()} with these meta {meta_data}')
-        BUFFERPOOL.update_meta_data(rid=rid, path_to_page=self.base_page_path, meta_data=meta_data)
+        BUFFERPOOL.update_meta_data(rid=rid, path_to_page=self.base_page_path, num_columns=self.num_columns, meta_data=meta_data)
 
     def delete_record(self, rid:RID)->None:
         BUFFERPOOL.delete_record(rid=rid, page_path=self.base_page_path, num_columns=self.num_columns)

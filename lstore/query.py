@@ -14,7 +14,7 @@ class Query:
         self.table = table
         self.inserted_keys = {}
 
-    #SWITCH THE RID TO 0 
+    #SWITCH THE RID TO 0
     def delete(self, primary_key)->bool:
         """
         # internal Method
@@ -32,7 +32,7 @@ class Query:
             return False
         else:
             return True
-    
+
         # TODO: implement TPL record locking
 
     def insert(self, *columns:tuple)->bool:
@@ -59,14 +59,15 @@ class Query:
         # Assume that select will never be called on a key that doesn't exist
         """
         rids = self.table.index.locate(search_key, search_key_index)
+
         records_list = list()
         try:
             for rid in rids:
                 rid = RID(rid=rid)
-                data_columns = self.table.get_data(rid)
+                data_columns = self.table.select(rid=rid)
 
-                filtered_list = [data_columns[i] for i in range(len(data_columns)) 
-                                   if projected_columns_index[i] == 1]
+                filtered_list = [data_columns[i] for i in range(len(data_columns))
+                                if projected_columns_index[i] == 1]
 
 
                 # print("FILTERED", filtered_list)
@@ -75,7 +76,7 @@ class Query:
         except ValueError:
             return False
 
-        return records_list 
+        return records_list
 
         # TODO: implement TPL record locking
 
@@ -99,7 +100,6 @@ class Query:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, primary_key, *columns)->bool:
-
         none_count = 0
         for i in range(len(columns)):
             if columns[i] == None:
@@ -110,7 +110,7 @@ class Query:
         # print("\n\nUpdate starting")
         rid = self.table.index.locate(primary_key, self.table.key_index)
         rid = RID(rid=list(rid)[0])
-        
+
         try:
             self.table.update_record(rid=rid, updated_column=columns)
         except ValueError: # TODO: TPL record locking
@@ -129,8 +129,8 @@ class Query:
         """
 
         rids = self.table.index.locate_range(start_range,end_range, self.table.key_index)
-        output = 0 
-        try: 
+        output = 0
+        try:
             for rid in rids:
                 rid = RID(rid=rid)
                 data_columns = self.table.get_data(rid)
