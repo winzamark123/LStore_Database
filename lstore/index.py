@@ -14,42 +14,61 @@ class Index_Column:
     """
     Delete index column.
     """
-
     self.tree.close()
+
+  def __add_rid_to_non_existant_entry_value(self, entry_value, rid:int)->None:
+    """
+    Adds an RID to a non-existant entry value of the column's tree.
+
+    If entry value is found, raises a KeyError.
+    """
+    if entry_value in self.tree: raise KeyError
+    self.tree[entry_value] = dumps({rid})
+
+  def __add_rid_to_existing_entry_value(self, entry_value, rid:int)->None:
+    """
+    Adds an RID to an existing entry value of the column's tree.
+
+    If not entry value is found or the RID exists, raises a KeyError.
+    """
+    if not entry_value in self.tree: raise KeyError
+    entry_value_set = set(loads(self.tree[entry_value]))
+    if rid in entry_value_set: raise KeyError
+    entry_value_set.add(rid)
+    self.tree[entry_value] = dumps(entry_value_set)
+
+  def __remove_rid_from_entry_value(self, entry_value, rid:int)->None:
+    """
+    Deletes an RID from a specified entry value of the column's tree.
+
+    If no entry value or RID found, raises a KeyError.
+    """
+    if not entry_value in self.tree: raise KeyError
+    entry_value_set = set(loads(self.tree[entry_value]))
+    entry_value_set.remove(rid)
+    if len(entry_value_set) == 0:
+      del self.tree[entry_value]
+    else:
+      self.tree[entry_value] = dumps(entry_value_set)
 
   def set_as_primary_key(self):
     self.is_key = True
 
   def add_value(self, entry_value, rid:int)->None:
-    def add_value_not_in_tree():
-      self.tree[entry_value] = dumps({rid})
-
-    def add_value_in_tree():
-      if self.is_key: raise ValueError
-      entry_value_set = set(loads(self.tree[entry_value]))
-      if rid in entry_value_set: raise ValueError
-      entry_value_set.add(rid)
-      self.tree[entry_value] = dumps(entry_value_set)
-
-    add_value_in_tree() if entry_value in self.tree else add_value_not_in_tree()
+    if not entry_value in self.tree:
+      self.__add_rid_to_non_existant_entry_value(entry_value, rid)
+    else:
+      self.__add_rid_to_existing_entry_value(entry_value, rid)
 
   def update_value(self, old_entry_value, new_entry_value, rid:int)->None:
-    # remove previous entry tied to RID
-    if not old_entry_value in self.tree:
-      raise ValueError
-    old_entry_set = set(loads(self.tree[old_entry_value]))
-    if rid not in old_entry_set:
-      raise ValueError
-    old_entry_set.remove(rid)
-    self.tree[old_entry_value] = dumps(old_entry_set)
-
-    # add RID back w/ new entry
+    self.__remove_rid_from_entry_value(old_entry_value, rid)
     if not new_entry_value in self.tree:
-      self.tree[new_entry_value] = dumps({rid})
+      self.__add_rid_to_non_existant_entry_value(new_entry_value, rid)
     else:
-      new_entry_value_set = set(loads(self.tree[new_entry_value]))
-      new_entry_value_set.add(rid)
-      self.tree[new_entry_value] = dumps(new_entry_value_set)
+      self.__add_rid_to_existing_entry_value(new_entry_value, rid)
+
+  def delete_value(self, entry_value, rid:int)->None:
+    self.__remove_rid_from_entry_value(entry_value, rid)
 
   def get_single_entry(self, entry_value)->set[int]:
     # print("here for", entry_value)
@@ -72,7 +91,7 @@ class Index:
 
   def __init__(self, table_dir_path:str, num_columns:int, primary_key_index:int, order:int)->None:
     assert primary_key_index < num_columns, IndexError
-    
+
     self.index_dir_path:str             = os.path.join(table_dir_path, "index")
     self.num_columns:int                = num_columns
     self.primary_key_index:int          = primary_key_index
@@ -83,7 +102,7 @@ class Index:
       self.__load_column_indices()
     else:
       os.makedirs(self.index_dir_path, exist_ok=False)
-      # automatically creates an index for the primary key
+      # always have an index for the primary key
       self.create_index(primary_key_index)
 
   def __load_column_indices(self)->None:
@@ -95,60 +114,64 @@ class Index:
   def __get_column_index_filename(self, column_index:int)->str:
     return os.path.join(self.index_dir_path, f"{column_index}.db")
 
+  def __does_index_filename_exist(self, column_index:int)->bool:
+    return os.path.exists(self.__get_column_index_filename(column_index))
+
+  def __is_index_in_indices(self, column_index:int)->bool:
+    return column_index in self.indices
+
+  def __is_index_key(self, column_index:int)->bool:
+    return column_index == self.primary_key_index
+
+  def __check_num_columns_valid(self, columns:tuple)->None:
+    if len(columns) != self.num_columns: raise ValueError
+
   def create_index(self, column_index:int)->None:
     """
     Creates an index for a specified column.
     """
-
-    if os.path.exists(self.__get_column_index_filename(column_index)):
-      raise FileExistsError
-    if column_index in self.indices:
-      raise ValueError
-
+    if self.__does_index_filename_exist(column_index): raise FileExistsError
+    if self.__is_index_in_indices(column_index): raise KeyError
+    if self.__is_index_key(column_index): raise ValueError
     self.indices[column_index] = Index_Column(self.__get_column_index_filename(column_index), self.order)
 
   def drop_index(self, column_index:int)->None:
     """
     Drops an index of a specified column.
 
-    Warning: deletes the data from the disk.
+    Warning: deletes the data of the column's index from disk.
     """
-
-    if not os.path.exists(self.__get_column_index_filename(column_index)):
-      raise ValueError
-    if not column_index in self.indices:
-      raise ValueError
-
+    if not self.__does_index_filename_exist(column_index): raise FileNotFoundError
+    if not self.__is_index_in_indices(column_index): raise KeyError
+    if self.__is_index_key(column_index): raise ValueError
     del self.indices[column_index]
     os.remove(self.__get_column_index_filename(column_index))
 
-  def insert_record_to_index(self, record_columns, rid:int)->None:
+  def insert_record(self, record_columns:tuple, rid:int)->None:
     """
-    Inserts all entry values into the index with the record's associated
-    RID.
-
-    If not all record fields are declared, returns ValueError.
-
-    Note: all record columns must be initialized. If a record column
-    does not have a value, simply pass None as its element value.
+    Adds record information to the created index columns.
     """
-
-    if len(record_columns) != self.num_columns:
-      raise ValueError
-
+    self.__check_num_columns_valid(record_columns)
     for i, record_entry_value in enumerate(record_columns):
-        if i in self.indices:
-          self.indices[i].add_value(record_entry_value, rid)
+      if i in self.indices:
+        self.indices[i].add_value(record_entry_value, rid)
+
+  def delete_record(self, record_columns:tuple, rid:int)->None:
+    """
+    Deletes record information from the created index columns.
+    """
+    self.__check_num_columns_valid(record_columns)
+    for i, record_entry_value in enumerate(record_columns):
+      if i in self.indices:
+        self.indices[i].delete_value(record_entry_value, rid)
 
   def locate(self, entry_value, column_index:int)->set[int]:
     """
     Returns the location of all records with the given value
     within a specified column.
     """
-
     if not column_index in self.indices:
-      raise ValueError
-
+      raise KeyError
     return self.indices[column_index].get_single_entry(entry_value)
 
   def locate_range(self, begin, end, column_index:int)->set[int]:
@@ -156,15 +179,10 @@ class Index:
     Returns the RIDs of all records with values in a specified column
     between "begin" and "end" (bounds-inclusive).
     """
-
     return self.indices[column_index].get_ranged_entry(begin, end)
 
   def update_entry(self, old_entry_value, new_entry_value, rid:int, column_index:int)->None:
     """
     Updates an RID-associated entry value.
     """
-
-    try:
-      self.indices[column_index].update_value(old_entry_value, new_entry_value, rid)
-    except ValueError:
-      print("Error: Unable to perform update properly.")
+    self.indices[column_index].update_value(old_entry_value, new_entry_value, rid)

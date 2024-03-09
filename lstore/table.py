@@ -124,9 +124,7 @@ class Table:
             self.create_page_range(self.__get_num_page_ranges())
 
         # insert record to index
-        self.index.insert_record_to_index(
-            record_columns=record.get_columns(), rid=record.get_rid()
-        )
+        self.index.insert_record(record_columns=record.get_columns(), rid=record.get_rid())
 
         # insert record to page range
         self.page_ranges[record.get_page_range_index()].insert_record(record=record)
@@ -270,19 +268,18 @@ class Table:
 
         return positions
 
-    def delete_record(self, rid: RID) -> None:
+    def delete_record(self, rid:RID) -> None:
         """
         Delete record from table.
         """
-        if isinstance(rid, int):
-            rid = RID(rid=rid)
 
         if not rid.get_page_range_index() in self.page_ranges:
             raise ValueError
 
         self.page_ranges[rid.get_page_range_index()].delete_record(rid)
-        # TODO: remove from index
-        # self.index.delete_record(rid)
+
+        # remove from index
+        self.index.delete_record(self.get_data(rid), rid)
 
         self.__decrement_num_records()
 
