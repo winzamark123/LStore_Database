@@ -14,16 +14,17 @@ class Query:
         self.table = table
         self.inserted_keys = {}
 
-    """
-    # internal Method
-    # Read a record with specified RID
-    # Returns True upon succesful deletion
-    # Return False if record doesn't exist or is locked due to 2PL
-    """
+    #SWITCH THE RID TO 0
     def delete(self, primary_key)->bool:
-        rid = self.table.index.locate(primary_key, self.table.key_index)
-        if len(rid) != 1: return False
-        rid = RID(rid.pop())
+        """
+        # internal Method
+        # Read a record with specified RID
+        # Returns True upon succesful deletion
+        # Return False if record doesn't exist or is locked due to 2PL
+        """
+
+        rids = self.table.index.locate(primary_key, self.table.key_index)
+
         try:
             self.table.delete_record(rid)
         except:
@@ -57,14 +58,15 @@ class Query:
     """
     def select(self, search_key: int, search_key_index: int, projected_columns_index:list)->list[Record]:
         rids = self.table.index.locate(search_key, search_key_index)
+
         records_list = list()
         try:
             for rid in rids:
-                rid = RID(rid)
-                data_columns = self.table.get_data(rid)
+                rid = RID(rid=rid)
+                data_columns = self.table.select(rid=rid)
 
                 filtered_list = [data_columns[i] for i in range(len(data_columns))
-                                   if projected_columns_index[i] == 1]
+                                if projected_columns_index[i] == 1]
 
 
                 # print("FILTERED", filtered_list)
@@ -97,7 +99,6 @@ class Query:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, primary_key, *columns)->bool:
-
         none_count = 0
         for i in range(len(columns)):
             if columns[i] == None:

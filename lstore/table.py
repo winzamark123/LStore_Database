@@ -36,12 +36,19 @@ class Table:
         if self.__get_num_page_ranges():
             self.page_ranges = self.load_page_ranges()
 
+    def __update_num_records_in_metadata(self)->None:
+        metadata = DISK.read_metadata_from_disk(self.table_dir_path)
+        metadata["num_columns"] = self.num_records
+        DISK.write_metadata_to_disk(self.table_dir_path, metadata)
+
     def __increment_num_records(self) -> int:
         self.num_records += 1
+        self.__update_num_records_in_metadata()
         return self.num_records
 
     def __decrement_num_records(self) -> int:
         self.num_records -= 1
+        self.__update_num_records_in_metadata()
         return self.num_records
 
     def __get_num_page_ranges(self) -> int:
@@ -137,6 +144,52 @@ class Table:
         if not rid.get_page_range_index() in self.page_ranges:
             raise ValueError
         return self.page_ranges[rid.get_page_range_index()].get_data(rid)
+
+    def select(self, rid: RID) -> tuple:
+        """
+        Select most up to date columns for record
+        """
+        # Get base meta data
+        base_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(rid)
+
+        # Check if indirection is equal to itself, if not then go to tail record
+        if base_meta_data[Config.INDIRECTION_COLUMN] != rid.to_int():
+
+            # Make tid to tail record columns
+            tid = RID(rid=base_meta_data[Config.INDIRECTION_COLUMN])
+            tail_record_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=tid, page_type='Tail')
+
+            if base_meta_data[Config.SCHEMA_ENCODING_COLUMN] == 2 ** (self.num_columns - 1):
+                return tail_record_columns
+
+            # Get indexes of schema encoding that have 1s and 0s
+            list_of_columns_updated_0 = self.__analyze_schema_encoding(schema_encoding=base_meta_data[Config.SCHEMA_ENCODING_COLUMN], zero=True)
+            list_of_columns_updated_1 = self.__analyze_schema_encoding(schema_encoding=base_meta_data[Config.SCHEMA_ENCODING_COLUMN])
+
+            # Base record columns
+            base_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
+
+            dict_values = {}
+
+            if len(list_of_columns_updated_0) != 0:
+                for i in list_of_columns_updated_0:
+                    dict_values[i] = base_columns[i]
+
+            if len(list_of_columns_updated_1) != 0:
+                for i in list_of_columns_updated_1:
+                    dict_values[i] = tail_record_columns[i]
+
+            # Sort the dictionary based on keys
+            sorted_dict = {k: dict_values[k] for k in sorted(dict_values)}
+
+            # Extract values and create a tuple
+            values_tuple = tuple(sorted_dict.values())
+
+            return values_tuple
+
+        else:
+            return self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
+
 
     def update_record(self, rid: RID, updated_column: tuple) -> None:
         """
@@ -249,7 +302,7 @@ class Table:
         return int(schema_encoding, 2)
 
     # help determine what columns have been updated
-    def __analyze_schema_encoding(self, schema_encoding: int) -> list:
+    def __analyze_schema_encoding(self, schema_encoding: int, zero:bool = False) -> list:
         schema_encoding = abs(schema_encoding)
         if not isinstance(schema_encoding, int):
             raise TypeError("Schema encoding must be an integer.")
@@ -259,11 +312,18 @@ class Table:
 
         # Initialize an empty list to store positions of bits with value 1
         positions = []
+
         # Iterate through each bit position
-        for i in range(0, self.num_columns):
-            if i != self.key_index:
-                # Check if the bit at position i is 1
-                if schema_encoding & (1 << (4 - i)):
+        if not zero:
+            for i in range(0, self.num_columns):
+                if i != self.key_index:
+                    # Check if the bit at position i is 1
+                    if schema_encoding & (1 << (4 - i)):
+                        positions.append(i)
+        else:
+            for i in range(0, self.num_columns):
+                # Check if the bit at position i is 0
+                if not schema_encoding & (1 << (4 - i)):
                     positions.append(i)
 
         return positions

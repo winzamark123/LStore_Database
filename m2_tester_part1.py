@@ -62,7 +62,7 @@ for _ in range(number_of_updates):
             record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
             error = False
             for j, column in enumerate(record.columns):
-                print(f"column: {column}, records[key][j]: {records[key][j]}")
+                # print(f"column: {column}, records[key][j]: {records[key][j]}")
                 if column != records[key][j]:
                     error = True
             if error:
