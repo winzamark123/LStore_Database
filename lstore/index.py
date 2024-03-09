@@ -2,6 +2,8 @@ import os
 from bplustree import BPlusTree
 from pickle import loads, dumps
 
+import lstore.config as Config
+
 # source for bplustree module: https://github.com/NicolasLM/bplustree
 
 class Index_Column:
@@ -87,6 +89,29 @@ class Index_Column:
     return rset
 
 
+class Column_Data_Getter:
+
+  def __init__(self, column_index:int, index_dir_path:str)->None:
+    self.column_index:int   = column_index
+    self.index_dir_path:str = index_dir_path
+    self.values:dict        = dict()
+
+  def get_column_data(self)->dict:
+    table_dir_path = os.path.dirname(self.index_dir_path)
+    for _ in os.listdir(table_dir_path):
+      if os.path.isdir(os.path.join(table_dir_path, _)):
+        self.__get_page_range_column_data(os.path.join(table_dir_path, _))
+    return self.values
+
+  def __get_page_range_column_data(self, page_range_dir_path:str)->None:
+    for _ in os.listdir(page_range_dir_path):
+      if os.path.isdir(os.path.join(page_range_dir_path, _)) and _.startswith("BP"):
+        self.__get_base_page_column_data(os.path.join(page_range_dir_path, _))
+
+  def __get_base_page_column_data(self, base_page_dir_path:str)->None:
+    pass
+
+
 class Index:
 
   def __init__(self, table_dir_path:str, num_columns:int, primary_key_index:int, order:int)->None:
@@ -128,7 +153,8 @@ class Index:
 
   def create_index(self, column_index:int)->None:
     """
-    Creates an index for a specified column.
+    Creates an index for a specified column. This scans the existing data
+    in the disk.
     """
     if self.__does_index_filename_exist(column_index): raise FileExistsError
     if self.__is_index_in_indices(column_index): raise KeyError
