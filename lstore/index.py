@@ -2,6 +2,7 @@ import os
 from bplustree import BPlusTree
 from pickle import loads, dumps
 
+from lstore.disk import DISK
 import lstore.config as Config
 
 # source for bplustree module: https://github.com/NicolasLM/bplustree
@@ -109,7 +110,8 @@ class Column_Data_Getter:
         self.__get_base_page_column_data(os.path.join(page_range_dir_path, _))
 
   def __get_base_page_column_data(self, base_page_dir_path:str)->None:
-    pass
+    num_records = DISK.read_metadata_from_disk(base_page_dir_path)["num_records"]
+    # TODO: use Diego's implementation of select to grab the latest entry based on RID
 
 
 class Index:
