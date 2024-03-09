@@ -1,8 +1,12 @@
+""" physical_page (PP) the unit of storage """
+
 from lstore.record import RID
 import lstore.config as Config
 
 
 class Physical_Page:
+    """physical page class for lstore"""
+
     def __init__(self):
         # self.num_records = 0
         # entry size of physical page entry differs between columns (RID colum: 2 bytes, StudentID column: 8 bytes, etc..)
@@ -36,11 +40,12 @@ class Physical_Page:
         return self.data[offset : offset + Config.DATA_ENTRY_SIZE]
 
     def get_data(self, rid: RID) -> int:
+        """get data from self.data in pp"""
         return int.from_bytes(self.__get_byte_array(rid), byteorder="big", signed=True)
 
     # checks if a value is in physical page
     def check_value_in_page(self, value_to_find: int, rid: int) -> bool:
-
+        """check if value is in the physical page"""
         offset = self.__get_offset(rid)
         start = offset
         end = start + Config.DATA_ENTRY_SIZE
@@ -73,4 +78,5 @@ class Physical_Page:
 
         if rid < 0:
             rid = abs(rid)
+
         return (rid - 1) * Config.DATA_ENTRY_SIZE % Config.PHYSICAL_PAGE_SIZE

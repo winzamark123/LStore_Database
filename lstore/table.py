@@ -1,3 +1,4 @@
+"""table module for lstore"""
 import os
 import threading
 import copy
