@@ -62,6 +62,7 @@ class Frame:
                     DISK.read_physical_page_from_disk(path_to_physical_page)
                 )
 
+
         self.unpin_frame()
 
     def insert_record(self, record: Record, record_meta_data: list = None) -> None:
@@ -71,6 +72,7 @@ class Frame:
         # print(f"Rid putting inputted {rid}")
         if record_meta_data is None:
             for i, pp in enumerate(self.physical_pages):
+
                 # print("I", i)
                 if i == Config.RID_COLUMN:
                     pp.edit_byte_array(value=rid, rid=rid)
@@ -122,6 +124,7 @@ class Frame:
 
     def delete_record(self, rid: RID) -> None:
         """delete record from the pp in the frame"""
+
         self.pin_frame()
 
         for i, physical_page in enumerate(self.physical_pages):
@@ -171,6 +174,7 @@ class Frame:
 
     # gets meta data for page
     def get_meta_data(self, rid: RID) -> list[int]:
+
         self.pin_frame()
         meta_data_columns = []
         for i, physical_page in enumerate(self.physical_pages):
