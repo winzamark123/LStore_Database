@@ -56,16 +56,19 @@ class Frame:
 
                     f.write(b'\x00' * Config.PHYSICAL_PAGE_SIZE)  # Adjust this according to your data structure needs
                 self.physical_pages.append(DISK.read_physical_page_from_disk(path_to_physical_page))
-                
+
         self.unpin_frame()
 
     def insert_record(self, record:Record, record_meta_data:list = None) -> None:
         self.pin_frame()
-        rid = record.get_rid()      
-        # print(f"Rid putting inputted {rid}") 
+        rid = record.get_rid()
+        print(f'Record: {record.columns}')
+        # print(f"Rid putting inputted {rid}")
         if record_meta_data == None:
+            print("base record inserting")
+            print(f'len of physical pages ({len(self.physical_pages)})')
             for i , pp in enumerate(self.physical_pages):
-                # print("I", i)
+                print("I", i)
                 if i == Config.RID_COLUMN:
                     pp.edit_byte_array(value=rid, rid=rid)
                 elif i == Config.INDIRECTION_COLUMN:
@@ -75,9 +78,10 @@ class Frame:
                 elif i == Config.SCHEMA_ENCODING_COLUMN:
                     pp.edit_byte_array(value=0, rid=rid)
                 else:
+                    print(f'{i} - {Config.META_DATA_NUM_COLUMNS} = {i - Config.META_DATA_NUM_COLUMNS}')
                     pp.edit_byte_array(record.columns[i - Config.META_DATA_NUM_COLUMNS], rid)
         else:
-        
+
             everything = []
             for i , pp in enumerate(self.physical_pages):
                 if i == Config.RID_COLUMN:
@@ -96,21 +100,21 @@ class Frame:
                     everything.append(record.columns[i - Config.META_DATA_NUM_COLUMNS])
                     pp.edit_byte_array(value=record.columns[i - Config.META_DATA_NUM_COLUMNS], rid=rid)
 
-            # print(f"inserting tail record {rid}, {everything}") 
+            # print(f"inserting tail record {rid}, {everything}")
         if not self.check_dirty_status():
             # print("frame set to dirty")
             # sets frame to be dirty
             self.set_dirty()
 
         self.unpin_frame()
-    
+
     def delete_record(self, rid:RID):
         self.pin_frame()
 
         for i, physical_page in enumerate(self.physical_pages):
             if i == Config.RID_COLUMN:
                 physical_page.edit_byte_array(value=0, rid=rid)
-        
+
         if not self.check_dirty_status():
             self.set_dirty()
 
@@ -122,7 +126,7 @@ class Frame:
         rid = rid.to_int()
 
         # print(f'Updating meta data for base record {rid}')
-        # updates base record indirection and schema encoding        
+        # updates base record indirection and schema encoding
         for i, pp in enumerate(self.physical_pages):
             if i == Config.INDIRECTION_COLUMN:   pp.edit_byte_array(value=meta_data[0], rid=rid)
             elif i == Config.SCHEMA_ENCODING_COLUMN: pp.edit_byte_array(value=meta_data[1], rid=rid)
@@ -150,13 +154,13 @@ class Frame:
         self.unpin_frame()
         return data_columns
 
-    # gets meta data for page 
+    # gets meta data for page
     def get_meta_data(self, rid:RID)->list[int]:
         self.pin_frame()
-        meta_data_columns = [] 
+        meta_data_columns = []
         for i, physical_page in enumerate(self.physical_pages):
             if i == Config.RID_COLUMN:
-                meta_data_columns.append(physical_page.get_data(rid))    
+                meta_data_columns.append(physical_page.get_data(rid))
             elif i == Config.INDIRECTION_COLUMN:
                 meta_data_columns.append(physical_page.get_data(rid))
             elif i == Config.BASE_RID_COLUMN:
