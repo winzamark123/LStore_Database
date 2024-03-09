@@ -36,12 +36,19 @@ class Table:
         if self.__get_num_page_ranges():
             self.page_ranges = self.load_page_ranges()
 
+    def __update_num_records_in_metadata(self)->None:
+        metadata = DISK.read_metadata_from_disk(self.table_dir_path)
+        metadata["num_columns"] = self.num_records
+        DISK.write_metadata_to_disk(self.table_dir_path, metadata)
+
     def __increment_num_records(self) -> int:
         self.num_records += 1
+        self.__update_num_records_in_metadata()
         return self.num_records
 
     def __decrement_num_records(self) -> int:
         self.num_records -= 1
+        self.__update_num_records_in_metadata()
         return self.num_records
 
     def __get_num_page_ranges(self) -> int:
