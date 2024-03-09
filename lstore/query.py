@@ -14,13 +14,13 @@ class Query:
         self.table = table
         self.inserted_keys = {}
 
+    """
+    # internal Method
+    # Read a record with specified RID
+    # Returns True upon succesful deletion
+    # Return False if record doesn't exist or is locked due to 2PL
+    """
     def delete(self, primary_key)->bool:
-        """
-        # internal Method
-        # Read a record with specified RID
-        # Returns True upon succesful deletion
-        # Return False if record doesn't exist or is locked due to 2PL
-        """
         rid = self.table.index.locate(primary_key, self.table.key_index)
         if len(rid) != 1: return False
         rid = RID(rid.pop())
@@ -33,12 +33,12 @@ class Query:
 
         # TODO: implement TPL record locking
 
+    """
+    # Insert a record with specified columns
+    # Return True upon succesful insertion
+    # Returns False if insert fails for whatever reason
+    """
     def insert(self, *columns:tuple)->bool:
-        """
-        # Insert a record with specified columns
-        # Return True upon succesful insertion
-        # Returns False if insert fails for whatever reason
-        """
         try:
             self.table.insert_record(self.table.create_record(columns))
         except ValueError:
@@ -46,16 +46,16 @@ class Query:
         else:
             return True
 
+    """
+    # Read matching record with specified search key
+    # :param search_key: the value you want to search based on
+    # :param search_key_index: the column index you want to search based on
+    # :param projected_columns_index: what columns to return. array of 1 or 0 values.
+    # Returns a list of Record objects upon success
+    # Returns False if record locked by TPL
+    # Assume that select will never be called on a key that doesn't exist
+    """
     def select(self, search_key: int, search_key_index: int, projected_columns_index:list)->list[Record]:
-        """
-        # Read matching record with specified search key
-        # :param search_key: the value you want to search based on
-        # :param search_key_index: the column index you want to search based on
-        # :param projected_columns_index: what columns to return. array of 1 or 0 values.
-        # Returns a list of Record objects upon success
-        # Returns False if record locked by TPL
-        # Assume that select will never be called on a key that doesn't exist
-        """
         rids = self.table.index.locate(search_key, search_key_index)
         records_list = list()
         try:
@@ -77,17 +77,17 @@ class Query:
 
         # TODO: implement TPL record locking
 
+    """
+    # Read matching record with specified search key
+    # :param search_key: the value you want to search based on
+    # :param search_key_index: the column index you want to search based on
+    # :param projected_columns_index: what columns to return. array of 1 or 0 values.
+    # :param relative_version: the relative version of the record you need to retreive.
+    # Returns a list of Record objects upon success
+    # Returns False if record locked by TPL
+    # Assume that select will never be called on a key that doesn't exist
+    """
     def select_version(self, search_key, search_key_index, projected_columns_index, relative_version):
-        """
-        # Read matching record with specified search key
-        # :param search_key: the value you want to search based on
-        # :param search_key_index: the column index you want to search based on
-        # :param projected_columns_index: what columns to return. array of 1 or 0 values.
-        # :param relative_version: the relative version of the record you need to retreive.
-        # Returns a list of Record objects upon success
-        # Returns False if record locked by TPL
-        # Assume that select will never be called on a key that doesn't exist
-        """
         # TODO
         pass
 
@@ -116,15 +116,15 @@ class Query:
         else:
             return True
 
+    """
+    :param start_range: int         # Start of the key range to aggregate
+    :param end_range: int           # End of the key range to aggregate
+    :param aggregate_columns: int  # Index of desired column to aggregate
+    # this function is only called on the primary key.
+    # Returns the summation of the given range upon success
+    # Returns False if no record exists in the given range
+    """
     def sum(self, start_range, end_range, aggregate_column_index)->int:
-        """
-        :param start_range: int         # Start of the key range to aggregate
-        :param end_range: int           # End of the key range to aggregate
-        :param aggregate_columns: int  # Index of desired column to aggregate
-        # this function is only called on the primary key.
-        # Returns the summation of the given range upon success
-        # Returns False if no record exists in the given range
-        """
 
         rids = self.table.index.locate_range(start_range,end_range, self.table.key_index)
         output = 0
