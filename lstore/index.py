@@ -3,6 +3,8 @@ from bplustree import BPlusTree
 from pickle import loads, dumps
 
 from lstore.disk import DISK
+from lstore.table import Table
+from lstore.record import RID
 import lstore.config as Config
 
 # source for bplustree module: https://github.com/NicolasLM/bplustree
@@ -90,35 +92,12 @@ class Index_Column:
     return rset
 
 
-class Column_Data_Getter:
-
-  def __init__(self, column_index:int, index_dir_path:str)->None:
-    self.column_index:int   = column_index
-    self.index_dir_path:str = index_dir_path
-    self.values:dict        = dict()
-
-  def get_column_data(self)->dict:
-    table_dir_path = os.path.dirname(self.index_dir_path)
-    for _ in os.listdir(table_dir_path):
-      if os.path.isdir(os.path.join(table_dir_path, _)):
-        self.__get_page_range_column_data(os.path.join(table_dir_path, _))
-    return self.values
-
-  def __get_page_range_column_data(self, page_range_dir_path:str)->None:
-    for _ in os.listdir(page_range_dir_path):
-      if os.path.isdir(os.path.join(page_range_dir_path, _)) and _.startswith("BP"):
-        self.__get_base_page_column_data(os.path.join(page_range_dir_path, _))
-
-  def __get_base_page_column_data(self, base_page_dir_path:str)->None:
-    num_records = DISK.read_metadata_from_disk(base_page_dir_path)["num_records"]
-    # TODO: use Diego's implementation of select to grab the latest entry based on RID
-
-
 class Index:
 
-  def __init__(self, table_dir_path:str, num_columns:int, primary_key_index:int, order:int)->None:
+  def __init__(self, table:Table, table_dir_path:str, num_columns:int, primary_key_index:int, order:int)->None:
     assert primary_key_index < num_columns, IndexError
 
+    self.table:Table                    = table
     self.index_dir_path:str             = os.path.join(table_dir_path, "index")
     self.num_columns:int                = num_columns
     self.primary_key_index:int          = primary_key_index
@@ -153,6 +132,9 @@ class Index:
   def __check_num_columns_valid(self, columns:tuple)->None:
     if len(columns) != self.num_columns: raise ValueError
 
+  def __get_num_records(self)->int:
+    return DISK.read_metadata_from_disk(self.table.table_dir_path)["num_records"]
+
   def create_index(self, column_index:int)->None:
     """
     Creates an index for a specified column. This scans the existing data
@@ -162,6 +144,13 @@ class Index:
     if self.__is_index_in_indices(column_index): raise KeyError
     if self.__is_index_key(column_index): raise ValueError
     self.indices[column_index] = Index_Column(self.__get_column_index_filename(column_index), self.order)
+    if not self.__get_num_records():
+      return
+    for rid in range(1, self.__get_num_records()+1):
+      columns = self.table.select(RID(rid))
+      assert len(columns) == self.num_columns
+      for column_index in self.indices:
+        self.indices[column_index].add_value(columns[column_index], rid)
 
   def drop_index(self, column_index:int)->None:
     """
