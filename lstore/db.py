@@ -1,11 +1,14 @@
-from lstore.table import Table
-from lstore.disk import DISK
+""" db class for database """
+
 import os
 import pickle
 from shutil import rmtree
+from lstore.table import Table
+from lstore.disk import DISK
 
 
 class Database:
+    """Database class for database"""
 
     def __init__(self) -> None:
         self.db_dir_path: str = None
@@ -18,7 +21,7 @@ class Database:
         If a database is already initialized, raises a ValueError.
         """
 
-        if self.db_dir_path != None:
+        if self.db_dir_path is not None:
             raise ValueError
 
         self.db_dir_path = db_dir_path
@@ -48,11 +51,11 @@ class Database:
         If no database found, raise a ValueError.
         """
 
-        if self.db_dir_path == None:
+        if self.db_dir_path is None:
             raise ValueError
 
         self.db_dir_path = None
-        self.disk = None
+        # self.disk = None
         for table in self.tables.values():
             table.close()
 
