@@ -161,7 +161,7 @@ class Query:
     """
     def increment(self, key, column):
         # TODO: idk anything abt this
-        r = self.select(key, self.table.key, [1] * self.table.num_columns)[0]
+        r = self.select(key, self.table.key_index, [1] * self.table.num_columns)[0]
         if r is not False:
             updated_columns = [None] * self.table.num_columns
             updated_columns[column] = r[column] + 1
