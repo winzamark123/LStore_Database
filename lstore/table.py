@@ -38,7 +38,7 @@ class Table:
 
     def __update_num_records_in_metadata(self)->None:
         metadata = DISK.read_metadata_from_disk(self.table_dir_path)
-        metadata["num_columns"] = self.num_records
+        metadata["num_records"] = self.num_records
         DISK.write_metadata_to_disk(self.table_dir_path, metadata)
 
     def __increment_num_records(self) -> int:

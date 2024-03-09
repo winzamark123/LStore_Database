@@ -15,7 +15,6 @@ class Base_Page:
 
     def __get_num_columns(self)->int:
         table_path = os.path.dirname(os.path.dirname(self.base_page_path))
-        print(f'table path {table_path}')
         return DISK.read_metadata_from_disk(table_path)["num_columns"]
 
     def insert_record(self, record:Record)->None:
@@ -25,7 +24,6 @@ class Base_Page:
         #     print(f'Base page {self.base_page_index} physical page ({j})')
         #     for i in range(0, 4096, 8):
         #         print(int.from_bytes(BUFFERPOOL.frames[frame_index].physical_pages[j].data[i:i+8], byteorder='big')
-        print(f'num columns: {self.num_columns} meta data columns {self.__get_num_columns()}')
         BUFFERPOOL.insert_record(page_path=self.base_page_path, record=record, num_columns=self.num_columns)
 
     #get data from bufferpool
