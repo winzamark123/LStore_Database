@@ -209,8 +209,6 @@ class Index:
             raise FileExistsError
         if self.__is_index_in_indices(column_index):
             raise KeyError
-        if self.__is_index_key(column_index):
-            raise ValueError
         self.indices[column_index] = Index_Column(
             self.__get_column_index_filename(column_index), self.order
         )
