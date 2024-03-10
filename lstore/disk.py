@@ -2,7 +2,7 @@
 
 import os
 import pickle
-from lstore.physical_page import Physical_Page
+from lstore.physical_page import PhysicalPage
 import lstore.config as Config
 
 
@@ -59,7 +59,7 @@ class Disk:
             return pickle.load(mdf)  # Corrected from pickle.loads to pickle.load
 
     def write_physical_page_to_disk(
-        self, path_to_physical_page: str, physical_page: Physical_Page, page_index: int
+        self, path_to_physical_page: str, physical_page: PhysicalPage, page_index: int
     ) -> None:
         if not self.__is_dir_under_root(path_to_physical_page):
             raise ValueError
@@ -69,14 +69,14 @@ class Disk:
             print(f"writing to physical page: {path_to_physical_page}/{page_index}.bin")
             ppf.write(physical_page.data)
 
-    def read_physical_page_from_disk(self, path_to_physical_page: str) -> Physical_Page:
+    def read_physical_page_from_disk(self, path_to_physical_page: str) -> PhysicalPage:
         if not self.__is_dir_under_root(path_to_physical_page):
             raise ValueError
         if not os.path.exists(path_to_physical_page):
             raise ValueError
         with open(path_to_physical_page, "rb") as ppf:
             byte_data = ppf.read(Config.PHYSICAL_PAGE_SIZE)
-            return Physical_Page.from_bytes(byte_data)
+            return PhysicalPage.from_bytes(byte_data)
 
             # return ppf.read(Config.PHYSICAL_PAGE_SIZE)
 
