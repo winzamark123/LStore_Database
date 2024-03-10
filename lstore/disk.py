@@ -20,6 +20,7 @@ class Disk:
         return os.path.commonpath([parent]) == os.path.commonpath([parent, child])
 
     def set_database(self, db_dir_path: str):
+        """set the database directory path to the root of the disk object"""
         self.root = db_dir_path
         if not os.path.exists(self.root):
             os.makedirs(self.root, exist_ok=True)
@@ -27,6 +28,7 @@ class Disk:
         print(f"Database from path {self.root} has been opened.")
 
     def create_path_directory(self, dir_path: str) -> None:
+        """Creates a directory in the database directory"""
         if os.path.exists(dir_path):
             raise ValueError
         if not self.__is_dir_under_root(dir_path):
@@ -34,12 +36,14 @@ class Disk:
         os.makedirs(dir_path)
 
     def write_metadata_to_disk(self, path_for_metadata: str, metadata: dict) -> None:
+        """Writes metadata to disk in the given path"""
         if not self.__is_dir_under_root(path_for_metadata):
             raise ValueError
         with open(os.path.join(path_for_metadata, "metadata.pkl"), "wb") as mdf:
             pickle.dump(metadata, mdf)
 
     def read_metadata_from_disk(self, path_for_metadata) -> dict:
+        """Reads metadata from disk in the given path and returns it as a dictionary"""
         if not self.__is_dir_under_root(path_for_metadata):
             raise ValueError
         if not os.path.exists(path_for_metadata):

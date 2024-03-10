@@ -1,4 +1,5 @@
 """table module for lstore"""
+
 import os
 import threading
 import copy
@@ -156,53 +157,48 @@ class Table:
         # Get base meta data
         base_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(rid)
 
-        # Check if indirection is equal to itself, if not then go to tail record
-        if base_meta_data[Config.INDIRECTION_COLUMN] != rid.to_int():
-
-            # Make tid to tail record columns
-            tid = RID(rid=base_meta_data[Config.INDIRECTION_COLUMN])
-            tail_record_columns = self.page_ranges[rid.get_page_range_index()].get_data(
-                rid=tid, page_type="Tail"
-            )
-
-            if base_meta_data[Config.SCHEMA_ENCODING_COLUMN] == 2 ** (
-                self.num_columns - 1
-            ):
-                return tail_record_columns
-
-            # Get indexes of schema encoding that have 1s and 0s
-            list_of_columns_updated_0 = self.__analyze_schema_encoding(
-                schema_encoding=base_meta_data[Config.SCHEMA_ENCODING_COLUMN], zero=True
-            )
-            list_of_columns_updated_1 = self.__analyze_schema_encoding(
-                schema_encoding=base_meta_data[Config.SCHEMA_ENCODING_COLUMN]
-            )
-
-            # Base record columns
-            base_columns = self.page_ranges[rid.get_page_range_index()].get_data(
-                rid=rid
-            )
-
-            dict_values = {}
-
-            if len(list_of_columns_updated_0) != 0:
-                for i in list_of_columns_updated_0:
-                    dict_values[i] = base_columns[i]
-
-            if len(list_of_columns_updated_1) != 0:
-                for i in list_of_columns_updated_1:
-                    dict_values[i] = tail_record_columns[i]
-
-            # Sort the dictionary based on keys
-            sorted_dict = {k: dict_values[k] for k in sorted(dict_values)}
-
-            # Extract values and create a tuple
-            values_tuple = tuple(sorted_dict.values())
-
-            return values_tuple
-
-        else:
+        # if RID is equal to the indirection (most up to date)
+        if base_meta_data[Config.INDIRECTION_COLUMN] == rid.to_int():
             return self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
+
+        # Make tid to tail record columns
+        tid = RID(rid=base_meta_data[Config.INDIRECTION_COLUMN])
+        tail_record_columns = self.page_ranges[rid.get_page_range_index()].get_data(
+            rid=tid, page_type="Tail"
+        )
+
+        # schema encoding
+        schema_encoding = base_meta_data[Config.SCHEMA_ENCODING_COLUMN]
+
+        if schema_encoding == 2 ** (self.num_columns - 1):
+            return tail_record_columns
+
+        # Get indexes of schema encoding that have 1s and 0s
+        list_of_columns_updated_0 = self.__analyze_schema_encoding(
+            schema_encoding=schema_encoding, zero=True
+        )
+        list_of_columns_updated_1 = self.__analyze_schema_encoding(
+            schema_encoding=schema_encoding
+        )
+
+        # Base record columns
+        base_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
+
+        dict_values = {}
+
+        for i in list_of_columns_updated_0:
+            dict_values[i] = base_columns[i]
+
+        for i in list_of_columns_updated_1:
+            dict_values[i] = tail_record_columns[i]
+
+        # Sort the dictionary based on keys
+        sorted_dict = {k: dict_values[k] for k in sorted(dict_values)}
+
+        # Extract values and create a tuple
+        values_tuple = tuple(sorted_dict.values())
+
+        return values_tuple
 
     def update_record(self, rid: RID, updated_column: tuple) -> None:
         """
