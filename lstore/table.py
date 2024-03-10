@@ -73,7 +73,7 @@ class Table:
         ]
         for page_range_dir in page_range_dirs:
             page_range_index = int(
-                page_range_dir[page_range_dir.rfind("/")].removeprefix("PR")
+                os.path.basename(page_range_dir).removeprefix("PR")
             )
             metadata = DISK.read_metadata_from_disk(self.table_dir_path)
             self.page_ranges[page_range_index] = PageRange(
