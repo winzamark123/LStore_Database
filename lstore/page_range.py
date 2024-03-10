@@ -1,17 +1,22 @@
+""" This module contains the Page Range class. The Page Range class represents a range of pages in the database. """
+
+import os
 import lstore.config as Config
 from lstore.disk import DISK
 from lstore.page import Base_Page, Tail_Page
 from lstore.record import Record, RID
-import os
 
 
-class Page_Range:
+class PageRange:
+    """Page Range class. Represents a range of pages in the database."""
+
     def __init__(
         self, page_range_dir_path: str, page_range_index: int, tps_index: int
     ) -> None:
         self.page_range_dir_path: str = page_range_dir_path
         self.page_range_index: int = page_range_index
         self.tps_index: int = tps_index
+        self.tid = 0
 
         self.base_pages: dict[int, Base_Page] = dict()
         if self.__get_num_base_pages():
@@ -20,7 +25,6 @@ class Page_Range:
         self.tail_pages: dict[int, Tail_Page] = dict()
         if self.__get_num_tail_pages():
             self.__load_tail_pages()
-        self.tid = 0
 
     def __tid_count(self) -> int:
         return self.tid
@@ -153,6 +157,7 @@ class Page_Range:
             )
 
     def update_record(self, record: Record, record_meta_data: list) -> int:
+        """update record from page range."""
         # change rid to be a tid which corresponds to this specific page range only
         record.rid = RID(self.__decrement_tid())
         self.insert_record(
@@ -161,6 +166,7 @@ class Page_Range:
         return record.get_rid()
 
     def get_data(self, rid: RID, page_type: str = "Base") -> tuple:
+        """get data from page in page range"""
         # Check if page type is 'Base'
         if page_type == "Base":
             base_page_index = rid.get_base_page_index()
@@ -178,8 +184,11 @@ class Page_Range:
             # Retrieve data from tail page and return
             return self.tail_pages[tail_page_index].get_data(rid=rid)
 
+    def new_get_data(self, rid: RID) -> tuple:
+        pass
+
     # returns list of meta data
-    def get_meta_data(self, rid: RID) -> [int]:
+    def get_meta_data(self, rid: RID) -> list[int]:
         """
         Update record from page range.
         """

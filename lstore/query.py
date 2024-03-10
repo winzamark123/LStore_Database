@@ -3,6 +3,7 @@ from lstore.table import Table
 from lstore.record import RID
 from lstore.record import Record
 
+
 class Query:
     """
     # Creates a Query object that can perform different queries on the specified table
@@ -10,12 +11,13 @@ class Query:
     Queries that succeed should return the result or True
     Any query that crashes (due to exceptions) should return False
     """
-    def __init__(self, table:Table):
+
+    def __init__(self, table: Table):
         self.table = table
         self.inserted_keys = {}
 
-    #SWITCH THE RID TO 0
-    def delete(self, primary_key)->bool:
+    # SWITCH THE RID TO 0
+    def delete(self, primary_key) -> bool:
         """
         # internal Method
         # Read a record with specified RID
@@ -35,7 +37,7 @@ class Query:
 
         # TODO: implement TPL record locking
 
-    def insert(self, *columns:tuple)->bool:
+    def insert(self, *columns: tuple) -> bool:
         """
         # Insert a record with specified columns
         # Return True upon succesful insertion
@@ -48,7 +50,9 @@ class Query:
         else:
             return True
 
-    def select(self, search_key: int, search_key_index: int, projected_columns_index:list)->list[Record]:
+    def select(
+        self, search_key: int, search_key_index: int, projected_columns_index: list
+    ) -> list[Record]:
         """
         # Read matching record with specified search key
         # :param search_key: the value you want to search based on
@@ -66,12 +70,16 @@ class Query:
                 rid = RID(rid=rid)
                 data_columns = self.table.select(rid=rid)
 
-                filtered_list = [data_columns[i] for i in range(len(data_columns))
-                                if projected_columns_index[i] == 1]
-
+                filtered_list = [
+                    data_columns[i]
+                    for i in range(len(data_columns))
+                    if projected_columns_index[i] == 1
+                ]
 
                 # print("FILTERED", filtered_list)
-                filtered_record = Record(rid=rid, key=self.table.key_index, columns=filtered_list)
+                filtered_record = Record(
+                    rid=rid, key=self.table.key_index, columns=filtered_list
+                )
                 records_list.append(filtered_record)
         except ValueError:
             return False
@@ -80,7 +88,9 @@ class Query:
 
         # TODO: implement TPL record locking
 
-    def select_version(self, search_key, search_key_index, projected_columns_index, relative_version):
+    def select_version(
+        self, search_key, search_key_index, projected_columns_index, relative_version
+    ):
         """
         # Read matching record with specified search key
         # :param search_key: the value you want to search based on
@@ -92,14 +102,19 @@ class Query:
         # Assume that select will never be called on a key that doesn't exist
         """
         # TODO
-        pass
+        # [0 0 0 0 0] Base Record
+        # [1 1 1 1 1] Tail Record
+        # [2 2 2 2 2] Tail Record (Up to date)
 
-    """
-    # Update a record with specified key and columns
-    # Returns True if update is succesful
-    # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
-    """
-    def update(self, primary_key, *columns)->bool:
+        # select_verion(-1)
+        # [1 1 1 1 1]
+
+    def update(self, primary_key, *columns) -> bool:
+        """
+        # Update a record with specified key and columns
+        # Returns True if update is succesful
+        # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
+        """
         none_count = 0
         for i in range(len(columns)):
             if columns[i] == None:
@@ -113,12 +128,12 @@ class Query:
 
         try:
             self.table.update_record(rid=rid, updated_column=columns)
-        except ValueError: # TODO: TPL record locking
+        except ValueError:  # TODO: TPL record locking
             return False
         else:
             return True
 
-    def sum(self, start_range, end_range, aggregate_column_index)->int:
+    def sum(self, start_range, end_range, aggregate_column_index) -> int:
         """
         :param start_range: int         # Start of the key range to aggregate
         :param end_range: int           # End of the key range to aggregate
@@ -128,7 +143,9 @@ class Query:
         # Returns False if no record exists in the given range
         """
 
-        rids = self.table.index.locate_range(start_range,end_range, self.table.key_index)
+        rids = self.table.index.locate_range(
+            start_range, end_range, self.table.key_index
+        )
         output = 0
         try:
             for rid in rids:
@@ -149,7 +166,10 @@ class Query:
     # Returns the summation of the given range upon success
     # Returns False if no record exists in the given range
     """
-    def sum_version(self, start_range, end_range, aggregate_column_index, relative_version):
+
+    def sum_version(
+        self, start_range, end_range, aggregate_column_index, relative_version
+    ):
         # TODO
         pass
 
@@ -161,6 +181,7 @@ class Query:
     # Returns True is increment is successful
     # Returns False if no record matches key or if target record is locked by 2PL.
     """
+
     def increment(self, key, column):
         # TODO: idk anything abt this
         r = self.select(key, self.table.key, [1] * self.table.num_columns)[0]

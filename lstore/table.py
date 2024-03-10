@@ -4,9 +4,9 @@ import os
 import threading
 import copy
 from lstore.index import Index
-from lstore.physical_page import Physical_Page
+from lstore.physical_page import PhysicalPage
 import lstore.config as Config
-from lstore.page_range import Page_Range
+from lstore.page_range import PageRange
 from lstore.disk import DISK
 from lstore.record import Record, RID
 
@@ -34,7 +34,7 @@ class Table:
             order=Config.ORDER_CHOICE,
         )
 
-        self.page_ranges: dict[int, Page_Range] = dict()
+        self.page_ranges: dict[int, PageRange] = dict()
         if self.__get_num_page_ranges():
             self.load_page_ranges()
 
@@ -76,7 +76,7 @@ class Table:
                 page_range_dir[page_range_dir.rfind("/")].removeprefix("PR")
             )
             metadata = DISK.read_metadata_from_disk(self.table_dir_path)
-            self.page_ranges[page_range_index] = Page_Range(
+            self.page_ranges[page_range_index] = PageRange(
                 page_range_dir_path=metadata["page_range_dir_path"],
                 page_range_index=metadata["page_range_index"],
                 tps_index=metadata["tps_index"],
@@ -97,7 +97,7 @@ class Table:
             "tps_index": 0,
         }
         DISK.write_metadata_to_disk(page_range_dir_path, metadata)
-        self.page_ranges[page_range_index] = Page_Range(
+        self.page_ranges[page_range_index] = PageRange(
             page_range_dir_path=page_range_dir_path,
             page_range_index=page_range_index,
             tps_index=0,
@@ -171,7 +171,7 @@ class Table:
         schema_encoding = base_meta_data[Config.SCHEMA_ENCODING_COLUMN]
 
         if schema_encoding == 2 ** (self.num_columns - 1):
-            return tail_record_columns
+            return
 
         # Get indexes of schema encoding that have 1s and 0s
         list_of_columns_updated_0 = self.__analyze_schema_encoding(
@@ -368,7 +368,7 @@ class Table:
     # TODO: complete merge (in the works: Testing in merge_test.py)
     # Implementing without bufferpool right now, will when bufferpool is finished
     @staticmethod
-    def __merge(page_range: Page_Range):
+    def __merge(page_range: PageRange):
         # print("\nMerge starting!!")
         # print(f"TPS before merge: {page_range.tps_range}")
         # records that need updating in base page
@@ -512,11 +512,9 @@ class Table:
             # last record merged
             page_range.tps_range = next(iter(updated_records))
 
-    # print("Merge finished")
-
     # TODO: takes buffer pool that it's going to use, since merge has it's own buffer pool so it won't interfere with the main thread
     @staticmethod
-    def __merge_update_to_buffer(physical_page: Physical_Page, base_page_number: int):
+    def __merge_update_to_buffer(physical_page: PhysicalPage, base_page_number: int):
         # print(f'Physical Page : {physical_page.column_number} for Base Page ({base_page_number})')
 
         pass

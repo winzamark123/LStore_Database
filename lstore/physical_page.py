@@ -4,7 +4,7 @@ from lstore.record import RID
 import lstore.config as Config
 
 
-class Physical_Page:
+class PhysicalPage:
     """physical page class for lstore"""
 
     def __init__(self):

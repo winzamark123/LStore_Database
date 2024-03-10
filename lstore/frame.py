@@ -1,17 +1,22 @@
+""" This file contains the Frame class, which is a data structure that holds a list of PhysicalPage objects. The Frame class is used to manage the physical pages of a page in the buffer pool. The Frame class is used to manage the physical pages of a page in the buffer pool. The Frame class is used to manage the physical pages of a page in the buffer pool. The Frame class is used to manage the physical pages of a page in the buffer pool. The Frame class is used to manage the physical pages of a page in the buffer pool. The Frame class is used to manage the physical pages of a page in the buffer pool. The Frame class is used to manage the physical pages of a page in the buffer pool. The Frame class is used to manage the physical pages of a page in the buffer pool. The Frame class is used to manage the physical pages of a page in the buffer pool. The Frame class is used to manage the physical pages of a page in the buffer pool."""
+
+import os
+from datetime import datetime
+
 from lstore.disk import DISK
 import lstore.config as Config
 from lstore.record import Record, RID
-import os
-from lstore.physical_page import Physical_Page
-from datetime import datetime
+from lstore.physical_page import PhysicalPage
 
 
 class Frame:
+    """Frame class"""
+
     def __init__(self, path_to_page: str):
         self.is_dirty = 0  # Boolean to check if the physical_page has been modified
         self.pin_count = 0
         self.is_pin = False
-        self.physical_pages: list[Physical_Page] = []
+        self.physical_pages: list[PhysicalPage] = []
         self.path_to_page = path_to_page
         self.last_time_used = datetime.now()
 
@@ -40,7 +45,7 @@ class Frame:
         self.pin_frame()
 
         for i in range(num_columns):
-            # self.physical_pages.append(Physical_Page()) path_to_physical_page = f"{path_to_page}/{i}.bin"
+            # self.physical_pages.append(PhysicalPage()) path_to_physical_page = f"{path_to_page}/{i}.bin"
 
             path_to_physical_page = f"{path_to_page}/{i}.bin"
             # Check if the file exists to decide whether to read from it or initialize a new one
@@ -61,7 +66,6 @@ class Frame:
                 self.physical_pages.append(
                     DISK.read_physical_page_from_disk(path_to_physical_page)
                 )
-
 
         self.unpin_frame()
 

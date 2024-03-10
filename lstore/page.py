@@ -32,6 +32,7 @@ class Base_Page:
 
     # get data from bufferpool
     def get_data(self, rid: RID) -> tuple:
+        """Get data from bufferpool"""
         return BUFFERPOOL.get_data_from_buffer(
             rid=rid, page_path=self.base_page_path, num_columns=self.num_columns
         )
@@ -57,6 +58,7 @@ class Base_Page:
 
 
 class Tail_Page:
+    """Tail Page class"""
 
     def __init__(self, tail_page_dir_path: str, tail_page_index: int) -> None:
         self.tail_page_index = tail_page_index
