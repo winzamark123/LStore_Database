@@ -27,12 +27,11 @@ class Query:
 
         rids = self.table.index.locate(primary_key, self.table.key_index)
 
-        try:
+        for rid in rids:
+            rid = RID(rid=rid)
             self.table.delete_record(rid)
-        except:
-            return False
-        else:
-            return True
+
+        return True
 
         # TODO: implement TPL record locking
 
