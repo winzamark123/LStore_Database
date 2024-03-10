@@ -1,10 +1,12 @@
+"""table module for lstore"""
+
 import os
 import threading
 import copy
 from lstore.index import Index
-from lstore.physical_page import Physical_Page
+from lstore.physical_page import PhysicalPage
 import lstore.config as Config
-from lstore.page_range import Page_Range
+from lstore.page_range import PageRange
 from lstore.disk import DISK
 from lstore.record import Record, RID
 
@@ -32,11 +34,11 @@ class Table:
             order=Config.ORDER_CHOICE,
         )
 
-        self.page_ranges: dict[int, Page_Range] = dict()
+        self.page_ranges: dict[int, PageRange] = dict()
         if self.__get_num_page_ranges():
-            self.page_ranges = self.load_page_ranges()
+            self.load_page_ranges()
 
-    def __update_num_records_in_metadata(self)->None:
+    def __update_num_records_in_metadata(self) -> None:
         metadata = DISK.read_metadata_from_disk(self.table_dir_path)
         metadata["num_records"] = self.num_records
         DISK.write_metadata_to_disk(self.table_dir_path, metadata)
@@ -62,7 +64,8 @@ class Table:
         # print(f'Page Ranges {count}')
         return count
 
-    def load_page_ranges(self) -> dict[int, Page_Range]:
+    def load_page_ranges(self):
+        """load page ranges from disk"""
         page_range_dirs = [
             os.path.join(self.table_dir_path, _)
             for _ in os.listdir(self.table_dir_path)
@@ -72,8 +75,8 @@ class Table:
             page_range_index = int(
                 page_range_dir[page_range_dir.rfind("/")].removeprefix("PR")
             )
-            metadata = DISK.read_metadata_from_disk()
-            self.page_ranges[page_range_index] = Page_Range(
+            metadata = DISK.read_metadata_from_disk(self.table_dir_path)
+            self.page_ranges[page_range_index] = PageRange(
                 page_range_dir_path=metadata["page_range_dir_path"],
                 page_range_index=metadata["page_range_index"],
                 tps_index=metadata["tps_index"],
@@ -94,7 +97,7 @@ class Table:
             "tps_index": 0,
         }
         DISK.write_metadata_to_disk(page_range_dir_path, metadata)
-        self.page_ranges[page_range_index] = Page_Range(
+        self.page_ranges[page_range_index] = PageRange(
             page_range_dir_path=page_range_dir_path,
             page_range_index=page_range_index,
             tps_index=0,
@@ -152,44 +155,48 @@ class Table:
         # Get base meta data
         base_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(rid)
 
-        # Check if indirection is equal to itself, if not then go to tail record
-        if base_meta_data[Config.INDIRECTION_COLUMN] != rid.to_int():
-
-            # Make tid to tail record columns
-            tid = RID(rid=base_meta_data[Config.INDIRECTION_COLUMN])
-            tail_record_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=tid, page_type='Tail')
-
-            if base_meta_data[Config.SCHEMA_ENCODING_COLUMN] == 2 ** (self.num_columns - 1):
-                return tail_record_columns
-
-            # Get indexes of schema encoding that have 1s and 0s
-            list_of_columns_updated_0 = self.__analyze_schema_encoding(schema_encoding=base_meta_data[Config.SCHEMA_ENCODING_COLUMN], zero=True)
-            list_of_columns_updated_1 = self.__analyze_schema_encoding(schema_encoding=base_meta_data[Config.SCHEMA_ENCODING_COLUMN])
-
-            # Base record columns
-            base_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
-
-            dict_values = {}
-
-            if len(list_of_columns_updated_0) != 0:
-                for i in list_of_columns_updated_0:
-                    dict_values[i] = base_columns[i]
-
-            if len(list_of_columns_updated_1) != 0:
-                for i in list_of_columns_updated_1:
-                    dict_values[i] = tail_record_columns[i]
-
-            # Sort the dictionary based on keys
-            sorted_dict = {k: dict_values[k] for k in sorted(dict_values)}
-
-            # Extract values and create a tuple
-            values_tuple = tuple(sorted_dict.values())
-
-            return values_tuple
-
-        else:
+        # if RID is equal to the indirection (most up to date)
+        if base_meta_data[Config.INDIRECTION_COLUMN] == rid.to_int():
             return self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
 
+        # Make tid to tail record columns
+        tid = RID(rid=base_meta_data[Config.INDIRECTION_COLUMN])
+        tail_record_columns = self.page_ranges[rid.get_page_range_index()].get_data(
+            rid=tid, page_type="Tail"
+        )
+
+        # schema encoding
+        schema_encoding = base_meta_data[Config.SCHEMA_ENCODING_COLUMN]
+
+        if schema_encoding == 2 ** (self.num_columns - 1):
+            return
+
+        # Get indexes of schema encoding that have 1s and 0s
+        list_of_columns_updated_0 = self.__analyze_schema_encoding(
+            schema_encoding=schema_encoding, zero=True
+        )
+        list_of_columns_updated_1 = self.__analyze_schema_encoding(
+            schema_encoding=schema_encoding
+        )
+
+        # Base record columns
+        base_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
+
+        dict_values = {}
+
+        for i in list_of_columns_updated_0:
+            dict_values[i] = base_columns[i]
+
+        for i in list_of_columns_updated_1:
+            dict_values[i] = tail_record_columns[i]
+
+        # Sort the dictionary based on keys
+        sorted_dict = {k: dict_values[k] for k in sorted(dict_values)}
+
+        # Extract values and create a tuple
+        values_tuple = tuple(sorted_dict.values())
+
+        return values_tuple
 
     def update_record(self, rid: RID, updated_column: tuple) -> None:
         """
@@ -233,8 +240,6 @@ class Table:
             # Change indirection to point to the previous tail record
             record_meta_data[Config.INDIRECTION_COLUMN] = prev_tid
             record_meta_data[Config.SCHEMA_ENCODING_COLUMN] = new_schema_encoding
-
-            # print(f"Update after first copy to RID {rid.to_int()} with these columns {modified_columns}")
 
             prev_tid = self.page_ranges[rid.get_page_range_index()].update_record(
                 record=self.create_record(columns=modified_columns, record_type="Tail"),
@@ -302,7 +307,9 @@ class Table:
         return int(schema_encoding, 2)
 
     # help determine what columns have been updated
-    def __analyze_schema_encoding(self, schema_encoding: int, zero:bool = False) -> list:
+    def __analyze_schema_encoding(
+        self, schema_encoding: int, zero: bool = False
+    ) -> list:
         schema_encoding = abs(schema_encoding)
         if not isinstance(schema_encoding, int):
             raise TypeError("Schema encoding must be an integer.")
@@ -358,7 +365,7 @@ class Table:
     # TODO: complete merge (in the works: Testing in merge_test.py)
     # Implementing without bufferpool right now, will when bufferpool is finished
     @staticmethod
-    def __merge(page_range: Page_Range):
+    def __merge(page_range: PageRange):
         # print("\nMerge starting!!")
         # print(f"TPS before merge: {page_range.tps_range}")
         # records that need updating in base page
@@ -502,26 +509,24 @@ class Table:
             # last record merged
             page_range.tps_range = next(iter(updated_records))
 
-    # print("Merge finished")
-
     # TODO: takes buffer pool that it's going to use, since merge has it's own buffer pool so it won't interfere with the main thread
     @staticmethod
-    def __merge_update_to_buffer(physical_page: Physical_Page, base_page_number: int):
+    def __merge_update_to_buffer(physical_page: PhysicalPage, base_page_number: int):
         # print(f'Physical Page : {physical_page.column_number} for Base Page ({base_page_number})')
 
         pass
 
     # checks if merging needs to happen
-    def _merge_checker(self, page_range_num):
-        if (
-            self.page_range_directory[page_range_num].num_updates
-            % Config.MERGE_THRESHOLD
-            == 0
-        ):
-            # creates deep copy of page range
-            page_range_copy = copy.deepcopy(self.page_range_directory[page_range_num])
-            merging_thread = threading.Thread(target=self.__merge())
-            merging_thread.start()
+    # def _merge_checker(self, page_range_num):
+    #     if (
+    #         self.page_range_directory[page_range_num].num_updates
+    #         % Config.MERGE_THRESHOLD
+    #         == 0
+    #     ):
+    #         # creates deep copy of page range
+    #         page_range_copy = copy.deepcopy(self.page_range_directory[page_range_num])
+    #         merging_thread = threading.Thread(target=self.__merge())
+    #         merging_thread.start()
 
     def close(self):
         """
