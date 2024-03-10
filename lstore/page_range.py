@@ -152,6 +152,7 @@ class PageRange:
                 self.create_tail_page(self.__get_num_tail_pages())
 
             # Appends new record to tail page
+
             self.tail_pages[record.rid.get_tail_page_index()].insert_record(
                 record=record, record_meta_data=record_meta_data
             )
@@ -196,6 +197,7 @@ class PageRange:
             raise ValueError
 
         return self.base_pages[rid.get_base_page_index()].get_meta_data(rid=rid)
+
 
     def update_meta_data(self, rid: RID, meta_data: list) -> bool:
 

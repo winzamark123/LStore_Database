@@ -1,9 +1,11 @@
 import os
-from bplustree import BPlusTree
 from pickle import loads, dumps
+from copy import deepcopy
+from bplustree import BPlusTree
+from bitarray import bitarray
 
+from lstore.bufferpool import BUFFERPOOL
 from lstore.disk import DISK
-from lstore.table import Table
 from lstore.record import RID
 import lstore.config as Config
 
@@ -92,12 +94,49 @@ class Index_Column:
     return rset
 
 
+class Column_Data_Getter:
+
+  def __init__(self, index_dir_path:str, column_index:int)->None:
+    self.table_dir_path:str        = os.path.dirname(index_dir_path)
+    self.column_index:int          = column_index
+    self.values:dict[int,set[int]] = dict()
+
+  def __get_page_dir_path(self, rid:RID, page_header:str)->str:
+    dir_path = os.path.join(self.table_dir_path, f"PR{rid.get_page_range_index()}", f"{page_header}{rid.get_base_page_index()}")
+    assert os.path.isdir(dir_path)
+    return dir_path
+
+  def __was_column_updated(self, rid:RID, column_index:int, base_page_dir_path:str, num_columns:int)->bool:
+    schema_encoding = BUFFERPOOL.get_meta_data(rid, base_page_dir_path, num_columns)[Config.SCHEMA_ENCODING_COLUMN]
+    schema_encoding = schema_encoding.to_bytes(length=Config.DATA_ENTRY_SIZE, byteorder="big")
+    bits = bitarray()
+    bits.tobytes(schema_encoding)
+    return bits[Config.DATA_ENTRY_SIZE * 8 - (num_columns - column_index) - 1] == 1
+
+  def get_column_data(self)->dict:
+    values:dict[int,set[int]] = dict()
+    num_records = DISK.read_metadata_from_disk(self.table_dir_path)["num_records"]
+    num_columns = DISK.read_metadata_from_disk(self.table_dir_path)["num_columns"]
+
+    for rid in range(1, num_records+1):
+      base_page_dir_path = self.__get_page_dir_path(RID(rid), "BP")
+      record_value = BUFFERPOOL.get_data_from_buffer(RID(rid), base_page_dir_path, num_columns)[self.column_index]
+      tid = BUFFERPOOL.get_meta_data(RID(rid), base_page_dir_path, num_columns)[Config.INDIRECTION_COLUMN]
+
+      if self.__was_column_updated(RID(rid), self.column_index, base_page_dir_path, num_columns):
+        tail_page_dir_path = self.__get_page_dir_path(RID(tid), "TP")
+        record_value = BUFFERPOOL.get_data_from_buffer(RID(tid), tail_page_dir_path, num_columns)[self.column_index]
+
+      if not record_value in values: values[record_value] = {rid}
+      else:                          values[record_value].add(rid)
+
+    return values
+
 class Index:
 
-  def __init__(self, table:Table, table_dir_path:str, num_columns:int, primary_key_index:int, order:int)->None:
+  def __init__(self, table_dir_path:str, num_columns:int, primary_key_index:int, order:int)->None:
     assert primary_key_index < num_columns, IndexError
 
-    self.table:Table                    = table
     self.index_dir_path:str             = os.path.join(table_dir_path, "index")
     self.num_columns:int                = num_columns
     self.primary_key_index:int          = primary_key_index
@@ -132,9 +171,6 @@ class Index:
   def __check_num_columns_valid(self, columns:tuple)->None:
     if len(columns) != self.num_columns: raise ValueError
 
-  def __get_num_records(self)->int:
-    return DISK.read_metadata_from_disk(self.table.table_dir_path)["num_records"]
-
   def create_index(self, column_index:int)->None:
     """
     Creates an index for a specified column. This scans the existing data
@@ -144,13 +180,13 @@ class Index:
     if self.__is_index_in_indices(column_index): raise KeyError
     if self.__is_index_key(column_index): raise ValueError
     self.indices[column_index] = Index_Column(self.__get_column_index_filename(column_index), self.order)
-    if not self.__get_num_records():
-      return
-    for rid in range(1, self.__get_num_records()+1):
-      columns = self.table.select(RID(rid))
-      assert len(columns) == self.num_columns
-      for column_index in self.indices:
-        self.indices[column_index].add_value(columns[column_index], rid)
+    # if not self.__get_num_records():
+    #   return
+    # for rid in range(1, self.__get_num_records()+1):
+    #   columns = self.table.select(RID(rid))
+    #   assert len(columns) == self.num_columns
+    #   for column_index in self.indices:
+    #     self.indices[column_index].add_value(columns[column_index], rid)
 
   def drop_index(self, column_index:int)->None:
     """
