@@ -348,7 +348,8 @@ class Table:
         self.page_ranges[rid.get_page_range_index()].delete_record(rid)
 
         # remove from index
-        self.index.delete_record(self.get_data(rid), rid)
+        record_data = self.select(rid)
+        self.index.delete_record(record_data, rid.to_int())
 
         self.__decrement_num_records()
 
