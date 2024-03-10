@@ -28,9 +28,8 @@ class Query:
         rids = self.table.index.locate(primary_key, self.table.key_index)
 
         try:
-            for rid in rids:
-                self.table.delete_record(rid)
-        except ValueError:
+            self.table.delete_record(rid)
+        except:
             return False
         else:
             return True
@@ -101,6 +100,7 @@ class Query:
         # Returns False if record locked by TPL
         # Assume that select will never be called on a key that doesn't exist
         """
+
         # TODO
         # [0 0 0 0 0] Base Record
         # [1 1 1 1 1] Tail Record
@@ -184,7 +184,7 @@ class Query:
 
     def increment(self, key, column):
         # TODO: idk anything abt this
-        r = self.select(key, self.table.key, [1] * self.table.num_columns)[0]
+        r = self.select(key, self.table.key_index, [1] * self.table.num_columns)[0]
         if r is not False:
             updated_columns = [None] * self.table.num_columns
             updated_columns[column] = r[column] + 1
