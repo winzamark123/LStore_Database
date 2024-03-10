@@ -120,13 +120,13 @@ class Page_Range:
                 self.create_tail_page(self.__get_num_tail_pages())
 
             # Appends new record to tail page
-            self.tail_pages[record.rid.get_tail_page_index()].insert_record(record=record, record_meta_data=record_meta_data) 
+            self.tail_pages[record.rid.get_tail_page_index()].insert_record(record=record, record_meta_data=record_meta_data)
 
     def update_record(self, record:Record, record_meta_data:list)->int:
-        # change rid to be a tid which corresponds to this specific page range only 
+        # change rid to be a tid which corresponds to this specific page range only
         record.rid = RID(self.__decrement_tid())
-        self.insert_record(record=record, page_type='Tail', record_meta_data=record_meta_data) 
-        return record.get_rid() 
+        self.insert_record(record=record, page_type='Tail', record_meta_data=record_meta_data)
+        return record.get_rid()
 
     def get_data(self, rid:RID, page_type:str='Base')->tuple:
         # Check if page type is 'Base'
@@ -137,7 +137,7 @@ class Page_Range:
                 raise ValueError("Base page index not found.")
             # Retrieve data from base page and return
             return self.base_pages[base_page_index].get_data(rid=rid)
-        
+
         else:
             tail_page_index = rid.get_tail_page_index()
             # Check if tail page index is in tail pages dictionary
@@ -145,19 +145,19 @@ class Page_Range:
                 raise ValueError("Tail page index not found.")
             # Retrieve data from tail page and return
             return self.tail_pages[tail_page_index].get_data(rid=rid)
-    
+
     # returns list of meta data
-    def get_meta_data(self, rid:RID)->[int]:
+    def get_meta_data(self, rid:RID)->dict:
         """
         Update record from page range.
         """
         if rid.get_base_page_index() not in self.base_pages:
             raise ValueError
-        
+
         return self.base_pages[rid.get_base_page_index()].get_meta_data(rid=rid)
 
     def update_meta_data(self, rid:RID, meta_data:list)->bool:
-        
+
         if rid.get_base_page_index() not in self.base_pages:
             raise ValueError
 
@@ -168,8 +168,8 @@ class Page_Range:
         """
         Delete record from page range.
         """
-        
+
         if rid.get_base_page_index() not in self.base_pages:
             raise ValueError
-        
+
         self.base_pages[rid.get_base_page_index()].delete_record(rid)
