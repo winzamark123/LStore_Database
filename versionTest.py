@@ -62,6 +62,10 @@ print(
     "First Record prev version",
     query.select_version(92106429, 0, [1, 1, 1, 1, 1], -1)[0].columns,
 )
+print(
+    "First Record prev 2x version",
+    query.select_version(92106429, 0, [1, 1, 1, 1, 1], -2)[0].columns,
+)
 
 
 db.close()
