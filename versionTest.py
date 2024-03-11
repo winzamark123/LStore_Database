@@ -46,6 +46,9 @@ for key in keys:
         # print('select on', key, ':', record)
 print("Select finished")
 
+print("NUMBER OF RECORDS", grades_table.num_records)
+print("First Record", query.select(92106429, 0, [1, 1, 1, 1, 1])[0].columns)
+
 # x update on every column
 for _ in range(number_of_updates):
     for key in keys:
@@ -82,23 +85,12 @@ for _ in range(number_of_updates):
             updated_columns[i] = None
 print("Update finished")
 
-for i in range(0, number_of_aggregates):
-    r = sorted(sample(range(0, len(keys)), 2))
-    column_sum = sum(map(lambda key: records[key][0], keys[r[0] : r[1] + 1]))
-    result = query.sum(keys[r[0]], keys[r[1]], 0)
-    if column_sum != result:
-        print(
-            "sum error on [",
-            keys[r[0]],
-            ",",
-            keys[r[1]],
-            "]: ",
-            result,
-            ", correct: ",
-            column_sum,
-        )
-    else:
-        pass
-        # print('sum on [', keys[r[0]], ',', keys[r[1]], ']: ', column_sum)
-print("Aggregate finished")
+print("NUMBER OF RECORDS", grades_table.num_records)
+print("First Record updated", query.select(92106429, 0, [1, 1, 1, 1, 1])[0].columns)
+print(
+    "First Record prev version",
+    query.select_version(92106429, 0, [1, 1, 1, 1, 1], -10)[0].columns,
+)
+
+
 db.close()

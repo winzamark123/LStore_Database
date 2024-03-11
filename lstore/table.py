@@ -72,9 +72,7 @@ class Table:
             if os.path.isdir(os.path.join(self.table_dir_path, _))
         ]
         for page_range_dir in page_range_dirs:
-            page_range_index = int(
-                os.path.basename(page_range_dir).removeprefix("PR")
-            )
+            page_range_index = int(os.path.basename(page_range_dir).removeprefix("PR"))
             metadata = DISK.read_metadata_from_disk(self.table_dir_path)
             self.page_ranges[page_range_index] = PageRange(
                 page_range_dir_path=metadata["page_range_dir_path"],
@@ -149,6 +147,25 @@ class Table:
         if not rid.get_page_range_index() in self.page_ranges:
             raise ValueError
         return self.page_ranges[rid.get_page_range_index()].get_data(rid)
+
+    def select_version(self, rid: RID, roll_back: int) -> tuple:
+        """select based on relative version"""
+        cur_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(rid)
+
+        while roll_back < 0:
+            print(f"Rolling back {roll_back} times")
+            print(f"Current RID: {cur_meta_data[Config.INDIRECTION_COLUMN]}")
+
+            cur_tid = RID(rid=cur_meta_data[Config.INDIRECTION_COLUMN])
+            cur_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(
+                cur_tid
+            )
+
+            roll_back += 1
+
+        cur_rid = cur_meta_data
+
+        return self.page_ranges[rid.get_page_range_index()].get_data(cur_rid, "Tail")
 
     def select(self, rid: RID) -> tuple:
         """

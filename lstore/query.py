@@ -87,8 +87,12 @@ class Query:
         # TODO: implement TPL record locking
 
     def select_version(
-        self, search_key, search_key_index, projected_columns_index, relative_version
-    ):
+        self,
+        search_key: int,
+        search_key_index: int,
+        projected_columns_index: list[int],
+        relative_version: int,
+    ) -> list[Record]:
         """
         # Read matching record with specified search key
         # :param search_key: the value you want to search based on
@@ -100,13 +104,39 @@ class Query:
         # Assume that select will never be called on a key that doesn't exist
         """
 
-        # TODO
         # [0 0 0 0 0] Base Record
         # [1 1 1 1 1] Tail Record
         # [2 2 2 2 2] Tail Record (Up to date)
 
         # select_verion(-1)
         # [1 1 1 1 1]
+
+        rids = self.table.index.locate(search_key, search_key_index)
+
+        records_list = list()
+        # try:
+        for rid in rids:
+            rid = RID(rid=rid)
+            data_columns = self.table.select_version(
+                rid=rid, roll_back=relative_version
+            )
+
+            print("DATA COLUMNS", data_columns)
+
+            filtered_list = [
+                data_columns[i]
+                for i in range(len(data_columns))
+                if projected_columns_index[i] == 1
+            ]
+
+            filtered_record = Record(
+                rid=rid, key=self.table.key_index, columns=filtered_list
+            )
+            records_list.append(filtered_record)
+        # except ValueError:
+        #     return False
+
+        return records_list
 
     def update(self, primary_key, *columns) -> bool:
         """

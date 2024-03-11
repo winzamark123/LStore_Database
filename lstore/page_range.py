@@ -185,9 +185,6 @@ class PageRange:
             # Retrieve data from tail page and return
             return self.tail_pages[tail_page_index].get_data(rid=rid)
 
-    def new_get_data(self, rid: RID) -> tuple:
-        pass
-
     # returns list of meta data
     def get_meta_data(self, rid: RID) -> list[int]:
         """
@@ -197,7 +194,6 @@ class PageRange:
             raise ValueError
 
         return self.base_pages[rid.get_base_page_index()].get_meta_data(rid=rid)
-
 
     def update_meta_data(self, rid: RID, meta_data: list) -> bool:
 
