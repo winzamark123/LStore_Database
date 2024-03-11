@@ -80,5 +80,8 @@ print(
     query.select_version(92106429, 0, [1, 1, 1, 1, 1], -3)[0].columns,
 )
 
+print(query.sum(92106429, 92106450, 1))
+print(query.sum_version(92106429, 92106450, 1, -3))
+
 
 db.close()
