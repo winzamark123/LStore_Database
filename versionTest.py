@@ -57,14 +57,27 @@ updated_columns = [None, None, randint(0, 20), randint(0, 20), randint(0, 20)]
 # Perform the update on the chosen key using the new values
 query.update(key, *updated_columns)
 
-print("First Record updated", query.select(key, 0, [1, 1, 1, 1, 1])[0].columns)
+print("First Record updated #1", query.select(key, 0, [1, 1, 1, 1, 1])[0].columns)
+
+# Define the new grades to update (None for values you don't want to change, and new values for the others)
+updated_columns = [None, None, 20, 20, 20]
+
+# Perform the update on the chosen key using the new values
+query.update(key, *updated_columns)
+
+print("First Record updated #2", query.select(key, 0, [1, 1, 1, 1, 1])[0].columns)
+
 print(
-    "First Record prev version",
+    "First Record Version 1 back",
     query.select_version(92106429, 0, [1, 1, 1, 1, 1], -1)[0].columns,
 )
 print(
-    "First Record prev 2x version",
+    "First Record Version 2 back",
     query.select_version(92106429, 0, [1, 1, 1, 1, 1], -2)[0].columns,
+)
+print(
+    "First Record Version 3 back",
+    query.select_version(92106429, 0, [1, 1, 1, 1, 1], -3)[0].columns,
 )
 
 

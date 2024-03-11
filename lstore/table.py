@@ -153,9 +153,6 @@ class Table:
         cur_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(rid)
 
         while roll_back < 0:
-            print(f"Rolling back {roll_back} times")
-            print(f"Current RID: {cur_meta_data[Config.INDIRECTION_COLUMN]}")
-
             cur_tid = RID(rid=cur_meta_data[Config.INDIRECTION_COLUMN])
             cur_meta_data = self.page_ranges[
                 rid.get_page_range_index()
@@ -163,7 +160,37 @@ class Table:
 
             roll_back += 1
 
-        return self.page_ranges[rid.get_page_range_index()].get_data(cur_tid, "Tail")
+        # get the rest of the schema encoding with 0s
+        schema_encoding = cur_meta_data[Config.SCHEMA_ENCODING_COLUMN]
+        # Get indexes of schema encoding that have 0s
+        list_of_columns_updated_0 = self.__analyze_schema_encoding(
+            schema_encoding=schema_encoding, zero=True
+        )
+        # Get indexes of schema encoding that have 0s
+        list_of_columns_updated_1 = self.__analyze_schema_encoding(
+            schema_encoding=schema_encoding
+        )
+        # Base record columns
+        base_columns = self.page_ranges[rid.get_page_range_index()].get_data(rid=rid)
+        tail_columns = self.page_ranges[rid.get_page_range_index()].get_data(
+            rid=cur_tid, page_type="Tail"
+        )
+
+        dict_values = {}
+
+        for i in list_of_columns_updated_0:
+            dict_values[i] = base_columns[i]
+
+        for i in list_of_columns_updated_1:
+            dict_values[i] = tail_columns[i]
+
+        # Sort the dictionary based on keys
+        sorted_dict = {k: dict_values[k] for k in sorted(dict_values)}
+
+        # Extract values and create a tuple
+        values_tuple = tuple(sorted_dict.values())
+
+        return values_tuple
 
     def select(self, rid: RID) -> tuple:
         """
