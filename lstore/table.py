@@ -157,15 +157,13 @@ class Table:
             print(f"Current RID: {cur_meta_data[Config.INDIRECTION_COLUMN]}")
 
             cur_tid = RID(rid=cur_meta_data[Config.INDIRECTION_COLUMN])
-            cur_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(
-                cur_tid
-            )
+            cur_meta_data = self.page_ranges[
+                rid.get_page_range_index()
+            ].get_tail_meta_data(cur_tid)
 
             roll_back += 1
 
-        cur_rid = cur_meta_data
-
-        return self.page_ranges[rid.get_page_range_index()].get_data(cur_rid, "Tail")
+        return self.page_ranges[rid.get_page_range_index()].get_data(cur_tid, "Tail")
 
     def select(self, rid: RID) -> tuple:
         """

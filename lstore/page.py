@@ -7,7 +7,7 @@ from lstore.record import Record, RID
 from lstore import config as Config
 
 
-class Base_Page:
+class BasePage:
     """Base Page class"""
 
     def __init__(self, base_page_dir_path: str, base_page_index: int) -> None:
@@ -57,7 +57,7 @@ class Base_Page:
         )
 
 
-class Tail_Page:
+class TailPage:
     """Tail Page class"""
 
     def __init__(self, tail_page_dir_path: str, tail_page_index: int) -> None:
@@ -88,4 +88,9 @@ class Tail_Page:
         # print(f"selecting {self.tail_page_path} ")
         return BUFFERPOOL.get_data_from_buffer(
             rid=rid, page_path=self.tail_page_path, num_columns=self.num_columns
+        )
+
+    def get_meta_data(self, rid: RID) -> list[int]:
+        return BUFFERPOOL.get_meta_data(
+            rid=rid, path_to_page=self.tail_page_path, num_columns=self.num_columns
         )

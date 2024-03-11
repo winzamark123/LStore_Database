@@ -3,7 +3,7 @@
 import os
 import lstore.config as Config
 from lstore.disk import DISK
-from lstore.page import Base_Page, Tail_Page
+from lstore.page import BasePage, TailPage
 from lstore.record import Record, RID
 
 
@@ -18,11 +18,11 @@ class PageRange:
         self.tps_index: int = tps_index
         self.tid = 0
 
-        self.base_pages: dict[int, Base_Page] = dict()
+        self.base_pages: dict[int, BasePage] = dict()
         if self.__get_num_base_pages():
             self.__load_base_pages()
 
-        self.tail_pages: dict[int, Tail_Page] = dict()
+        self.tail_pages: dict[int, TailPage] = dict()
         if self.__get_num_tail_pages():
             self.__load_tail_pages()
 
@@ -63,7 +63,7 @@ class PageRange:
         for base_page_dir in base_page_dirs:
             base_page_index = int(base_page_dir.removeprefix("BP"))
             metadata = DISK.read_metadata_from_disk(base_page_dir)
-            self.base_pages[base_page_index] = Base_Page(
+            self.base_pages[base_page_index] = BasePage(
                 base_page_dir_path=metadata["base_page_dir_path"],
                 base_page_index=metadata["base_page_index"],
             )
@@ -78,7 +78,7 @@ class PageRange:
         for tail_page_dir in tail_page_dirs:
             tail_page_index = int(tail_page_dir.removeprefix("TP"))
             metadata = DISK.read_metadata_from_disk(tail_page_dir)
-            self.tail_pages[tail_page_index] = Tail_Page(
+            self.tail_pages[tail_page_index] = TailPage(
                 metadata["tail_page_dir_path"], metadata["tail_page_index"]
             )
 
@@ -99,7 +99,7 @@ class PageRange:
             "base_page_index": base_page_index,
         }
         DISK.write_metadata_to_disk(base_page_dir_path, metadata)
-        self.base_pages[base_page_index] = Base_Page(
+        self.base_pages[base_page_index] = BasePage(
             base_page_dir_path, base_page_index
         )
 
@@ -120,7 +120,7 @@ class PageRange:
             "tail_page_index": tail_page_index,
         }
         DISK.write_metadata_to_disk(tail_page_dir_path, metadata)
-        self.tail_pages[tail_page_index] = Tail_Page(
+        self.tail_pages[tail_page_index] = TailPage(
             tail_page_dir_path, tail_page_index
         )
 
@@ -188,14 +188,26 @@ class PageRange:
     # returns list of meta data
     def get_meta_data(self, rid: RID) -> list[int]:
         """
-        Update record from page range.
+        get meta data from basepage in page range
         """
         if rid.get_base_page_index() not in self.base_pages:
             raise ValueError
 
         return self.base_pages[rid.get_base_page_index()].get_meta_data(rid=rid)
 
+    def get_tail_meta_data(self, rid: RID) -> list[int]:
+        """
+        get meta data from tailpage in page range
+        """
+        if rid.get_tail_page_index() not in self.tail_pages:
+            raise ValueError
+
+        return self.tail_pages[rid.get_tail_page_index()].get_meta_data(rid=rid)
+
     def update_meta_data(self, rid: RID, meta_data: list) -> bool:
+        """
+        Update record from page range.
+        """
 
         if rid.get_base_page_index() not in self.base_pages:
             raise ValueError

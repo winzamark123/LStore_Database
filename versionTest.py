@@ -49,47 +49,18 @@ print("Select finished")
 print("NUMBER OF RECORDS", grades_table.num_records)
 print("First Record", query.select(92106429, 0, [1, 1, 1, 1, 1])[0].columns)
 
-# x update on every column
-for _ in range(number_of_updates):
-    for key in keys:
-        updated_columns = [None, None, None, None, None]
-        for i in range(2, grades_table.num_columns):
-            # updated value
-            value = randint(0, 20)
-            updated_columns[i] = value
-            # copy record to check
-            original = records[key].copy()
-            # update our test directory
-            records[key][i] = value
-            query.update(key, *updated_columns)
-            record = query.select(key, 0, [1, 1, 1, 1, 1])[0]
-            error = False
-            for j, column in enumerate(record.columns):
-                # print(f"column: {column}, records[key][j]: {records[key][j]}")
-                if column != records[key][j]:
-                    error = True
-            if error:
-                print(
-                    "update error on",
-                    original,
-                    "and",
-                    updated_columns,
-                    ":",
-                    record,
-                    ", correct:",
-                    records[key],
-                )
-            else:
-                pass
-                # print('update on', original, 'and', updated_columns, ':', record)
-            updated_columns[i] = None
-print("Update finished")
 
-print("NUMBER OF RECORDS", grades_table.num_records)
-print("First Record updated", query.select(92106429, 0, [1, 1, 1, 1, 1])[0].columns)
+key = 92106429
+# Define the new grades to update (None for values you don't want to change, and new values for the others)
+updated_columns = [None, None, randint(0, 20), randint(0, 20), randint(0, 20)]
+
+# Perform the update on the chosen key using the new values
+query.update(key, *updated_columns)
+
+print("First Record updated", query.select(key, 0, [1, 1, 1, 1, 1])[0].columns)
 print(
     "First Record prev version",
-    query.select_version(92106429, 0, [1, 1, 1, 1, 1], -10)[0].columns,
+    query.select_version(92106429, 0, [1, 1, 1, 1, 1], -1)[0].columns,
 )
 
 

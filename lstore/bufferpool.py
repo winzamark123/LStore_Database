@@ -17,9 +17,7 @@ class Bufferpool:
     def __evict_frame(self) -> None:
         # print("evicting frame")
         lru_time_frame = None
-        lru_frame_path = ''
-
-
+        lru_frame_path = ""
 
         # Find the least recently used frame that is not pinned
         for frame_path, frame_obj in self.frames.items():
@@ -62,7 +60,6 @@ class Bufferpool:
     def __import_frame(self, path_to_page: str, num_columns: int) -> None:
         if not self.__has_capacity():
             self.__evict_frame()
-
 
         self.frames[path_to_page] = Frame(path_to_page=path_to_page)
         self.frames[path_to_page].load_data(
