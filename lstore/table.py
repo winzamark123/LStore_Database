@@ -153,7 +153,9 @@ class Table:
         cur_meta_data = self.page_ranges[rid.get_page_range_index()].get_meta_data(rid)
 
         while roll_back < 0:
+            # print(f"Rolling back {roll_back} times")
             cur_tid = RID(rid=cur_meta_data[Config.INDIRECTION_COLUMN])
+            # print(f"Current TID: {cur_tid.to_int()}")
             cur_meta_data = self.page_ranges[
                 rid.get_page_range_index()
             ].get_tail_meta_data(cur_tid)

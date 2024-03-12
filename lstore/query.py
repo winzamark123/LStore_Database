@@ -146,9 +146,9 @@ class Query:
         """
         none_count = 0
         for i in range(len(columns)):
-            if columns[i] == None:
+            if columns[i] is None:
                 none_count += 1
-            if none_count == self.table.num_columns:
+            if none_count is self.table.num_columns:
                 return True
 
         # print("\n\nUpdate starting")
@@ -179,28 +179,37 @@ class Query:
         try:
             for rid in rids:
                 rid = RID(rid=rid)
-                data_columns = self.table.get_data(rid)
+                data_columns = self.table.select(rid)
                 output += data_columns[aggregate_column_index]
         except ValueError:
             return False
 
         return output
 
-    """
-    :param start_range: int         # Start of the key range to aggregate
-    :param end_range: int           # End of the key range to aggregate
-    :param aggregate_columns: int  # Index of desired column to aggregate
-    :param relative_version: the relative version of the record you need to retreive.
-    # this function is only called on the primary key.
-    # Returns the summation of the given range upon success
-    # Returns False if no record exists in the given range
-    """
-
     def sum_version(
         self, start_range, end_range, aggregate_column_index, relative_version
     ):
-        # TODO
-        pass
+        """
+        :param start_range: int         # Start of the key range to aggregate
+        :param end_range: int           # End of the key range to aggregate
+        :param aggregate_columns: int  # Index of desired column to aggregate
+        :param relative_version: the relative version of the record you need to retreive.
+        # this function is only called on the primary key.
+        # Returns the summation of the given range upon success
+        # Returns False if no record exists in the given range
+        """
+        rids = self.table.index.locate_range(
+            start_range,
+            end_range,
+            self.table.key_index,
+        )
+        output = 0
+        for rid in rids:
+            rid = RID(rid=rid)
+            data_columns = self.table.select_version(rid, relative_version)
+            output += data_columns[aggregate_column_index]
+
+        return output
 
     """
     incremenets one column of the record
