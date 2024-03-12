@@ -79,9 +79,17 @@ print(
     "First Record Version 3 back",
     query.select_version(92106429, 0, [1, 1, 1, 1, 1], -3)[0].columns,
 )
-
-print(query.sum(92106429, 92106450, 1))
-print(query.sum_version(92106429, 92106450, 1, -3))
+print(
+    "First Record Version 4 back",
+    query.select_version(92106429, 0, [1, 1, 1, 1, 1], -4)[0].columns,
+)
+roll_back = -2
+print("Second Record", query.select(92106430, 0, [1, 1, 1, 1, 1])[0].columns)
+print("Query Sum:", query.sum(92106429, 92106430, 3))
+print(
+    f"Query Sum Prev {roll_back} back, 3rd column",
+    query.sum_version(92106429, 92106430, 3, roll_back),
+)
 
 
 db.close()

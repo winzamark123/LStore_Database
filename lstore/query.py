@@ -204,13 +204,10 @@ class Query:
             self.table.key_index,
         )
         output = 0
-        try:
-            for rid in rids:
-                rid = RID(rid=rid)
-                data_columns = self.table.select_version(rid, relative_version)
-                output += data_columns[aggregate_column_index]
-        except ValueError:
-            return False
+        for rid in rids:
+            rid = RID(rid=rid)
+            data_columns = self.table.select_version(rid, relative_version)
+            output += data_columns[aggregate_column_index]
 
         return output
 
