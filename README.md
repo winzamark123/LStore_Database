@@ -97,7 +97,7 @@ Second part of our demo runs a tester that checks with the old database to see i
 
 ## Credits 
 
-As mentioned before, this was a group project that was built with sleepless nights and major caffeine addictions. Nontheless, it was fun to build something on a lower level, manipulating, and storing data. Special thanks to @nsanchez75 and @dieg0raf for making this all happened.
+As mentioned before, this was a group project that was built with sleepless nights and major caffeine addictions. Nonetheless, it was fun to build something on a lower level, manipulating, and storing data. Special thanks to @nsanchez75 and @dieg0raf for making this all happened.
 
 Check out their works here:
 
